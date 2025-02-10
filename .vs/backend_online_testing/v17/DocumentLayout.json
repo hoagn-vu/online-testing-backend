@@ -1,0 +1,92 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{8A9E5124-1B10-40F1-A81F-52569F84BCD7}|backend_online_testing.csproj|c:\\users\\hoang\\documents\\github\\projectonlinetesting\\backend_online_testing\\models\\productmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8A9E5124-1B10-40F1-A81F-52569F84BCD7}|backend_online_testing.csproj|solutionrelative:models\\productmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8A9E5124-1B10-40F1-A81F-52569F84BCD7}|backend_online_testing.csproj|c:\\users\\hoang\\documents\\github\\projectonlinetesting\\backend_online_testing\\controllers\\productcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8A9E5124-1B10-40F1-A81F-52569F84BCD7}|backend_online_testing.csproj|solutionrelative:controllers\\productcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8A9E5124-1B10-40F1-A81F-52569F84BCD7}|backend_online_testing.csproj|c:\\users\\hoang\\documents\\github\\projectonlinetesting\\backend_online_testing\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8A9E5124-1B10-40F1-A81F-52569F84BCD7}|backend_online_testing.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8A9E5124-1B10-40F1-A81F-52569F84BCD7}|backend_online_testing.csproj|c:\\users\\hoang\\documents\\github\\projectonlinetesting\\backend_online_testing\\services\\testservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8A9E5124-1B10-40F1-A81F-52569F84BCD7}|backend_online_testing.csproj|solutionrelative:services\\testservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ProductController.cs",
+              "DocumentMoniker": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\Controllers\\ProductController.cs",
+              "RelativeDocumentMoniker": "Controllers\\ProductController.cs",
+              "ToolTip": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\Controllers\\ProductController.cs",
+              "RelativeToolTip": "Controllers\\ProductController.cs",
+              "ViewState": "AQIAAAcAAAAAAAAAAAAQwBwAAAAFAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-09T04:12:38.369Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "TestService.cs",
+              "DocumentMoniker": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\Services\\TestService.cs",
+              "RelativeDocumentMoniker": "Services\\TestService.cs",
+              "ToolTip": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\Services\\TestService.cs",
+              "RelativeToolTip": "Services\\TestService.cs",
+              "ViewState": "AQIAAAMAAAAAAAAAAAAAABAAAAAJAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-09T03:47:48.026Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ProductModel.cs",
+              "DocumentMoniker": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\Models\\ProductModel.cs",
+              "RelativeDocumentMoniker": "Models\\ProductModel.cs",
+              "ToolTip": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\Models\\ProductModel.cs",
+              "RelativeToolTip": "Models\\ProductModel.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAoAAAAoAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-09T03:44:11.059Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA4AAAAzAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-09T03:37:57.215Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
