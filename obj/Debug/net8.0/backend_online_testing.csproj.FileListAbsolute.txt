@@ -36,3 +36,4 @@ C:\Users\hoang\Documents\GitHub\ProjectOnlineTesting\backend_online_testing\obj\
 C:\Users\hoang\Documents\GitHub\ProjectOnlineTesting\backend_online_testing\obj\Debug\net8.0\backend_online_testing.pdb
 C:\Users\hoang\Documents\GitHub\ProjectOnlineTesting\backend_online_testing\obj\Debug\net8.0\backend_online_testing.genruntimeconfig.cache
 C:\Users\hoang\Documents\GitHub\ProjectOnlineTesting\backend_online_testing\obj\Debug\net8.0\ref\backend_online_testing.dll
+C:\Users\hoang\Documents\GitHub\ProjectOnlineTesting\backend_online_testing\obj\Debug\net8.0\backend_online_testing.sourcelink.json

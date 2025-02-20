@@ -15,10 +15,11 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
     var client = sp.GetRequiredService<IMongoClient>();
-    return client.GetDatabase("testDb");
+    return client.GetDatabase("onlineTestingDB");
 });
 
 builder.Services.AddSingleton<TestService>();
+builder.Services.AddSingleton<RoomService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
