@@ -18,7 +18,6 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     return client.GetDatabase("onlineTestingDB");
 });
 
-builder.Services.AddSingleton<TestService>();
 builder.Services.AddSingleton<RoomService>();
 
 builder.Services.AddControllers();
