@@ -1,41 +1,5 @@
 [
   {
-    "ContainingType": "backend_online_testing.Controllers.ProductController",
-    "Method": "Get",
-    "RelativePath": "api/Product",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.List\u00601[[backend_online_testing.Models.ProductModel, backend_online_testing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "backend_online_testing.Controllers.ProductController",
-    "Method": "Create",
-    "RelativePath": "api/Product",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "product",
-        "Type": "backend_online_testing.Models.ProductModel",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
     "Method": "Get",
     "RelativePath": "api/Room",
@@ -100,7 +64,7 @@
   },
   {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
-    "Method": "Delete",
+    "Method": "SoftDelete",
     "RelativePath": "api/Room/{id}",
     "HttpMethod": "DELETE",
     "IsController": true,
@@ -116,7 +80,7 @@
   },
   {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
-    "Method": "SoftDelete",
+    "Method": "Delete",
     "RelativePath": "api/Room/del/{id}",
     "HttpMethod": "DELETE",
     "IsController": true,
