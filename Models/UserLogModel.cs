@@ -3,13 +3,13 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace backend_online_testing.Models
 {
-    public class RoomLogModel
+    public class UserLogModel
     {
-        [BsonElement("roomLogUserId")]
+        [BsonElement("logUserId")]
         public ObjectId UserId { get; set; }
-        [BsonElement("RoomLogType")]
+        [BsonElement("userLogType")]
         public required string Type { get; set; }
-        [BsonElement("RoomLogAt")]
+        [BsonElement("userLogAt")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime LogAt { get; set; } = DateTime.UtcNow;
     }

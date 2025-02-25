@@ -2,7 +2,7 @@
   {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
     "Method": "Get",
-    "RelativePath": "api/Room",
+    "RelativePath": "api/room",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -12,7 +12,7 @@
   {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
     "Method": "Create",
-    "RelativePath": "api/Room",
+    "RelativePath": "api/room",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -28,7 +28,7 @@
   {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
     "Method": "Get",
-    "RelativePath": "api/Room/{id}",
+    "RelativePath": "api/room/{id}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -44,7 +44,7 @@
   {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
     "Method": "Update",
-    "RelativePath": "api/Room/{id}",
+    "RelativePath": "api/room/{id}",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
@@ -65,7 +65,7 @@
   {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
     "Method": "SoftDelete",
-    "RelativePath": "api/Room/{id}",
+    "RelativePath": "api/room/{id}",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -81,7 +81,7 @@
   {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
     "Method": "Delete",
-    "RelativePath": "api/Room/del/{id}",
+    "RelativePath": "api/room/del/{id}",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -89,6 +89,32 @@
       {
         "Name": "id",
         "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.UserController",
+    "Method": "Get",
+    "RelativePath": "api/user",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.UserController",
+    "Method": "Create",
+    "RelativePath": "api/user",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "user",
+        "Type": "backend_online_testing.Models.UserModel",
         "IsRequired": true
       }
     ],

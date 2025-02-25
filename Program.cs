@@ -1,3 +1,4 @@
+using backend_online_testing.Models;
 using backend_online_testing.Services;
 using MongoDB.Driver;
 
@@ -19,6 +20,7 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 });
 
 builder.Services.AddSingleton<RoomService>();
+builder.Services.AddSingleton<UserService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

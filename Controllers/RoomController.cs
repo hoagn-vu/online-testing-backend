@@ -6,7 +6,7 @@ using MongoDB.Bson;
 
 namespace backend_online_testing.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/room")]
     [ApiController]
     public class RoomController : ControllerBase
     {
