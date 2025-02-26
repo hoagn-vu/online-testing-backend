@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace backend_online_testing.Models
 {
@@ -6,7 +7,7 @@ namespace backend_online_testing.Models
     {
         [BsonId]
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-        public string? QuestionId { get; set; }
+        public string QuestionId { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement]
         public double? QuestionScore { get; set; }

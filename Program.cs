@@ -21,6 +21,10 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 
 builder.Services.AddSingleton<RoomService>();
 builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<RoomsService>();
+builder.Services.AddSingleton<ExamsService>();
+builder.Services.AddSingleton<ExamMatrixsService>();
+builder.Services.AddSingleton<SubjectsService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

@@ -26,8 +26,8 @@ namespace backend_online_testing.Controllers
             return Ok(new { status ="Success" , data = exams_list });
         }
 
-        [HttpPost("SearchByName")]
-        public async Task<IActionResult> SearchByName([FromBody] string examName)
+        [HttpPost("SearchByName/{name}")]
+        public async Task<IActionResult> SearchByName(string name, [FromBody] string examName)
         {
             var exams_list = await _examsService.FindExamByName(examName);
             if (exams_list == null || !exams_list.Any())
@@ -61,8 +61,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("UpdateExam")]
-        public async Task<IActionResult> UpdateExam([FromBody] ExamDTO updateExamData)
+        [HttpPost("UpdateExam/{id}")]
+        public async Task<IActionResult> UpdateExam(string id, [FromBody] ExamDTO updateExamData)
         {
             if (updateExamData == null || string.IsNullOrEmpty(updateExamData.Id))
             {
@@ -97,8 +97,8 @@ namespace backend_online_testing.Controllers
             return BadRequest(new { status = "Failed", message = addStatus });
         }
 
-        [HttpPut("UpdateQuestion/{Id}")]
-        public async Task<IActionResult> UpdateQuestionExam(string Id, [FromBody] ExamQuestionDTO addQuestionData)
+        [HttpPost("UpdateQuestion/{id}")]
+        public async Task<IActionResult> UpdateQuestionExam(string id, [FromBody] ExamQuestionDTO addQuestionData)
         {
             string updateStatus = await _examsService.UpdateExamQuestion(addQuestionData);
 
@@ -108,8 +108,8 @@ namespace backend_online_testing.Controllers
             }
             return BadRequest(new { status = "Failed", message = updateStatus });
         }
-        [HttpPost("DeleteQuestion")]
-        public async Task<IActionResult> DeleteQuestionExam([FromBody] ExamQuestionDTO deleteQuestionData)
+        [HttpPost("DeleteQuestion/{id}")]
+        public async Task<IActionResult> DeleteQuestionExam(string id, [FromBody] ExamQuestionDTO deleteQuestionData)
         {
             string deleteStatus = await _examsService.DeleteExamQuestion(deleteQuestionData);
             if(deleteStatus == "Question deleted successfully")
