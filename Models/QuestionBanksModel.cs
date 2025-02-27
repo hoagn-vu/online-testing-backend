@@ -7,7 +7,7 @@ namespace backend_online_testing.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+        public string QuestionBankId { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("questionBankName")]
         public string QuestionBankName { get; set; }

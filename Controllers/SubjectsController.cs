@@ -1,4 +1,5 @@
-﻿using backend_online_testing.Models;
+﻿using backend_online_testing.Dtos;
+using backend_online_testing.Models;
 using backend_online_testing.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,96 @@ namespace backend_online_testing.Controllers
         {
             var result = await _subjectsService.SearchByQuestionName(subjectName, questionBankName, questionName);
             return Ok(result);
+        }
+
+        [HttpPost("/AddSubjectName/")]
+        public async Task<ActionResult> AddSubjectName(string subjectName)
+        {
+            var result = await _subjectsService.AddSubject(subjectName);
+
+            if (result == "Add subject successfully")
+            {
+                return Ok(new { message = result });
+            }
+            else
+            {
+                return BadRequest(new { error = result });
+            }
+        }
+
+        [HttpPost("/{subjectId}/AddQuestionBank/")]
+        public async Task<ActionResult> AddQuestionBankName(string subjectId, string questionBankName)
+        {
+            var result = await _subjectsService.AddQuestionBank(subjectId, questionBankName);
+
+            if (result == "Add question bank successfully")
+            {
+                return Ok(new { message = result });
+            }
+            else
+            {
+                return BadRequest(new { error = result });
+            }
+        }
+
+        [HttpPost("/{subjectId}/{questionBankId}/AddQuestionList")]
+        public async Task<ActionResult> AddQuestionList(string subjectId, string questionBankId, string questionLogUserId, List<SubjectQuestionDto> listQuestion)
+        {
+            var result = await _subjectsService.AddQuestionsList(subjectId, questionBankId, questionLogUserId, listQuestion);
+
+            if (result == "Add question list successfully")
+            {
+                return Ok(new { message = result });
+            }
+            else
+            {
+                return BadRequest(new { error = result });
+            }
+        }
+
+        [HttpPost("Update/{subjectId}")]
+        public async Task<ActionResult> UpdateSubjectName(string subjectId, string subjectName)
+        {
+            var result = await _subjectsService.UpdateSubjectName(subjectId, subjectName);
+
+            if (result == "Update subject name successfully")
+            {
+                return Ok(new { message = result });
+            }
+            else
+            {
+                return BadRequest(new { error = result });
+            }
+        }
+
+        [HttpPost("Update/{subjectId}/{questionBankId}")]
+        public async Task<ActionResult> UpdateQuestionBankName(string subjectId,string questionBankId, string questionBankName)
+        {
+            var result = await _subjectsService.UpdateQuestionBankName(subjectId, questionBankId, questionBankName);
+
+            if (result == "Update subject name successfully")
+            {
+                return Ok(new { message = result });
+            }
+            else
+            {
+                return BadRequest(new { error = result });
+            }
+        }
+
+        [HttpPost("Update/{subjectId}/{questionBankId}/{questionId}")]
+        public async Task<ActionResult> UpdateQuestion(string subjectId, string questionBankId, string questionId, string userLogId, SubjectQuestionDto questionData)
+        {
+            var result = await _subjectsService.UpdateQuestion(subjectId, questionBankId, questionId, userLogId, questionData);
+
+            if (result == "Update question successfully")
+            {
+                return Ok(new { message = result });
+            }
+            else
+            {
+                return BadRequest(new { error = result });
+            }
         }
 
         [HttpPost("SeedData/")]

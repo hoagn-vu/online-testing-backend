@@ -1,5 +1,73 @@
 [
   {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "AddQuestionList",
+    "RelativePath": "{subjectId}/{questionBankId}/AddQuestionList",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionLogUserId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "listQuestion",
+        "Type": "System.Collections.Generic.List\u00601[[backend_online_testing.Dtos.SubjectQuestionDto, backend_online_testing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "AddQuestionBankName",
+    "RelativePath": "{subjectId}/AddQuestionBank",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "AddSubjectName",
+    "RelativePath": "AddSubjectName",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_online_testing.Controllers.ExamController",
     "Method": "AddQuestionExam",
     "RelativePath": "api/Exam/AddQuestion",
@@ -581,6 +649,89 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "UpdateSubjectName",
+    "RelativePath": "api/Subjects/Update/{subjectId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "subjectName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "UpdateQuestionBankName",
+    "RelativePath": "api/Subjects/Update/{subjectId}/{questionBankId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "UpdateQuestion",
+    "RelativePath": "api/Subjects/Update/{subjectId}/{questionBankId}/{questionId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "userLogId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "questionData",
+        "Type": "backend_online_testing.Dtos.SubjectQuestionDto",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {

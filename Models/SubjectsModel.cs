@@ -13,6 +13,6 @@ namespace backend_online_testing.Models
         public string SubjectName { get; set; }
 
         [BsonElement("questionBanks")]
-        public List<QuestionBanksModel> QuestionBanks { get; set; }
+        public List<QuestionBanksModel>? QuestionBanks { get; set; }
     }
 }

@@ -1,5 +1,8 @@
-﻿using backend_online_testing.Models;
+﻿using backend_online_testing.Dtos;
+using backend_online_testing.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Security.Cryptography.X509Certificates;
 
 namespace backend_online_testing.Services
 {
@@ -61,7 +64,7 @@ namespace backend_online_testing.Services
                 .Where(qb => qb.QuestionBankName == questionBankName) // Chỉ lấy đúng QuestionBankName
                 .Select(qb => new QuestionBanksModel
                 {
-                    Id = qb.Id,
+                    QuestionBankId = qb.QuestionBankId,
                     QuestionBankName = qb.QuestionBankName,
                     List = qb.List
                         .Where(q => q.QuestionText.ToLower().Contains(questionName.ToLower())) // Lọc câu hỏi
@@ -72,6 +75,198 @@ namespace backend_online_testing.Services
 
             return await _subjectsCollection.Find(filter).Project(projection).ToListAsync();
         }
+        //Add subject
+        public async Task<string> AddSubject(string subjectName)
+        {
+            try
+            {
+                var subject = new SubjectsModel
+                {
+                    SubjectName = subjectName,
+                    QuestionBanks = new List<QuestionBanksModel>()
+                };
+
+                await _subjectsCollection.InsertOneAsync(subject);
+                return ("Add subject successfully");
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+
+        //Add question bank
+        public async Task<string> AddQuestionBank(string subjectNameId, string questionBankName)
+        {
+            try
+            {
+                var subject = await _subjectsCollection.Find(s => s.Id == subjectNameId).FirstOrDefaultAsync();
+
+                if (subject == null)
+                {
+                    return "Not found subject";
+                }
+
+                var newQuestionBank = new QuestionBanksModel
+                {
+                    QuestionBankName = questionBankName,
+                    List= new List<QuestionListModel>()
+                };
+
+                subject.QuestionBanks.Add(newQuestionBank);
+
+                var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
+                await _subjectsCollection.UpdateOneAsync(s => s.Id == subjectNameId, update);
+
+                return $"Add question bank successfully";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+        //Add Question List
+        public async Task<string> AddQuestionsList(string id, string questionBankId, string questionLogUserId, List<SubjectQuestionDto> questionsList)
+        {
+            try
+            {
+                var subject = await _subjectsCollection.Find(s => s.Id == id).FirstOrDefaultAsync();
+                if (subject == null)
+                {
+                    return "Not found subject";
+                }
+                var questionBank = subject.QuestionBanks.Find(qb => qb.QuestionBankId == questionBankId);
+                if (questionBank == null)
+                {
+                    return "Not found question bank";
+                }
+
+                foreach (var questionDto in questionsList)
+                {
+                    var questionAddLog = new QuestionLogsModel
+                    {
+                        QuestionLogType = "Added question",
+                        QuestionLogUserId = questionLogUserId,
+                        QuestionLogAt = DateTime.Now,
+                    };
+
+                    var newQuestion = new QuestionListModel
+                    {
+                        Options = questionDto.Options,
+                        QuestionType = questionDto.QuestionType,
+                        QuestionText = questionDto.QuestionText,
+                        QuestionStatus = questionDto.QuestionStatus,
+                        IsRandomOrder = questionDto.IsRandomOrder,
+                        Tags = questionDto.Tags,
+                        QuestionLogs = new List<QuestionLogsModel> { questionAddLog}
+                    };
+
+                    questionBank.List.Add(newQuestion);
+                }
+
+                var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
+                await _subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
+
+                return $"Add question list successfully";
+            }
+            catch (Exception ex) {
+                return $"Error: Add question failure {ex.Message}";
+            }
+        }
+        //Update Subject Name
+        public async Task<string> UpdateSubjectName(string id,string subjectName)
+        {
+            try
+            {
+                var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, id);
+                var update = Builders<SubjectsModel>.Update.Set(s => s.SubjectName, subjectName);
+
+                var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+
+                if (result.ModifiedCount > 0)
+                {
+                    return "Update subject name successfully";
+                }
+                return "Subject not found or no changes made";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+
+        //Update Question Bank Name
+        public async Task<string> UpdateQuestionBankName(string id, string questionBankId, string questionBankName)
+        {
+            try
+            {
+                var filter = Builders<SubjectsModel>.Filter.And(
+                    Builders<SubjectsModel>.Filter.Eq(s => s.Id, id),
+                    Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankId == questionBankId)
+                );
+
+                var update = Builders<SubjectsModel>.Update.Set("QuestionBanks.$.QuestionBankName", questionBankName);
+
+                var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+
+                if (result.ModifiedCount > 0)
+                {
+                    return "Update question bank name successfully";
+                }
+                return "Question bank not found or no changes made";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+
+        //Update Question List
+        public async Task<string> UpdateQuestion(string id, string questionBankId, string questionId, string userLogId, SubjectQuestionDto questionData)
+        {
+            try
+            {
+                var subject = await _subjectsCollection.Find(s => s.Id == id).FirstOrDefaultAsync();
+                if (subject == null)
+                    return "Subject not found";
+
+                // Find question bank
+                var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
+                if (questionBank == null)
+                    return "QuestionBank not found";
+
+                // Find question
+                var questionIndex = questionBank.List.FindIndex(q => q.QuestionId == questionId);
+                if (questionIndex == -1)
+                    return "Question not found";
+                var updateLog = new QuestionLogsModel
+                {
+                    QuestionLogType = "Updated question",
+                    QuestionLogUserId = userLogId,
+                    QuestionLogAt = DateTime.Now
+                };
+
+                // Update question data
+                questionBank.List[questionIndex].Options = questionData.Options;
+                questionBank.List[questionIndex].QuestionType = questionData.QuestionType;
+                questionBank.List[questionIndex].QuestionStatus = questionData.QuestionStatus;
+                questionBank.List[questionIndex].QuestionText = questionData.QuestionText;
+                questionBank.List[questionIndex].IsRandomOrder = questionData.IsRandomOrder;
+                questionBank.List[questionIndex].Tags = questionData.Tags;
+                questionBank.List[questionIndex].QuestionLogs.Add(updateLog);
+
+                // Update data
+                var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
+                var result = await _subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
+
+                return result.ModifiedCount > 0 ? "Update question successfully" : "Update failed";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+
         //Insert sample data
         public async Task InsertSampleDataAsync()
         {
