@@ -1,20 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\backend_online_testing.csproj": {}
+    "D:\\WebThiTracNghiem\\backend_online_testing\\backend_online_testing.csproj": {}
   },
   "projects": {
-    "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\backend_online_testing.csproj": {
+    "D:\\WebThiTracNghiem\\backend_online_testing\\backend_online_testing.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\backend_online_testing.csproj",
+        "projectUniqueName": "D:\\WebThiTracNghiem\\backend_online_testing\\backend_online_testing.csproj",
         "projectName": "backend_online_testing",
-        "projectPath": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\backend_online_testing.csproj",
-        "packagesPath": "C:\\Users\\hoang\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\hoang\\Documents\\GitHub\\ProjectOnlineTesting\\backend_online_testing\\obj\\",
+        "projectPath": "D:\\WebThiTracNghiem\\backend_online_testing\\backend_online_testing.csproj",
+        "packagesPath": "C:\\Users\\ngodu\\.nuget\\packages\\",
+        "outputPath": "D:\\WebThiTracNghiem\\backend_online_testing\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\hoang\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\ngodu\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -22,6 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -73,7 +78,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.401/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -1,5 +1,428 @@
 [
   {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "AddQuestionList",
+    "RelativePath": "{subjectId}/{questionBankId}/AddQuestionList",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionLogUserId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "listQuestion",
+        "Type": "System.Collections.Generic.List\u00601[[backend_online_testing.Dtos.SubjectQuestionDto, backend_online_testing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "AddQuestionBankName",
+    "RelativePath": "{subjectId}/AddQuestionBank",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "AddSubjectName",
+    "RelativePath": "AddSubjectName",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamController",
+    "Method": "AddQuestionExam",
+    "RelativePath": "api/Exam/AddQuestion",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "addQuestionData",
+        "Type": "backend_online_testing.DTO.ExamQuestionDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamController",
+    "Method": "CreateExam",
+    "RelativePath": "api/Exam/CreatExam",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "createExamData",
+        "Type": "backend_online_testing.DTO.ExamDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamController",
+    "Method": "DeleteQuestionExam",
+    "RelativePath": "api/Exam/DeleteQuestion/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "deleteQuestionData",
+        "Type": "backend_online_testing.DTO.ExamQuestionDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamController",
+    "Method": "GetAllExam",
+    "RelativePath": "api/Exam/GetAllExam",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamController",
+    "Method": "SearchByName",
+    "RelativePath": "api/Exam/SearchByName/{name}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "name",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "examName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamController",
+    "Method": "SeedData",
+    "RelativePath": "api/Exam/SeedData",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamController",
+    "Method": "UpdateExam",
+    "RelativePath": "api/Exam/UpdateExam/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "updateExamData",
+        "Type": "backend_online_testing.DTO.ExamDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamController",
+    "Method": "UpdateQuestionExam",
+    "RelativePath": "api/Exam/UpdateQuestion/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "addQuestionData",
+        "Type": "backend_online_testing.DTO.ExamQuestionDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "GetByIdExamMatrix",
+    "RelativePath": "api/ExamMatrixs/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "AddExamMatrix",
+    "RelativePath": "api/ExamMatrixs/AddExamMatrix",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "examMatrixData",
+        "Type": "backend_online_testing.Models.ExamMatrixsModel",
+        "IsRequired": true
+      },
+      {
+        "Name": "matrixLogUserId",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "AddTag",
+    "RelativePath": "api/ExamMatrixs/AddTags/{examMatrixId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "examMatrixId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "tagsData",
+        "Type": "backend_online_testing.Dtos.ExamMatrixAddDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "DeleteMatrixExam",
+    "RelativePath": "api/ExamMatrixs/DeleteMatrixExam/{examMatrixId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "examMatrixId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "matrixLogUserId",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "DeleteTagExam",
+    "RelativePath": "api/ExamMatrixs/DeletetagExam/{examMatrixId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "examMatrixId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "tagName",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "matrixLogUserId",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "GetAllExamsMatrix",
+    "RelativePath": "api/ExamMatrixs/GetAllExamsMatrix",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "SearchByName",
+    "RelativePath": "api/ExamMatrixs/Search/{name}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "name",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "SeedData",
+    "RelativePath": "api/ExamMatrixs/SeedData",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "UpdateMatrixExam",
+    "RelativePath": "api/ExamMatrixs/UpdateMatrixExam/{examMatrixId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "examMatrixId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "examMatrixData",
+        "Type": "backend_online_testing.Dtos.ExamMatrixUpdateDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ExamMatrixsController",
+    "Method": "UpdateTags",
+    "RelativePath": "api/ExamMatrixs/UpdateTags/{examMatrixId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "examMatrixId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "tagsData",
+        "Type": "backend_online_testing.Dtos.ExamMatrixUpdateDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ProductController",
+    "Method": "Get",
+    "RelativePath": "api/Product",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[backend_online_testing.Models.ProductModel, backend_online_testing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.ProductController",
+    "Method": "Create",
+    "RelativePath": "api/Product",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "product",
+        "Type": "backend_online_testing.Models.ProductModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_online_testing.Controllers.RoomController",
     "Method": "Get",
     "RelativePath": "api/room",
@@ -95,6 +518,291 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "backend_online_testing.Controllers.RoomsController",
+    "Method": "GetAllRoom",
+    "RelativePath": "api/Rooms/Room",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "backend_online_testing.Models.RoomsModel",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.RoomsController",
+    "Method": "CreateRoom",
+    "RelativePath": "api/Rooms/Room/Create",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "roomDTO",
+        "Type": "backend_online_testing.DTO.RoomDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.RoomsController",
+    "Method": "DeleteRoom",
+    "RelativePath": "api/Rooms/Room/Delete",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "roomDeleteDTO",
+        "Type": "backend_online_testing.DTO.DeleteRoomDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.RoomsController",
+    "Method": "SearchByRoomName",
+    "RelativePath": "api/Rooms/Room/Search",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "name",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "backend_online_testing.Models.RoomsModel",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.RoomsController",
+    "Method": "SeedData",
+    "RelativePath": "api/Rooms/Room/Seed",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.RoomsController",
+    "Method": "UpdateRoom",
+    "RelativePath": "api/Rooms/Room/Update",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "roomDTO",
+        "Type": "backend_online_testing.DTO.RoomDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "DeleteQuestion",
+    "RelativePath": "api/Subjects/DeleteQuestion/{questionId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "questionId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "userLogId",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "DeleteQuestionBank",
+    "RelativePath": "api/Subjects/DeleteQuestionBank/{questionBankId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "DeleteSubject",
+    "RelativePath": "api/Subjects/DeleteSubject/{subjectId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "GetAllSubjects",
+    "RelativePath": "api/Subjects/GetAllSubjects",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[backend_online_testing.Models.SubjectsModel, backend_online_testing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "InsertSampleData",
+    "RelativePath": "api/Subjects/SeedData",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "UpdateSubjectName",
+    "RelativePath": "api/Subjects/Update/{subjectId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "subjectName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "UpdateQuestionBankName",
+    "RelativePath": "api/Subjects/Update/{subjectId}/{questionBankId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "UpdateQuestion",
+    "RelativePath": "api/Subjects/Update/{subjectId}/{questionBankId}/{questionId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "userLogId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "questionData",
+        "Type": "backend_online_testing.Dtos.SubjectQuestionDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "backend_online_testing.Controllers.UserController",
     "Method": "Get",
     "RelativePath": "api/user",
@@ -119,5 +827,175 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.UsersController",
+    "Method": "Get",
+    "RelativePath": "api/Users",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[backend_online_testing.Models.UsersModel, backend_online_testing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.UsersController",
+    "Method": "GetById",
+    "RelativePath": "api/Users/getUserById/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "backend_online_testing.Models.UsersModel",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.UsersController",
+    "Method": "SeedData",
+    "RelativePath": "api/Users/seed",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.UsersController",
+    "Method": "UpdateUserById",
+    "RelativePath": "api/Users/updateUserById/{id}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "updateUser",
+        "Type": "backend_online_testing.Models.UsersModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "SearchByQuestionBankName",
+    "RelativePath": "SearchByQuestionBank/{subjectName}/{questionBankName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectName",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[backend_online_testing.Models.SubjectsModel, backend_online_testing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "SearchByQuestionName",
+    "RelativePath": "SearchByQuestionName/{subjectName}/{questionBankName}/{questionName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectName",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionBankName",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "questionName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[backend_online_testing.Models.SubjectsModel, backend_online_testing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "SearchBySubjectName",
+    "RelativePath": "SearchBySubjectName/{subjectName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[backend_online_testing.Models.SubjectsModel, backend_online_testing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   }
 ]

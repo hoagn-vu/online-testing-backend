@@ -12,9 +12,9 @@ using System;
 using System.Reflection;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("backend_online_testing")]
-[assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
+[assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+466f0d0e4238edb3260cb1bb78d796a820a745a3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c529d4f74727c91bed358e1b68f0afe0c7f1083c")]
 [assembly: System.Reflection.AssemblyProductAttribute("backend_online_testing")]
 [assembly: System.Reflection.AssemblyTitleAttribute("backend_online_testing")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
