@@ -27,6 +27,17 @@ builder.Services.AddSingleton<ExamsService>();
 builder.Services.AddSingleton<ExamMatrixsService>();
 builder.Services.AddSingleton<SubjectsService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()    // Cho phép tất cả nguồn (có thể giới hạn bằng .WithOrigins())
+                .AllowAnyMethod()    // Cho phép tất cả phương thức (GET, POST, PUT, DELETE,...)
+                .AllowAnyHeader();   // Cho phép tất cả headers
+        });
+});
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -40,6 +51,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowAll");
+
+app.UseRouting();
 
 app.UseHttpsRedirection();
 

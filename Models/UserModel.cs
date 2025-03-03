@@ -27,7 +27,7 @@ namespace backend_online_testing.Models
         [BsonElement("groupName")]
         public List<string>? Groups { get; set; }
         [BsonElement("accountStatus")]
-        public string? Status { get; set; } = "available";
+        public string Status { get; set; } = "available";
         [BsonElement("accountLogs")]
         public List<UserLogModel>? Logs { get; set; }
     }
