@@ -12,6 +12,9 @@ namespace backend_online_testing.Models
         [BsonElement("subjects")]
         public string SubjectName { get; set; }
 
+        [BsonElement("subjectStatus")]
+        public string SubjectStatus { get; set; }
+
         [BsonElement("questionBanks")]
         public List<QuestionBanksModel>? QuestionBanks { get; set; }
     }

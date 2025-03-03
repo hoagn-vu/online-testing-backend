@@ -10,10 +10,10 @@ namespace backend_online_testing.Models
 
         public string? ExamLogUserId { get; set; }
 
-        [BsonElement]
+        [BsonElement("examLogType")]
         public string? ExamLogType { get; set; }
 
-        [BsonElement]
+        [BsonElement("examChangeAt")]
         public DateTime ExamChangeAt { get; set; }
     }
 }

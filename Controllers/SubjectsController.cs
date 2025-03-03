@@ -136,6 +136,48 @@ namespace backend_online_testing.Controllers
             }
         }
 
+        [HttpPost("DeleteSubject/{subjectId}")]
+        public async Task<ActionResult> DeleteSubject(string subjectId)
+        {
+            var result = await _subjectsService.DeleteSubject(subjectId);
+
+            if(result == "Delete subject successfully")
+            {
+                return Ok(new { message = result });
+            }else
+            {
+                return BadRequest(new { message = result});
+            }
+        }
+
+        [HttpPost("DeleteQuestionBank/{questionBankId}")]
+        public async Task<ActionResult> DeleteQuestionBank(string subjectId, string questionBankId)
+        {
+            var result = await _subjectsService.DeleteQuestionBank(subjectId, questionBankId);
+
+            if(result == "Delete question bank successfully")
+            {
+                return Ok(new { message = result });
+            }else
+            {
+                return BadRequest(new { message = result });
+            }
+        }
+
+        [HttpPost("DeleteQuestion/{questionId}")]
+        public async Task<ActionResult> DeleteQuestion(string subjectId, string questionBankId, string questionId, string userLogId)
+        {
+            var result = await _subjectsService.DeleteQuestion(subjectId, questionBankId, questionId, userLogId);
+
+            if(result == "Question deleted successfully")
+            {
+                return Ok(new { message = result });
+            }else
+            {
+                return BadRequest(new { message = result });
+            }
+        }
+
         [HttpPost("SeedData/")]
         public async Task<IActionResult> InsertSampleData()
         {

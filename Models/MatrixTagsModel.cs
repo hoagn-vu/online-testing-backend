@@ -5,13 +5,13 @@ namespace backend_online_testing.Models
 {
     public class MatrixTagsModel
     {
-        [BsonElement]
+        [BsonElement("tagName")]
         public string TagName { get; set; }
 
-        [BsonElement]
+        [BsonElement("questionCount")]
         public int QuestionCount { get; set; }
 
-        [BsonElement]
+        [BsonElement("tagScore")]
         public int TagScore { get; set; }
     }
 }

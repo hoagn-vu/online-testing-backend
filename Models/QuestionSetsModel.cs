@@ -9,7 +9,7 @@ namespace backend_online_testing.Models
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
         public string QuestionId { get; set; } = ObjectId.GenerateNewId().ToString();
 
-        [BsonElement]
+        [BsonElement("questionScore")]
         public double? QuestionScore { get; set; }
     }
 }

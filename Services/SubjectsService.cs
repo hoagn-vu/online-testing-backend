@@ -1,5 +1,6 @@
 ﻿using backend_online_testing.Dtos;
 using backend_online_testing.Models;
+using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Security.Cryptography.X509Certificates;
@@ -266,7 +267,102 @@ namespace backend_online_testing.Services
                 return $"Error: {ex.Message}";
             }
         }
+        //Delete subject
+        public async Task<string> DeleteSubject(string subjectId)
+        {
+            try
+            {
+                var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
 
+                var update = Builders<SubjectsModel>.Update.Set(s => s.SubjectStatus, "Deleted/Disable");
+
+                var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+
+                if (result.ModifiedCount > 0)
+                {
+                    return "Delete subject successfully";
+                }
+                else
+                {
+                    return "Subject not found";
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+        //Delete question bank
+        public async Task<string> DeleteQuestionBank(string subjectId, string questionBankId)
+        {
+            try
+            {
+                var filter = Builders<SubjectsModel>.Filter.And(
+                    Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
+                    Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankId == questionBankId)
+                );
+
+                var update = Builders<SubjectsModel>.Update
+                    .Set("questionBanks.$.questionBankStatus", "Deleted/Disable"); // Hoặc "Disabled"
+
+                var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+
+                if (result.ModifiedCount > 0)
+                {
+                    return "Delete question bank successfully";
+                }
+                return "Not found question bank";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+        //Delete question in question list
+        public async Task<string> DeleteQuestion(string subjectId, string questionBankId,string questionId, string userLogId)
+        {
+            var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
+            var subject = await _subjectsCollection.Find(filter).FirstOrDefaultAsync();
+
+            if (subject == null)
+            {
+                return "Subject not found";
+            }
+
+            var questionBank = subject.QuestionBanks?.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
+            if (questionBank == null)
+            {
+                return "Question bank not found";
+            }
+
+            var question = questionBank.List.FirstOrDefault(q => q.QuestionId == questionId);
+            if (question == null)
+            {
+                return "Question not found";
+            }
+
+            question.QuestionStatus = "Delete/Disable";
+
+            question.QuestionLogs ??= new List<QuestionLogsModel>();
+            question.QuestionLogs.Add(new QuestionLogsModel
+            {
+                QuestionLogUserId = userLogId,
+                QuestionLogType = "Disabled",
+                QuestionLogAt = DateTime.UtcNow
+            });
+
+            var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
+            var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+
+            if (result.ModifiedCount > 0)
+            {
+                return "Question disabled successfully";
+            }
+            else
+            {
+                return "Update failed or no changes were made";
+            }
+        }
         //Insert sample data
         public async Task InsertSampleDataAsync()
         {

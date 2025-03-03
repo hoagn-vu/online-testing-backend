@@ -5,13 +5,13 @@ namespace backend_online_testing.Models
 {
     public class MatrixLogsModel
     {
-        [BsonElement]
+        [BsonElement("matrixLogUserId")]
         public string MatrixLogUserId { get; set; }
 
-        [BsonElement]
+        [BsonElement("matrixLogUserId")]
         public string MatrixLogType { get; set; }
 
-        [BsonElement]
+        [BsonElement("matrixChangeAt")]
         public DateTime MatrixChangeAt { get; set; }
     }
 }

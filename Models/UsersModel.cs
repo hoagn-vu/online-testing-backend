@@ -7,8 +7,8 @@ namespace backend_online_testing.Models
     public class UsersModel
     {
         [BsonId]
-        //[BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; } = string.Empty;
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("userName")]
         public string UserName { get; set; } = string.Empty;

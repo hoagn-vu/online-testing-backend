@@ -9,22 +9,22 @@ namespace backend_online_testing.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
         
-        [BsonElement]
+        [BsonElement("examCode")]
         public string? ExamCode { get; set; }
         
-        [BsonElement]
+        [BsonElement("examName")]
         public string? ExamName { get; set; }
         
-        [BsonElement]
+        [BsonElement("subjectId")]
         public string? SubjectId { get; set; }  
 
-        [BsonElement]
+        [BsonElement("questionSet")]
         public List<QuestionSetsModel> QuestionSet { get; set; }
 
-        [BsonElement]
+        [BsonElement("examStatus")]
         public string? ExamStatus { get; set; }
 
-        [BsonElement]
+        [BsonElement("examLogs")]
         public List<ExamLogsModel> ExamLogs { get; set; }
     }
 }

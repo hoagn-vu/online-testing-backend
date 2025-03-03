@@ -10,25 +10,25 @@ namespace backend_online_testing.Models
 
         public string Id { get; set; }
 
-        [BsonElement]
+        [BsonElement("matrixName")]
         public string MatrixName { get; set; }
 
-        [BsonElement]
+        [BsonElement("MatrixStatus")]
         public string MatrixStatus { get; set; }
 
-        [BsonElement]
+        [BsonElement("totalGeneratedExams")]
         public int TotalGeneratedExams { get; set; }
 
-        [BsonElement]
+        [BsonElement("subjectId")]
         public string SubjectId { get; set; }
 
-        [BsonElement]
+        [BsonElement("matrixTags")]
         public List<MatrixTagsModel>? MatrixTags { get; set; }
 
-        [BsonElement]
+        [BsonElement("matrixLogs")]
         public List<MatrixLogsModel>? MatrixLogs { get; set; }
 
-        [BsonElement]
+        [BsonElement("examId")]
         public List<string> ExamId { get; set; }
     }
 }

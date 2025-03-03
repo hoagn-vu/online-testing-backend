@@ -623,6 +623,74 @@
   },
   {
     "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "DeleteQuestion",
+    "RelativePath": "api/Subjects/DeleteQuestion/{questionId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "questionId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "userLogId",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "DeleteQuestionBank",
+    "RelativePath": "api/Subjects/DeleteQuestionBank/{questionBankId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "questionBankId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
+    "Method": "DeleteSubject",
+    "RelativePath": "api/Subjects/DeleteSubject/{subjectId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "subjectId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "backend_online_testing.Controllers.SubjectsController",
     "Method": "GetAllSubjects",
     "RelativePath": "api/Subjects/GetAllSubjects",
     "HttpMethod": "GET",
