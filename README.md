@@ -1,4 +1,4 @@
-# backend_online_testing
+# Online Testing - Backend
 ## Giới thiệu
 Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp tổ chức các kỳ thi trực tuyến một cách dễ dàng, hiệu quả và bảo mật. Hệ thống hỗ trợ nhiều vai trò người dùng như thí sinh, giám thị, quản trị viên, và cán bộ phụ trách ca thi. Các tính năng chính bao gồm:
 - Tạo và quản lý ngân hàng câu hỏi.
@@ -12,6 +12,7 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
   - Framework: ASP.NET Core
   - Cơ sở dữ liệu: MongoDB
   - API giao tiếp: RESTful API với JSON
+  - Authentication: JWT
 - Frontend:
   - Ngôn ngữ: JavaScript, TypeScript
   - Thư viện/UI Framework: React.js
@@ -34,4 +35,5 @@ dotnet restore
 ```sh
 dotnet run
 ```
-
+## Liên kết khác
+Repo Fontend: [Online Exam System - Frontend](https://github.com/hoagn-vu/frontend_online_testing)
