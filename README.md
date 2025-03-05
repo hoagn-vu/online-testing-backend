@@ -20,7 +20,7 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
   - API giao tiếp: RESTful API với JSON
   - Authentication: JWT
 - Frontend:
-  - Ngôn ngữ: JavaScript, TypeScript
+  - Ngôn ngữ: JavaScript
   - Thư viện/UI Framework: React.js
 ## Hướng dẫn cài đặt
 ### 1. Yêu cầu hệ thống
