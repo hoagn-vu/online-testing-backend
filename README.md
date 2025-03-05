@@ -9,6 +9,7 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
 ## Liên kết khác
 - Fontend: [https://github.com/hoagn-vu/fontend_online_testing](https://github.com/hoagn-vu/frontend_online_testing)
 - Backend: [https://github.com/hoagn-vu/backend_online_testing](https://github.com/hoagn-vu/backend_online_testing)
+- Jira: [https://hoangvu.atlassian.net/jira/software/projects/OT/boards/2](https://hoangvu.atlassian.net/jira/software/projects/OT/boards/2)
 - Tài liệu SRS: 
 - Tài liệu SDD: 
 ## Công nghệ sử dụng
