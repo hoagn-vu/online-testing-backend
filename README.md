@@ -1,4 +1,4 @@
-# Online Testing - Backend
+# online-testing-backend
 ## Giới thiệu
 Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp tổ chức các kỳ thi trực tuyến một cách dễ dàng, hiệu quả và bảo mật. Hệ thống hỗ trợ nhiều vai trò người dùng như thí sinh, giám thị, quản trị viên, và cán bộ phụ trách ca thi. Các tính năng chính bao gồm:
 - Tạo và quản lý ngân hàng câu hỏi.
@@ -9,6 +9,7 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
 ## Liên kết khác
 - Fontend: [https://github.com/hoagn-vu/fontend_online_testing](https://github.com/hoagn-vu/frontend_online_testing)
 - Backend: [https://github.com/hoagn-vu/backend_online_testing](https://github.com/hoagn-vu/backend_online_testing)
+- Jira: [https://hoangvu.atlassian.net/jira/software/projects/OT/boards/2](https://hoangvu.atlassian.net/jira/software/projects/OT/boards/2)
 - Tài liệu SRS: 
 - Tài liệu SDD: 
 ## Công nghệ sử dụng
