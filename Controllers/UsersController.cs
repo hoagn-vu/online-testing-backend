@@ -34,7 +34,7 @@ namespace backend_online_testing.Controllers
         [HttpPost("updateUserById/{id}")]
         public async Task<ActionResult> UpdateUserById(string id, [FromBody] UsersModel updateUser)
         {
-            if(updateUser == null)
+            if (updateUser == null)
             {
                 return BadRequest(new { message = "Invalid data" });
             }

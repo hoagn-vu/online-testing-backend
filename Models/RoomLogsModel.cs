@@ -10,7 +10,7 @@ namespace backend_online_testing.Models
 
         [BsonElement("roomLogUserId")]
         //[BsonRepresentation(BsonType.ObjectId)]
-        public string RoomLogUserId { get; set; }  = string.Empty;
+        public string RoomLogUserId { get; set; } = string.Empty;
 
         [BsonElement("roomChangeAt")]
         public DateTime RoomChangeAt { get; set; }

@@ -8,15 +8,15 @@ namespace backend_online_testing.Models
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
-        
+
         [BsonElement("examCode")]
         public string? ExamCode { get; set; }
-        
+
         [BsonElement("examName")]
         public string? ExamName { get; set; }
-        
+
         [BsonElement("subjectId")]
-        public string? SubjectId { get; set; }  
+        public string? SubjectId { get; set; }
 
         [BsonElement("questionSet")]
         public List<QuestionSetsModel> QuestionSet { get; set; }

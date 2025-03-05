@@ -27,7 +27,7 @@ namespace backend_online_testing.Services
             return await _subjectsCollection.Find(filter).ToListAsync();
         }
         //Search by Question Bank Name
-        public async Task<List<SubjectsModel>> SearchByQuestionBankName(string subjectName,string questionBankName)
+        public async Task<List<SubjectsModel>> SearchByQuestionBankName(string subjectName, string questionBankName)
         {
             var filter = Builders<SubjectsModel>.Filter.And(
                 Builders<SubjectsModel>.Filter.Regex(s => s.SubjectName, new MongoDB.Bson.BsonRegularExpression(subjectName, "i")),
@@ -111,7 +111,7 @@ namespace backend_online_testing.Services
                 var newQuestionBank = new QuestionBanksModel
                 {
                     QuestionBankName = questionBankName,
-                    List= new List<QuestionListModel>()
+                    List = new List<QuestionListModel>()
                 };
 
                 subject.QuestionBanks.Add(newQuestionBank);
@@ -159,7 +159,7 @@ namespace backend_online_testing.Services
                         QuestionStatus = questionDto.QuestionStatus,
                         IsRandomOrder = questionDto.IsRandomOrder,
                         Tags = questionDto.Tags,
-                        QuestionLogs = new List<QuestionLogsModel> { questionAddLog}
+                        QuestionLogs = new List<QuestionLogsModel> { questionAddLog }
                     };
 
                     questionBank.List.Add(newQuestion);
@@ -170,12 +170,13 @@ namespace backend_online_testing.Services
 
                 return $"Add question list successfully";
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 return $"Error: Add question failure {ex.Message}";
             }
         }
         //Update Subject Name
-        public async Task<string> UpdateSubjectName(string id,string subjectName)
+        public async Task<string> UpdateSubjectName(string id, string subjectName)
         {
             try
             {
@@ -319,7 +320,7 @@ namespace backend_online_testing.Services
             }
         }
         //Delete question in question list
-        public async Task<string> DeleteQuestion(string subjectId, string questionBankId,string questionId, string userLogId)
+        public async Task<string> DeleteQuestion(string subjectId, string questionBankId, string questionId, string userLogId)
         {
             var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
             var subject = await _subjectsCollection.Find(filter).FirstOrDefaultAsync();

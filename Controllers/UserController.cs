@@ -30,8 +30,8 @@ namespace backend_online_testing.Controllers
             await _userService.CreateAsync(user, TempId);
             return CreatedAtAction(nameof(Get), new { id = user.Id }, user);
         }
-        
-         [HttpPost("login")]
+
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var user = await _userService.AuthenticateAsync(request.Username, request.Password);

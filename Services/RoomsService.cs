@@ -65,7 +65,7 @@ namespace backend_online_testing.Services
             var filter = Builders<RoomsModel>.Filter.Eq(r => r.RoomName, roomData.RoomName);
             var room = await _rooms.Find(filter).FirstOrDefaultAsync();
 
-            if(room == null)
+            if (room == null)
             {
                 Console.WriteLine("Room Not Found!");
                 return;
@@ -100,13 +100,13 @@ namespace backend_online_testing.Services
             var filter = Builders<RoomsModel>.Filter.Eq(r => r.RoomName, roomData.RoomName);
             var room = await _rooms.Find(filter).FirstOrDefaultAsync();
 
-            if(room == null)
+            if (room == null)
             {
                 Console.WriteLine("Room not exist");
             }
 
             //Get ID from LogRoom
-            string newLogId = (room.RoomLogs.Any() && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId)) 
+            string newLogId = (room.RoomLogs.Any() && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
                 ? (lastLogId + 1).ToString() : "1";
 
             var roomLogData = new RoomLogsModel

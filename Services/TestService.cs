@@ -25,7 +25,8 @@ namespace backend_online_testing.Services
             {
                 _productCollection.InsertOne(product);
                 return "Add new successful";
-            } else
+            }
+            else
             {
                 _productCollection.ReplaceOne(x => x.Id == product.Id, product);
             }
