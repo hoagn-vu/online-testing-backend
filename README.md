@@ -23,11 +23,11 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
   - Ngôn ngữ: JavaScript, TypeScript
   - Thư viện/UI Framework: React.js
 ## Hướng dẫn cài đặt
-1. Yêu cầu hệ thống
+### 1. Yêu cầu hệ thống
 - Node.js: >= 16.x
 - .NET Core SDK: >= 7.0
 - MongoDB: >= 6.0
-3. Cài đặt Backend
+### 2. Cài đặt Backend
 - Clone repo
 ```sh
 git clone https://github.com/your-repo/online-exam-system.git
