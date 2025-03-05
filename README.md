@@ -30,8 +30,8 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
 ### 2. Cài đặt Backend
 - Clone repo:
 ```sh
-git clone https://github.com/your-repo/online-exam-system.git
-cd online-exam-system/backend
+git clone https://github.com/hoagn-vu/online-testing-backend
+cd online-testing-backend
 ```
 - Cài đặt các thư viện cần thiết:
 ```sh
@@ -39,6 +39,7 @@ dotnet restore
 ```
 - Chạy dự án:
 ```sh
+dotnet nuget locals all --clear
 dotnet run
 ```
 - Kiểm thử và format code:
