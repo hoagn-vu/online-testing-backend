@@ -35,11 +35,11 @@ cd online-testing-backend
 ```
 - Cài đặt các thư viện cần thiết:
 ```sh
+dotnet nuget locals all --clear
 dotnet restore
 ```
 - Chạy dự án:
 ```sh
-dotnet nuget locals all --clear
 dotnet run
 ```
 - Kiểm thử và format code:
