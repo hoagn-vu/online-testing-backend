@@ -7,10 +7,10 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
 - Chống gian lận bằng các biện pháp giám sát.
 - Báo cáo kết quả và phân tích dữ liệu điểm thi
 ## Liên kết khác
-Fontend: [https://github.com/hoagn-vu/fontend_online_testing](https://github.com/hoagn-vu/frontend_online_testing)
-Backend: [https://github.com/hoagn-vu/backend_online_testing](https://github.com/hoagn-vu/backend_online_testing)
-Tài liệu SRS: 
-Tài liệu SDD: 
+- Fontend: [https://github.com/hoagn-vu/fontend_online_testing](https://github.com/hoagn-vu/frontend_online_testing)
+- Backend: [https://github.com/hoagn-vu/backend_online_testing](https://github.com/hoagn-vu/backend_online_testing)
+- Tài liệu SRS: 
+- Tài liệu SDD: 
 ## Công nghệ sử dụng
 - Backend:
   - Ngôn ngữ: C#
