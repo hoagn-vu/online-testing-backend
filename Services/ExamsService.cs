@@ -27,7 +27,7 @@ namespace backend_online_testing.Services
             if (string.IsNullOrEmpty(examName))
                 return new List<ExamsModel>();
 
-            var filter = Builders<ExamsModel>.Filter.Regex(e => e.ExamName, new BsonRegularExpression(examName, "i")); 
+            var filter = Builders<ExamsModel>.Filter.Regex(e => e.ExamName, new BsonRegularExpression(examName, "i"));
 
             return await _examsCollection.Find(filter).ToListAsync();
         }
@@ -64,12 +64,12 @@ namespace backend_online_testing.Services
                 await _examsCollection.InsertOneAsync(newExamData);
                 return "Exam created successfully.";
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine($"Error inserting exam: {ex.Message}");
                 return "Failed to create exam.";
             }
-            
+
         }
 
         //Update Exam(Not include question)
@@ -89,7 +89,7 @@ namespace backend_online_testing.Services
                 .Set(e => e.SubjectId, updateExamData.SubjectId)
                 .Set(e => e.ExamStatus, updateExamData.ExamStatus)
                 .Push(e => e.ExamLogs, logUpdateData);
-                //.PushEach(e => e.QuestionSet, updateExamData.QuestionSets);
+            //.PushEach(e => e.QuestionSet, updateExamData.QuestionSets);
 
             var result = await _examsCollection.UpdateOneAsync(filter, update);
             return result.ModifiedCount > 0;
@@ -136,7 +136,7 @@ namespace backend_online_testing.Services
             var questionScore = questionSet.QuestionScore;
 
             var filter = Builders<ExamsModel>.Filter.And(
-                Builders<ExamsModel>.Filter.Eq(e => e.Id, questionData.Id), 
+                Builders<ExamsModel>.Filter.Eq(e => e.Id, questionData.Id),
                 Builders<ExamsModel>.Filter.ElemMatch(e => e.QuestionSet, qs => qs.QuestionId == questionId)
             );
 
@@ -171,8 +171,8 @@ namespace backend_online_testing.Services
             var questionId = question.QuestionId;
 
             var filter = Builders<ExamsModel>.Filter.And(
-                Builders<ExamsModel>.Filter.Eq(e=>e.Id, questionData.Id),
-                Builders<ExamsModel>.Filter.ElemMatch(e=>e.QuestionSet, qs=>qs.QuestionId == questionId)
+                Builders<ExamsModel>.Filter.Eq(e => e.Id, questionData.Id),
+                Builders<ExamsModel>.Filter.ElemMatch(e => e.QuestionSet, qs => qs.QuestionId == questionId)
             );
 
             var delete = Builders<ExamsModel>.Update.PullFilter(e => e.QuestionSet, qs => qs.QuestionId == questionId);

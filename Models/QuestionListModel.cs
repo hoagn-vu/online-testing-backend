@@ -12,7 +12,7 @@ namespace backend_online_testing.Models
         [BsonElement("options")]
         public List<OptionsModel>? Options { get; set; }
 
-        [BsonElement("questionType")] 
+        [BsonElement("questionType")]
         public string QuestionType { get; set; }
 
         [BsonElement("questionStatus")]

@@ -11,13 +11,13 @@ namespace backend_online_testing.Services
         {
             _users = database.GetCollection<UsersModel>("Users");
         }
-        
+
         //Get all User
         public async Task<IEnumerable<UsersModel>> GetAllUsers()
         {
             return await _users.Find(FilterDefinition<UsersModel>.Empty).ToListAsync();
         }
-        
+
         //Get user using ID
         public async Task<UsersModel?> GetUserById(string id)
         {
@@ -27,7 +27,7 @@ namespace backend_online_testing.Services
         //Update user by Id
         public async Task<bool> UpdateUserbByID(string id, UsersModel updateUser)
         {
-            var filter = Builders<UsersModel>.Filter.Eq(x=>x.Id, id);
+            var filter = Builders<UsersModel>.Filter.Eq(x => x.Id, id);
             var update = Builders<UsersModel>.Update
                 .Set(x => x.UserName, updateUser.UserName)
                 .Set(x => x.Password, updateUser.Password)
@@ -36,16 +36,16 @@ namespace backend_online_testing.Services
                 .Set(x => x.Gender, updateUser.Gender)
                 .Set(x => x.PhoneNumber, updateUser.PhoneNumber)
                 .Set(x => x.DateOfBirth, updateUser.DateOfBirth);
-        
+
             var result = await _users.UpdateOneAsync(filter, update);
             return result.ModifiedCount > 0;
         }
         //Delete user by Id
         public async Task<bool> DeleteUserById(string id)
         {
-            var filter = Builders<UsersModel>.Filter.Eq(x=>x.Id, id);
+            var filter = Builders<UsersModel>.Filter.Eq(x => x.Id, id);
             var result = await _users.DeleteOneAsync(filter);
-            
+
             return result.DeletedCount > 0;
         }
 

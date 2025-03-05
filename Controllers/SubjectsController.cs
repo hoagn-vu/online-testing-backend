@@ -107,7 +107,7 @@ namespace backend_online_testing.Controllers
         }
 
         [HttpPost("Update/{subjectId}/{questionBankId}")]
-        public async Task<ActionResult> UpdateQuestionBankName(string subjectId,string questionBankId, string questionBankName)
+        public async Task<ActionResult> UpdateQuestionBankName(string subjectId, string questionBankId, string questionBankName)
         {
             var result = await _subjectsService.UpdateQuestionBankName(subjectId, questionBankId, questionBankName);
 
@@ -141,12 +141,13 @@ namespace backend_online_testing.Controllers
         {
             var result = await _subjectsService.DeleteSubject(subjectId);
 
-            if(result == "Delete subject successfully")
+            if (result == "Delete subject successfully")
             {
                 return Ok(new { message = result });
-            }else
+            }
+            else
             {
-                return BadRequest(new { message = result});
+                return BadRequest(new { message = result });
             }
         }
 
@@ -155,10 +156,11 @@ namespace backend_online_testing.Controllers
         {
             var result = await _subjectsService.DeleteQuestionBank(subjectId, questionBankId);
 
-            if(result == "Delete question bank successfully")
+            if (result == "Delete question bank successfully")
             {
                 return Ok(new { message = result });
-            }else
+            }
+            else
             {
                 return BadRequest(new { message = result });
             }
@@ -169,10 +171,11 @@ namespace backend_online_testing.Controllers
         {
             var result = await _subjectsService.DeleteQuestion(subjectId, questionBankId, questionId, userLogId);
 
-            if(result == "Question deleted successfully")
+            if (result == "Question deleted successfully")
             {
                 return Ok(new { message = result });
-            }else
+            }
+            else
             {
                 return BadRequest(new { message = result });
             }
