@@ -28,16 +28,16 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
 - .NET Core SDK: >= 7.0
 - MongoDB: >= 6.0
 ### 2. Cài đặt Backend
-- Clone repo
+- Clone repo:
 ```sh
 git clone https://github.com/your-repo/online-exam-system.git
 cd online-exam-system/backend
 ```
-- Cài đặt các thư viện cần thiết
+- Cài đặt các thư viện cần thiết:
 ```sh
 dotnet restore
 ```
-- Chạy dự án
+- Chạy dự án:
 ```sh
 dotnet run
 ```
