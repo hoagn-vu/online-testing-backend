@@ -6,6 +6,11 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
 - Hỗ trợ nộp bài tự động và lưu bài thi theo từng câu để tránh mất dữ liệu.
 - Chống gian lận bằng các biện pháp giám sát.
 - Báo cáo kết quả và phân tích dữ liệu điểm thi
+## Liên kết khác
+Fontend: [https://github.com/hoagn-vu/fontend_online_testing](https://github.com/hoagn-vu/frontend_online_testing)
+Backend: [https://github.com/hoagn-vu/backend_online_testing](https://github.com/hoagn-vu/backend_online_testing)
+Tài liệu SRS: 
+Tài liệu SDD: 
 ## Công nghệ sử dụng
 - Backend:
   - Ngôn ngữ: C#
@@ -35,5 +40,4 @@ dotnet restore
 ```sh
 dotnet run
 ```
-## Liên kết khác
-Repo Fontend: [Online Exam System - Frontend](https://github.com/hoagn-vu/frontend_online_testing)
+
