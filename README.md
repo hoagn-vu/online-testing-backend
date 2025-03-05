@@ -40,4 +40,9 @@ dotnet restore
 ```sh
 dotnet run
 ```
+- Kiểm thử và format code:
+```sh
+dotnet build
+dotnet format backend_online_testing.sln
+```
 
