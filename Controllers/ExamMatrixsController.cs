@@ -34,7 +34,8 @@ namespace backend_online_testing.Controllers
         {
             var result = await _examMatrixsService.GetByIdExamMatrix(id);
 
-            if (result == null) {
+            if (result == null)
+            {
                 return NotFound(new { message = "Exam matrix not found" });
             }
 
@@ -46,7 +47,7 @@ namespace backend_online_testing.Controllers
         {
             var results = await _examMatrixsService.SearchByName(name);
 
-            if(results == null || !results.Any())
+            if (results == null || !results.Any())
             {
                 return NotFound(new { message = "No exam matrix found" });
             }
@@ -63,7 +64,7 @@ namespace backend_online_testing.Controllers
             }
 
             var result = await _examMatrixsService.AddExamMatrix(examMatrixData, matrixLogUserId);
-            
+
             if (result == "Exam matrix created successfully")
             {
                 return Ok(new { status = "Success", message = result });

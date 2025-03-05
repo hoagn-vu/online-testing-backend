@@ -10,7 +10,8 @@ namespace backend_online_testing.Services
     {
         private readonly IMongoCollection<ExamMatrixsModel> _examMatrixsCollection;
 
-        public ExamMatrixsService(IMongoDatabase database) {
+        public ExamMatrixsService(IMongoDatabase database)
+        {
             _examMatrixsCollection = database.GetCollection<ExamMatrixsModel>("ExamMatrixs");
         }
 
@@ -51,7 +52,7 @@ namespace backend_online_testing.Services
             {
                 examMatrixData.MatrixLogs = new List<MatrixLogsModel>();
             }
-            
+
             //Add log to exam matrix data
             examMatrixData.MatrixLogs.Add(addLog);
 
@@ -69,7 +70,8 @@ namespace backend_online_testing.Services
             }
         }
 
-        public async Task<string> AddTag(ExamMatrixAddDto examMatrixData) {
+        public async Task<string> AddTag(ExamMatrixAddDto examMatrixData)
+        {
             var filter = Builders<ExamMatrixsModel>.Filter.Eq(e => e.Id, examMatrixData.ExamMatrixId);
 
             if (examMatrixData == null || string.IsNullOrWhiteSpace(examMatrixData.ExamMatrixId) || examMatrixData.Tags == null || !examMatrixData.Tags.Any())
@@ -93,7 +95,7 @@ namespace backend_online_testing.Services
 
         public async Task<string> UpdateExamMatrix(string ExamMatrixId, ExamMatrixUpdateDto examMatrixData)
         {
-            if(examMatrixData == null)
+            if (examMatrixData == null)
             {
                 return "Invalid data";
             }
@@ -130,7 +132,8 @@ namespace backend_online_testing.Services
 
         public async Task<string> UpdateTag(string examMatricId, ExamMatrixUpdateDto tagsData)
         {
-            if (tagsData == null) {
+            if (tagsData == null)
+            {
                 return "Invalid data";
             }
 

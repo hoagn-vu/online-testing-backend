@@ -12,7 +12,8 @@ namespace backend_online_testing.Controllers
     {
         private readonly RoomsService _roomsService;
 
-        public RoomsController(RoomsService roomsService) { 
+        public RoomsController(RoomsService roomsService)
+        {
             _roomsService = roomsService;
         }
         [HttpGet("Room")]

@@ -20,10 +20,11 @@ namespace backend_online_testing.Controllers
         public async Task<IActionResult> GetAllExam()
         {
             var exams_list = await _examsService.FindExam();
-            if(exams_list == null || !exams_list.Any()){
+            if (exams_list == null || !exams_list.Any())
+            {
                 return NotFound(new { message = "No exam founds" });
             }
-            return Ok(new { status ="Success" , data = exams_list });
+            return Ok(new { status = "Success", data = exams_list });
         }
 
         [HttpPost("SearchByName/{name}")]
@@ -49,7 +50,7 @@ namespace backend_online_testing.Controllers
 
             if (result == "Exam name already exists.")
             {
-                return Conflict(new { Message = result }); 
+                return Conflict(new { Message = result });
             }
             else if (result == "Exam created successfully.")
             {
@@ -57,7 +58,7 @@ namespace backend_online_testing.Controllers
             }
             else
             {
-                return StatusCode(500, new { Message = result }); 
+                return StatusCode(500, new { Message = result });
             }
         }
 
@@ -90,7 +91,7 @@ namespace backend_online_testing.Controllers
         {
             string addStatus = await _examsService.AddExamQuestion(addQuestionData);
 
-            if(addStatus == "Question added successfully")
+            if (addStatus == "Question added successfully")
             {
                 return Ok(new { status = "Success", message = "Added question successfully." });
             }
@@ -112,7 +113,7 @@ namespace backend_online_testing.Controllers
         public async Task<IActionResult> DeleteQuestionExam(string id, [FromBody] ExamQuestionDTO deleteQuestionData)
         {
             string deleteStatus = await _examsService.DeleteExamQuestion(deleteQuestionData);
-            if(deleteStatus == "Question deleted successfully")
+            if (deleteStatus == "Question deleted successfully")
             {
                 return Ok(new { status = "Success", message = "Delete question successfully." });
             }

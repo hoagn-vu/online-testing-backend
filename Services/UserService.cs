@@ -21,7 +21,7 @@ namespace backend_online_testing.Services
             user.Logs.Add(new UserLogModel { UserId = logUserId, Type = "created" });
             await _userCollection.InsertOneAsync(user);
         }
-        
+
         public async Task<UserModel?> AuthenticateAsync(string username, string password)
         {
             var user = await _userCollection.Find(u => u.Username == username).FirstOrDefaultAsync();
@@ -30,6 +30,6 @@ namespace backend_online_testing.Services
             return user;
         }
 
-        
+
     }
 }
