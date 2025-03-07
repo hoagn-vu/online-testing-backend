@@ -1,4 +1,4 @@
-namespace backend_online_testing.Models;
+namespace Backend_online_testing.Models;
 
 public class LoginRequest
 {

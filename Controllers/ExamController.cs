@@ -1,10 +1,10 @@
-﻿using backend_online_testing.DTO;
-using backend_online_testing.Models;
-using backend_online_testing.Services;
+﻿using Backend_online_testing.DTO;
+using Backend_online_testing.Models;
+using Backend_online_testing.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
-namespace backend_online_testing.Controllers
+namespace Backend_online_testing.Controllers
 {
     [Route("api/[controller]")]
     public class ExamController : ControllerBase

@@ -1,11 +1,20 @@
-﻿using backend_online_testing.Dtos;
-using backend_online_testing.Models;
+﻿// <copyright file="SubjectsService.cs" company="PlaceholderCompany">
+// Copyright (c) PlaceholderCompany. All rights reserved.
+// </copyright>
+
+#pragma warning disable
+
+using Backend_online_testing.Dtos;
+using Backend_online_testing.Models;
+using DocumentFormat.OpenXml.Packaging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.Json;
 
-namespace backend_online_testing.Services
+namespace Backend_online_testing.Services
 {
     public class SubjectsService
     {
@@ -364,6 +373,103 @@ namespace backend_online_testing.Services
                 return "Update failed or no changes were made";
             }
         }
+        //Process file
+        public async Task<List<QuestionBanksModel>> ProcessFileTxt(StreamReader reader, string subjectId, string userLogId)
+        {
+            QuestionBanksModel questionBanks;
+            string questionBankName = "";
+            string questionType = "";
+            List<QuestionBanksModel> questionBankList = new List<QuestionBanksModel>();
+            QuestionBanksModel currentQuestionBank = null;
+            List<QuestionListModel> questionList = new List<QuestionListModel>();
+            QuestionListModel currentQuestion = null;
+            //OptionsModel optionChoice = null;
+
+            string line;
+            //foreach (var line in File.ReadLines(filePath)) {
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                if (line.StartsWith("@"))
+                {
+                    questionBankName = line.Trim('@', '{', '}', '-');
+                    if (currentQuestionBank != null && questionList != null)
+                    {
+                        currentQuestionBank.List = questionList;
+                        questionBankList.Add(currentQuestionBank);
+                    }
+                    currentQuestionBank = new QuestionBanksModel();
+                    currentQuestionBank.QuestionBankName = questionBankName;
+                    currentQuestionBank.QuestionBankStatus = "Active";
+                }
+                else if (line.StartsWith("$"))
+                {
+                    questionType = line.Trim('$', '{', '}', '-');
+                }
+                else if (line.StartsWith("#"))
+                {
+                    if (currentQuestion != null)
+                    {
+                        questionList.Add(currentQuestion);
+                    }
+
+                    var questionName = line.Trim('#');
+
+                    currentQuestion = new QuestionListModel();
+                    currentQuestion.QuestionText = questionName;
+                    currentQuestion.QuestionId = ObjectId.GenerateNewId().ToString();
+                    currentQuestion.QuestionStatus = "Active";
+                    currentQuestion.QuestionType = questionType;
+                    currentQuestion.Options = new List<OptionsModel>();
+                }
+                else
+                {
+                    if (currentQuestion == null || string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    var optionChoice = new OptionsModel
+                    {
+                        OptionText = line,
+                        IsCorrect = false
+                    };
+
+                    currentQuestion.Options.Add(optionChoice);
+                }
+            }
+
+            if (currentQuestion != null)
+            {
+                questionList.Add(currentQuestion);
+            }
+
+            if (currentQuestionBank != null && questionList != null)
+            {
+                currentQuestionBank.List = questionList;
+                questionBankList.Add(currentQuestionBank);
+            }
+
+            //return questionList;
+            return questionBankList;
+        }
+
+        public async Task<List<QuestionBanksModel>> ProcessFileDocx(Stream fileStream, string subjectId, string userLogId)
+        {
+            var text = new StringBuilder();
+
+            using (var wordDoc = WordprocessingDocument.Open(fileStream, false))
+            {
+                foreach (var paragraph in wordDoc.MainDocumentPart.Document.Body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
+                {
+                    text.AppendLine(paragraph.InnerText);
+                }
+            }
+
+            // Tạo StreamReader từ nội dung docx
+            using (var reader = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(text.ToString()))))
+            {
+                return await ProcessFileTxt(reader, subjectId, userLogId);
+            }
+        }
+
         //Insert sample data
         public async Task InsertSampleDataAsync()
         {

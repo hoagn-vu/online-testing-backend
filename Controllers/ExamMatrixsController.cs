@@ -1,11 +1,11 @@
-﻿using backend_online_testing.Models;
-using backend_online_testing.Services;
+﻿using Backend_online_testing.Models;
+using Backend_online_testing.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http.HttpResults;
-using backend_online_testing.Dtos;
+using Backend_online_testing.Dtos;
 
-namespace backend_online_testing.Controllers
+namespace Backend_online_testing.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

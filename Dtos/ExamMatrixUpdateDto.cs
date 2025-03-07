@@ -1,6 +1,6 @@
-﻿using backend_online_testing.Models;
+﻿using Backend_online_testing.Models;
 
-namespace backend_online_testing.Dtos
+namespace Backend_online_testing.Dtos
 {
     public class ExamMatrixUpdateDto
     {

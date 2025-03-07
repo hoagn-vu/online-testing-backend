@@ -2,7 +2,7 @@
 using MongoDB.Bson;
 using System.ComponentModel.DataAnnotations;
 
-namespace backend_online_testing.Models
+namespace Backend_online_testing.Models
 {
     public class UsersModel
     {

@@ -1,11 +1,11 @@
-﻿using backend_online_testing.DTO;
-using backend_online_testing.Models;
+﻿using Backend_online_testing.DTO;
+using Backend_online_testing.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace backend_online_testing.Services
+namespace Backend_online_testing.Services
 {
     public class ExamsService
     {

@@ -1,9 +1,9 @@
 ﻿using MongoDB.Driver;
-using backend_online_testing.Models;
-using backend_online_testing.DTO;
+using Backend_online_testing.Models;
+using Backend_online_testing.DTO;
 using System.Xml.Linq;
 using MongoDB.Bson.Serialization.IdGenerators;
-namespace backend_online_testing.Services
+namespace Backend_online_testing.Services
 {
     public class RoomsService
     {

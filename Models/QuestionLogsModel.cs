@@ -1,6 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 
-namespace backend_online_testing.Models
+namespace Backend_online_testing.Models
 {
     public class QuestionLogsModel
     {

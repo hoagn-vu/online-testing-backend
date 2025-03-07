@@ -1,6 +1,6 @@
-﻿using backend_online_testing.Models;
+﻿using Backend_online_testing.Models;
 
-namespace backend_online_testing.DTO
+namespace Backend_online_testing.DTO
 {
     public class ExamDTO
     {

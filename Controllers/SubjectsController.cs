@@ -1,11 +1,11 @@
-﻿using backend_online_testing.Dtos;
-using backend_online_testing.Models;
-using backend_online_testing.Services;
+﻿using Backend_online_testing.Dtos;
+using Backend_online_testing.Models;
+using Backend_online_testing.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Runtime.CompilerServices;
 
-namespace backend_online_testing.Controllers
+namespace Backend_online_testing.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -178,6 +178,43 @@ namespace backend_online_testing.Controllers
             else
             {
                 return BadRequest(new { message = result });
+            }
+        }
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] string subjectId, [FromQuery] string userLogId)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("Vui lòng chọn file hợp lệ.");
+
+            List<QuestionBanksModel> questionBanks;
+
+            try
+            {
+                using (var stream = file.OpenReadStream())
+                {
+                    if (file.FileName.EndsWith(".txt"))
+                    {
+                        using (var reader = new StreamReader(stream))
+                        {
+                            questionBanks = await _subjectsService.ProcessFileTxt(reader, subjectId, userLogId);
+                        }
+                    }
+                    else if (file.FileName.EndsWith(".docx"))
+                    {
+                        questionBanks = await _subjectsService.ProcessFileDocx(stream, subjectId, userLogId);
+                    }
+                    else
+                    {
+                        return BadRequest("Chỉ hỗ trợ file .txt và .docx.");
+                    }
+                }
+
+                return Ok(new { Message = "Tải lên thành công!", Data = questionBanks });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Đã xảy ra lỗi khi xử lý file.");
             }
         }
 
