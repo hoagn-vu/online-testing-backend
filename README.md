@@ -1,4 +1,4 @@
-# Online Testing - Backend
+# online-testing-backend
 ## Giới thiệu
 Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp tổ chức các kỳ thi trực tuyến một cách dễ dàng, hiệu quả và bảo mật. Hệ thống hỗ trợ nhiều vai trò người dùng như thí sinh, giám thị, quản trị viên, và cán bộ phụ trách ca thi. Các tính năng chính bao gồm:
 - Tạo và quản lý ngân hàng câu hỏi.
@@ -9,8 +9,9 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
 ## Liên kết khác
 - Fontend: [https://github.com/hoagn-vu/fontend_online_testing](https://github.com/hoagn-vu/frontend_online_testing)
 - Backend: [https://github.com/hoagn-vu/backend_online_testing](https://github.com/hoagn-vu/backend_online_testing)
-- Tài liệu SRS: 
-- Tài liệu SDD: 
+- Jira: [https://hoangvu.atlassian.net/jira/software/projects/OT/boards/2](https://hoangvu.atlassian.net/jira/software/projects/OT/boards/2)
+- SRS: 
+- SDD: 
 ## Công nghệ sử dụng
 - Backend:
   - Ngôn ngữ: C#
@@ -19,24 +20,25 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
   - API giao tiếp: RESTful API với JSON
   - Authentication: JWT
 - Frontend:
-  - Ngôn ngữ: JavaScript, TypeScript
+  - Ngôn ngữ: JavaScript
   - Thư viện/UI Framework: React.js
 ## Hướng dẫn cài đặt
-1. Yêu cầu hệ thống
+### 1. Yêu cầu hệ thống
 - Node.js: >= 16.x
 - .NET Core SDK: >= 7.0
 - MongoDB: >= 6.0
-3. Cài đặt Backend
-- Clone repo
+### 2. Cài đặt Backend
+- Clone repo:
 ```sh
-git clone https://github.com/your-repo/online-exam-system.git
-cd online-exam-system/backend
+git clone https://github.com/hoagn-vu/online-testing-backend
+cd online-testing-backend
 ```
-- Cài đặt các thư viện cần thiết
+- Cài đặt các thư viện cần thiết:
 ```sh
+dotnet nuget locals all --clear
 dotnet restore
 ```
-- Chạy dự án
+- Chạy dự án:
 ```sh
 dotnet run
 ```
