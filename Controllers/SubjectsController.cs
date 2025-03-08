@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace backend_online_testing.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/subjects")]
     [ApiController]
     public class SubjectsController : ControllerBase
     {
@@ -18,35 +18,40 @@ namespace backend_online_testing.Controllers
             _subjectsService = subjectsService;
         }
 
-        [HttpGet("GetAllSubjects/")]
+        //Get all subject
+        [HttpGet]
         public async Task<ActionResult<List<SubjectsModel>>> GetAllSubjects()
         {
             var subjects = await _subjectsService.GetAllSubjects();
             return Ok(subjects);
         }
 
-        [HttpGet("/SearchBySubjectName/{subjectName}")]
+        //Search by name
+        [HttpGet("search-subject-name")]
         public async Task<ActionResult<List<SubjectsModel>>> SearchBySubjectName(string subjectName)
         {
             var result = await _subjectsService.SearchBySubjectName(subjectName);
             return Ok(result);
         }
 
-        [HttpGet("/SearchByQuestionBank/{subjectName}/{questionBankName}")]
+        //Search by question bank name
+        [HttpGet("search-question-bank-name")]
         public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionBankName(string subjectName, string questionBankName)
         {
             var result = await _subjectsService.SearchByQuestionBankName(subjectName, questionBankName);
             return Ok(result);
         }
 
-        [HttpGet("/SearchByQuestionName/{subjectName}/{questionBankName}/{questionName}")]
+        //Search by question name
+        [HttpGet("search-question-name")]
         public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionName(string subjectName, string questionBankName, string questionName)
         {
             var result = await _subjectsService.SearchByQuestionName(subjectName, questionBankName, questionName);
             return Ok(result);
         }
 
-        [HttpPost("/AddSubjectName/")]
+        //Add subject
+        [HttpPost("add-subject")]
         public async Task<ActionResult> AddSubjectName(string subjectName)
         {
             var result = await _subjectsService.AddSubject(subjectName);
@@ -61,7 +66,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("/{subjectId}/AddQuestionBank/")]
+        //Add question bank
+        [HttpPost("add-question-bank")]
         public async Task<ActionResult> AddQuestionBankName(string subjectId, string questionBankName)
         {
             var result = await _subjectsService.AddQuestionBank(subjectId, questionBankName);
@@ -76,7 +82,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("/{subjectId}/{questionBankId}/AddQuestionList")]
+        //Add question list
+        [HttpPost("add-question-list")]
         public async Task<ActionResult> AddQuestionList(string subjectId, string questionBankId, string questionLogUserId, List<SubjectQuestionDto> listQuestion)
         {
             var result = await _subjectsService.AddQuestionsList(subjectId, questionBankId, questionLogUserId, listQuestion);
@@ -91,7 +98,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("Update/{subjectId}")]
+        //Update subject
+        [HttpPost("update-subject")]
         public async Task<ActionResult> UpdateSubjectName(string subjectId, string subjectName)
         {
             var result = await _subjectsService.UpdateSubjectName(subjectId, subjectName);
@@ -106,7 +114,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("Update/{subjectId}/{questionBankId}")]
+        //Update question bank
+        [HttpPost("update-question-bank")]
         public async Task<ActionResult> UpdateQuestionBankName(string subjectId, string questionBankId, string questionBankName)
         {
             var result = await _subjectsService.UpdateQuestionBankName(subjectId, questionBankId, questionBankName);
@@ -121,7 +130,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("Update/{subjectId}/{questionBankId}/{questionId}")]
+        //Update question Id
+        [HttpPost("update-question")]
         public async Task<ActionResult> UpdateQuestion(string subjectId, string questionBankId, string questionId, string userLogId, SubjectQuestionDto questionData)
         {
             var result = await _subjectsService.UpdateQuestion(subjectId, questionBankId, questionId, userLogId, questionData);
@@ -136,7 +146,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("DeleteSubject/{subjectId}")]
+        //Delete Subject
+        [HttpDelete("delete-subject")]
         public async Task<ActionResult> DeleteSubject(string subjectId)
         {
             var result = await _subjectsService.DeleteSubject(subjectId);
@@ -151,7 +162,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("DeleteQuestionBank/{questionBankId}")]
+        //Delete question bank
+        [HttpDelete("delete-question-bank")]
         public async Task<ActionResult> DeleteQuestionBank(string subjectId, string questionBankId)
         {
             var result = await _subjectsService.DeleteQuestionBank(subjectId, questionBankId);
@@ -166,7 +178,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("DeleteQuestion/{questionId}")]
+        //Delete question
+        [HttpDelete("delete/question")]
         public async Task<ActionResult> DeleteQuestion(string subjectId, string questionBankId, string questionId, string userLogId)
         {
             var result = await _subjectsService.DeleteQuestion(subjectId, questionBankId, questionId, userLogId);
@@ -181,7 +194,7 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("SeedData/")]
+        [HttpPost("seed")]
         public async Task<IActionResult> InsertSampleData()
         {
             await _subjectsService.InsertSampleDataAsync();

@@ -25,6 +25,8 @@ builder.Services.AddSingleton<UsersService>();
 builder.Services.AddSingleton<RoomsService>();
 builder.Services.AddSingleton<ExamsService>();
 builder.Services.AddSingleton<ExamMatrixsService>();
+builder.Services.AddSingleton<AddLogService>();
+builder.Services.AddSingleton<FileManagementService>();
 builder.Services.AddSingleton<SubjectsService>();
 
 builder.Services.AddCors(options =>
