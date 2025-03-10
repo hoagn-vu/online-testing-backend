@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace backend_online_testing.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/exams")]
     public class ExamController : ControllerBase
     {
         private readonly ExamsService _examsService;
@@ -16,7 +16,8 @@ namespace backend_online_testing.Controllers
             _examsService = examsService;
         }
 
-        [HttpGet("GetAllExam")]
+        //Get all Exam
+        [HttpGet]
         public async Task<IActionResult> GetAllExam()
         {
             var exams_list = await _examsService.FindExam();
@@ -27,7 +28,8 @@ namespace backend_online_testing.Controllers
             return Ok(new { status = "Success", data = exams_list });
         }
 
-        [HttpPost("SearchByName/{name}")]
+        //Search by name
+        [HttpPost("search")]
         public async Task<IActionResult> SearchByName(string name, [FromBody] string examName)
         {
             var exams_list = await _examsService.FindExamByName(examName);
@@ -38,7 +40,8 @@ namespace backend_online_testing.Controllers
             return Ok(new { message = "Success", exams_list });
         }
 
-        [HttpPost("CreatExam")]
+        //Create Exam
+        [HttpPost]
         public async Task<IActionResult> CreateExam([FromBody] ExamDTO createExamData)
         {
             if (createExamData == null)
@@ -62,7 +65,8 @@ namespace backend_online_testing.Controllers
             }
         }
 
-        [HttpPost("UpdateExam/{id}")]
+        //Update exam
+        [HttpPost("update/{id}")]
         public async Task<IActionResult> UpdateExam(string id, [FromBody] ExamDTO updateExamData)
         {
             if (updateExamData == null || string.IsNullOrEmpty(updateExamData.Id))
@@ -86,7 +90,8 @@ namespace backend_online_testing.Controllers
             return NotFound(new { status = "Error", message = "Exam update failed." });
         }
 
-        [HttpPost("AddQuestion")]
+        //Add questions to Exam
+        [HttpPost("{examId}/questions)")]
         public async Task<IActionResult> AddQuestionExam([FromBody] ExamQuestionDTO addQuestionData)
         {
             string addStatus = await _examsService.AddExamQuestion(addQuestionData);
@@ -98,7 +103,8 @@ namespace backend_online_testing.Controllers
             return BadRequest(new { status = "Failed", message = addStatus });
         }
 
-        [HttpPost("UpdateQuestion/{id}")]
+        //Update a question to exam
+        [HttpPost("questions/{questionId}")]
         public async Task<IActionResult> UpdateQuestionExam(string id, [FromBody] ExamQuestionDTO addQuestionData)
         {
             string updateStatus = await _examsService.UpdateExamQuestion(addQuestionData);
@@ -109,7 +115,9 @@ namespace backend_online_testing.Controllers
             }
             return BadRequest(new { status = "Failed", message = updateStatus });
         }
-        [HttpPost("DeleteQuestion/{id}")]
+
+        //Delete question in Exam
+        [HttpDelete("questions/{questionId}")]
         public async Task<IActionResult> DeleteQuestionExam(string id, [FromBody] ExamQuestionDTO deleteQuestionData)
         {
             string deleteStatus = await _examsService.DeleteExamQuestion(deleteQuestionData);
@@ -120,7 +128,8 @@ namespace backend_online_testing.Controllers
             return BadRequest(new { status = "Failed", message = deleteStatus });
         }
 
-        [HttpGet("SeedData")]
+        //Insert data to database
+        [HttpGet("seed")]
         public async Task<IActionResult> SeedData()
         {
             await _examsService.SeedData();

@@ -1,4 +1,6 @@
 ﻿using backend_online_testing.Models;
+using DocumentFormat.OpenXml.Spreadsheet;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace backend_online_testing.Services
@@ -24,6 +26,44 @@ namespace backend_online_testing.Services
             var filter = Builders<UsersModel>.Filter.Eq(x => x.Id, id);
             return await _users.Find(filter).FirstOrDefaultAsync();
         }
+        //Add new user
+        public async Task<string> AddUser(UsersModel userData, string userLogId)
+        {
+            //Check enter data
+            if (string.IsNullOrWhiteSpace(userData.UserName) || string.IsNullOrWhiteSpace(userData.Password) || string.IsNullOrWhiteSpace(userData.UserCode) || string.IsNullOrWhiteSpace(userLogId))
+            {
+                return "Invalid user data";
+            }
+
+            var existingUser = await _users.Find(u => u.UserName == userData.UserName).FirstOrDefaultAsync();
+            if (existingUser != null)
+            {
+                return "UserName already exists";
+            }
+
+            if (string.IsNullOrWhiteSpace(userData.Id))
+            {
+                userData.Id = ObjectId.GenerateNewId().ToString();
+            }
+
+            if (userData.UserLog != null)
+            {
+                userData.UserLog[0].LogId = ObjectId.GenerateNewId().ToString();
+            }
+
+            try
+            {
+                await _users.InsertOneAsync(userData);
+                return "User is added successfully";
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error: {ex.Message}");
+                return ex.Message;
+            }
+
+        }
+
         //Update user by Id
         public async Task<bool> UpdateUserbByID(string id, UsersModel updateUser)
         {

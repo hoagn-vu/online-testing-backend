@@ -18,7 +18,7 @@ namespace backend_online_testing.Services
         public async Task CreateAsync(UserModel user, ObjectId logUserId)
         {
             user.Logs ??= [];
-            user.Logs.Add(new UserLogModel { UserId = logUserId, Type = "created" });
+            //user.Logs.Add(new UserLogsModel { UserId = logUserId, Type = "created" });
             await _userCollection.InsertOneAsync(user);
         }
 
@@ -29,7 +29,5 @@ namespace backend_online_testing.Services
                 return null;
             return user;
         }
-
-
     }
 }

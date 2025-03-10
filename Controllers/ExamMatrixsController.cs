@@ -7,7 +7,7 @@ using backend_online_testing.Dtos;
 
 namespace backend_online_testing.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/exam-matrix")]
     [ApiController]
     public class ExamMatrixsController : ControllerBase
     {
@@ -18,7 +18,8 @@ namespace backend_online_testing.Controllers
             _examMatrixsService = examMatrixsService;
         }
 
-        [HttpGet("GetAllExamsMatrix")]
+        //Get all exam matrix
+        [HttpGet]
         public async Task<IActionResult> GetAllExamsMatrix()
         {
             var examMatrixs_list = await _examMatrixsService.GetAllExamMatrix();
@@ -28,7 +29,8 @@ namespace backend_online_testing.Controllers
             }
             return Ok(new { status = "Success", data = examMatrixs_list });
         }
-
+        
+        //Get by Id
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdExamMatrix(string id)
         {
@@ -42,7 +44,8 @@ namespace backend_online_testing.Controllers
             return Ok(new { status = "Success", data = result });
         }
 
-        [HttpGet("Search/{name}")]
+        //Searchby name
+        [HttpGet("search-name")]
         public async Task<IActionResult> SearchByName(string name)
         {
             var results = await _examMatrixsService.SearchByName(name);
@@ -55,7 +58,8 @@ namespace backend_online_testing.Controllers
             return Ok(new { status = "Success", data = results });
         }
 
-        [HttpPost("AddExamMatrix")]
+        //Add exam matrix
+        [HttpPost]
         public async Task<IActionResult> AddExamMatrix([FromBody] ExamMatrixsModel examMatrixData, string matrixLogUserId)
         {
             if (examMatrixData == null)
@@ -73,7 +77,8 @@ namespace backend_online_testing.Controllers
             return BadRequest(new { status = "Failure", message = result });
         }
 
-        [HttpPost("AddTags/{examMatrixId}")]
+        //Add tag
+        [HttpPost("tags/")]
         public async Task<IActionResult> AddTag(string examMatrixId, [FromBody] ExamMatrixAddDto tagsData)
         {
             var result = await _examMatrixsService.AddTag(tagsData);
@@ -85,7 +90,8 @@ namespace backend_online_testing.Controllers
             return BadRequest(new { status = "Failure", message = result });
         }
 
-        [HttpPost("UpdateMatrixExam/{examMatrixId}")]
+        //Update exam matrix
+        [HttpPost("{examMatrixId}")]
         public async Task<IActionResult> UpdateMatrixExam(string examMatrixId, [FromBody] ExamMatrixUpdateDto examMatrixData)
         {
             var result = await _examMatrixsService.UpdateExamMatrix(examMatrixId, examMatrixData);
@@ -97,7 +103,8 @@ namespace backend_online_testing.Controllers
             return BadRequest(new { status = "Failure", message = result });
         }
 
-        [HttpPost("UpdateTags/{examMatrixId}")]
+        //Update tag
+        [HttpPost("{examMatrixId}/tags/{tagName}")]
         public async Task<IActionResult> UpdateTags(string examMatrixId, [FromBody] ExamMatrixUpdateDto tagsData)
         {
             var result = await _examMatrixsService.UpdateTag(examMatrixId, tagsData);
@@ -109,7 +116,7 @@ namespace backend_online_testing.Controllers
             return BadRequest(new { status = "Failure", message = result });
         }
 
-        [HttpPost("DeleteMatrixExam/{examMatrixId}")]
+        [HttpDelete("delete-exam-matrix")]
         public async Task<IActionResult> DeleteMatrixExam(string examMatrixId, string matrixLogUserId)
         {
             var result = await _examMatrixsService.DeleteExamMatrix(examMatrixId, matrixLogUserId);
@@ -121,7 +128,7 @@ namespace backend_online_testing.Controllers
             return BadRequest(new { status = "Failure", message = result });
         }
 
-        [HttpPost("DeletetagExam/{examMatrixId}")]
+        [HttpDelete("delete-tag")]
         public async Task<IActionResult> DeleteTagExam(string examMatrixId, string tagName, string matrixLogUserId)
         {
             var result = await _examMatrixsService.DeleteTag(examMatrixId, tagName, matrixLogUserId);
@@ -133,7 +140,8 @@ namespace backend_online_testing.Controllers
             return BadRequest(new { status = "Failure", message = result });
         }
 
-        [HttpGet("SeedData")]
+        //Insert form data
+        [HttpGet("seed")]
         public async Task<IActionResult> SeedData()
         {
             await _examMatrixsService.SeedData();
