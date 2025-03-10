@@ -21,6 +21,7 @@ namespace backend_online_testing.Controllers
                 return BadRequest("Vui lòng chọn file hợp lệ.");
 
             List<QuestionBanksModel> questionBanks;
+            string result;
 
             try
             {
@@ -30,12 +31,14 @@ namespace backend_online_testing.Controllers
                     {
                         using (var reader = new StreamReader(stream))
                         {
-                            questionBanks = await _fileService.ProcessFileTxt(reader, subjectId, userLogId);
+                            //questionBanks = await _fileService.ProcessFileTxt(reader, subjectId, userLogId);
+                            result = await _fileService.ProcessFileTxt(reader, subjectId, userLogId);
                         }
                     }
                     else if (file.FileName.EndsWith(".docx"))
                     {
-                        questionBanks = await _fileService.ProcessFileDocx(stream, subjectId, userLogId);
+                        //questionBanks = await _fileService.ProcessFileDocx(stream, subjectId, userLogId);
+                        result = await _fileService.ProcessFileDocx(stream, subjectId, userLogId);
                     }
                     else
                     {
@@ -43,7 +46,15 @@ namespace backend_online_testing.Controllers
                     }
                 }
 
-                return Ok(new { Message = "Tải lên thành công!", Data = questionBanks });
+                //return Ok(new { Message = "Tải lên thành công!", Data = questionBanks });
+                if(result == "Insert question bank successfully")
+                {
+                    return Ok(new { message = "Insert question bank successfully" });
+                }
+                else
+                {
+                    return BadRequest(new {message = result});
+                }
             }
             catch (Exception ex)
             {

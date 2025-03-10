@@ -7,6 +7,7 @@ using OfficeOpenXml;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using LicenseContext = OfficeOpenXml.LicenseContext;
 
 namespace backend_online_testing.Services
@@ -14,14 +15,16 @@ namespace backend_online_testing.Services
     public class FileManagementService
     {
         private readonly IMongoCollection<UsersModel> _users;
+        private readonly IMongoCollection<SubjectsModel> _subjects;
         private readonly AddLogService _logService;
 
         public FileManagementService(IMongoDatabase database, AddLogService logService){
             _users = database.GetCollection<UsersModel>("Users");
+            _subjects = database.GetCollection<SubjectsModel>("Subjects");
             _logService = logService;
         }
 
-        public async Task<List<QuestionBanksModel>> ProcessFileTxt(StreamReader reader, string subjectId, string userLogId)
+        public async Task<string> ProcessFileTxt(StreamReader reader, string subjectId, string userLogId)
         {
             QuestionBanksModel questionBanks;
             string questionBankName = "";
@@ -73,10 +76,25 @@ namespace backend_online_testing.Services
                     if (currentQuestion == null || string.IsNullOrWhiteSpace(line))
                         continue;
 
+                    var match = Regex.Match(line, @"^(A|B|C|D|E|F|G|H|I)[\.\)]\s*(.+)");
+                    bool isCorrect = false;
+                    string optionText = line.Trim();
+
+                    if (match.Success)
+                    {
+                        string optionLabel = match.Groups[1].Value; // Get A, B, C, D
+                        optionText = match.Groups[2].Value.Trim(); // Lấy phần nội dung còn lại
+
+                        if (optionLabel == "A") //If a answer is true
+                        {
+                            isCorrect = true;
+                        }
+                    }
+
                     var optionChoice = new OptionsModel
                     {
-                        OptionText = line,
-                        IsCorrect = false
+                        OptionText = optionText,
+                        IsCorrect = isCorrect
                     };
 
                     currentQuestion.Options.Add(optionChoice);
@@ -95,10 +113,32 @@ namespace backend_online_testing.Services
             }
 
             //return questionList;
-            return questionBankList;
+            //return questionBankList;
+            //Find subject by id
+            var subjectFilter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
+            var subject = await _subjects.Find(subjectFilter).FirstOrDefaultAsync();
+
+            if (subject == null) {
+                return "Not found subject";
+            }
+            //Insert to database
+            var update = Builders<SubjectsModel>.Update.PushEach(s => s.QuestionBanks, questionBankList);
+            await _subjects.UpdateOneAsync(subjectFilter, update);
+
+            //Update user logg
+            var logData = new UserLogsModel
+            {
+                LogAction = "Created",
+                LogDetails = "Add list question using file docx",
+                LogAt = DateTime.Now
+            };
+
+            await _logService.AddActionLog(userLogId, logData);
+
+            return "Insert question bank successfully";
         }
 
-        public async Task<List<QuestionBanksModel>> ProcessFileDocx(Stream fileStream, string subjectId, string userLogId)
+        public async Task<string> ProcessFileDocx(Stream fileStream, string subjectId, string userLogId)
         {
             var text = new StringBuilder();
 
