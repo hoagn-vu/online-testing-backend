@@ -1,7 +1,7 @@
-﻿using backend_online_testing.Dtos;
+﻿#pragma warning disable
+using backend_online_testing.Dtos;
 using backend_online_testing.Models;
 using DocumentFormat.OpenXml.Packaging;
-using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Security.Cryptography.X509Certificates;
@@ -18,35 +18,89 @@ namespace backend_online_testing.Services
             _subjectsCollection = database.GetCollection<SubjectsModel>("Subjects");
         }
         //Find all
-        public async Task<List<SubjectsModel>> GetAllSubjects()
+        public async Task<object> GetAllSubjects(string keyword, int page, int pageSize)
         {
-            return await _subjectsCollection.Find(_ => true).ToListAsync();
+            var filter = Builders<SubjectsModel>.Filter.Empty;
+            
+            if (!string.IsNullOrEmpty(keyword)) { 
+                filter = Builders<SubjectsModel>.Filter.Regex(s => s.SubjectName, new BsonRegularExpression(keyword, "i"));
+            }
+
+            //Get all records
+            var totalRecords = await _subjectsCollection.CountDocumentsAsync(filter);
+
+            //Get neccessary filed
+            var protection = Builders<SubjectsModel>.Projection.Expression(s => new
+            {
+                Id = s.Id,
+                SubjectName = s.SubjectName
+            });
+
+            var subjects = await _subjectsCollection
+                .Find(filter)
+                .Project(protection)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            return new
+            {
+                TotalRecords = totalRecords,
+                Subjects = subjects
+            };
         }
+
         //Search by Subject name
         public async Task<List<SubjectsModel>> SearchBySubjectName(string subjectName)
         {
             var filter = Builders<SubjectsModel>.Filter.Regex(s => s.SubjectName, new MongoDB.Bson.BsonRegularExpression(subjectName, "i"));
             return await _subjectsCollection.Find(filter).ToListAsync();
         }
-        //Search by Question Bank Name
-        public async Task<List<SubjectsModel>> SearchByQuestionBankName(string subjectName, string questionBankName)
+
+        //Search or Get All Question Bank Name
+        public class SearchQuestionBankResult
         {
-            var filter = Builders<SubjectsModel>.Filter.And(
-                Builders<SubjectsModel>.Filter.Regex(s => s.SubjectName, new MongoDB.Bson.BsonRegularExpression(subjectName, "i")),
-                Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb =>
-                qb.QuestionBankName.ToLower().Contains(questionBankName.ToLower()))
-            );
+            public List<QuestionBankDto> QuestionBanks { get; set; } = new();
+            public int TotalCount { get; set; }
+        }
 
-            var projection = Builders<SubjectsModel>.Projection.Expression(subject => new SubjectsModel
+        public async Task<SearchQuestionBankResult> SearchByQuestionBankName(string subjectId, string? questionBankName, int page, int pageSize)
+        {
+            var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
+
+            if (!string.IsNullOrEmpty(questionBankName))
             {
-                Id = subject.Id,
-                SubjectName = subject.SubjectName,
-                QuestionBanks = subject.QuestionBanks
-                .Where(qb => qb.QuestionBankName.ToLower().Contains(questionBankName.ToLower()))
-                .ToList()
-            });
+                filter = Builders<SubjectsModel>.Filter.And(
+                    filter,
+                    Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks,
+                        Builders<QuestionBanksModel>.Filter.Regex(q => q.QuestionBankName, new BsonRegularExpression(questionBankName, "i")))
+                );
+            }
 
-            return await _subjectsCollection.Find(filter).Project(projection).ToListAsync();
+            var subjects = await _subjectsCollection
+            .Find(filter)
+            .ToListAsync();
+
+            var listQuestionBanks = subjects
+            .SelectMany(s => s.QuestionBanks
+                .Where(qb => string.IsNullOrEmpty(questionBankName) ||
+                                qb.QuestionBankName.ToLower().Contains(questionBankName.ToLower()))
+                .Select(qb => new QuestionBankDto
+                {
+                    SubjectId = s.Id,
+                    QuestionBankId = qb.QuestionBankId,
+                    QuestionBankName = qb.QuestionBankName
+                })
+            )
+            .ToList();
+
+            int totalCount = listQuestionBanks.Count;
+
+            return new SearchQuestionBankResult
+            {
+                QuestionBanks = listQuestionBanks.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+                TotalCount = totalCount
+            };
         }
 
         public async Task<List<SubjectsModel>> SearchByQuestionName(string subjectName, string questionBankName, string questionName)
@@ -54,7 +108,7 @@ namespace backend_online_testing.Services
             var filter = Builders<SubjectsModel>.Filter.And(
                 Builders<SubjectsModel>.Filter.Eq(s => s.SubjectName, subjectName), // Khớp 100%
                 Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb =>
-                    qb.QuestionBankName == questionBankName && // Khớp 100%
+                    qb.QuestionBankName == questionBankName && 
                     qb.List.Any(q => q.QuestionText.ToLower().Contains(questionName.ToLower())) // Chứa questionName
                 )
             );
@@ -64,13 +118,13 @@ namespace backend_online_testing.Services
                 Id = subject.Id,
                 SubjectName = subject.SubjectName,
                 QuestionBanks = subject.QuestionBanks
-                .Where(qb => qb.QuestionBankName == questionBankName) // Chỉ lấy đúng QuestionBankName
+                .Where(qb => qb.QuestionBankName == questionBankName)
                 .Select(qb => new QuestionBanksModel
                 {
                     QuestionBankId = qb.QuestionBankId,
                     QuestionBankName = qb.QuestionBankName,
                     List = qb.List
-                        .Where(q => q.QuestionText.ToLower().Contains(questionName.ToLower())) // Lọc câu hỏi
+                        .Where(q => q.QuestionText.ToLower().Contains(questionName.ToLower()))
                         .ToList()
                 })
                 .ToList()

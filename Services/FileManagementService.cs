@@ -190,6 +190,7 @@ namespace backend_online_testing.Services
                     {
                         Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
                         UserName = userName,
+                        AccountStatus = "Active",
                         UserCode = worksheet.Cells[row, 2].Text.Trim(),
                         FullName = worksheet.Cells[row, 3].Text.Trim(),
                         Gender = worksheet.Cells[row, 4].Text.Trim(),
@@ -207,7 +208,7 @@ namespace backend_online_testing.Services
                     {
                         LogId = ObjectId.GenerateNewId().ToString(),
                         LogAction = "Created",
-                        LogDetails = $"User account is created by account {userLogInfo.UserName} and name {userLogInfo.FullName}",
+                        LogDetails = $"User account is created by account {(userLogInfo?.UserName ?? "Unknown")} and name {(userLogInfo?.FullName ?? "Unknown")}",
                         LogAt = DateTime.UtcNow
                     });
 
@@ -221,6 +222,10 @@ namespace backend_online_testing.Services
                         Status = "Added successfully"
                     });
                 }
+            }
+            if (usersList == null || !usersList.Any())
+            {
+                return usersResponse;
             }
 
             await _users.InsertManyAsync(usersList);
@@ -283,7 +288,7 @@ namespace backend_online_testing.Services
                             {
                                 LogId = ObjectId.GenerateNewId().ToString(),
                                 LogAction = "Created",
-                                LogDetails = $"User account is added to group {groupName} by account {userLogInfo.UserName} and name {userLogInfo.FullName}",
+                                LogDetails = $"User account is added to group {groupName} by account {(userLogInfo?.UserName ?? "Unknown")} and name {(userLogInfo?.FullName ?? "Unknown")}",
                                 LogAt = DateTime.UtcNow
                             };
 

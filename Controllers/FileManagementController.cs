@@ -76,6 +76,12 @@ namespace backend_online_testing.Controllers
                 stream.Position = 0;
 
                 var users = await _fileService.UsersFileExcel(stream, userLogId);
+
+                if (users == null)
+                {
+                    return BadRequest("File is uploaded");
+                }
+
                 return Ok(users);
             }
         }

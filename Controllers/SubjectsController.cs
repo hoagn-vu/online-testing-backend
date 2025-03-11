@@ -20,25 +20,26 @@ namespace backend_online_testing.Controllers
 
         //Get all subject
         [HttpGet]
-        public async Task<ActionResult<List<SubjectsModel>>> GetAllSubjects()
+        public async Task<ActionResult<List<SubjectsModel>>> GetAllSubjects(string? keyword, int page, int pageSize)
         {
-            var subjects = await _subjectsService.GetAllSubjects();
+            var subjects = await _subjectsService.GetAllSubjects(keyword, page, pageSize);
+
             return Ok(subjects);
         }
 
         //Search by name
-        [HttpGet("search-subject-name")]
-        public async Task<ActionResult<List<SubjectsModel>>> SearchBySubjectName(string subjectName)
-        {
-            var result = await _subjectsService.SearchBySubjectName(subjectName);
-            return Ok(result);
-        }
+        //[HttpGet("search-subject-name")]
+        //public async Task<ActionResult<List<SubjectsModel>>> SearchBySubjectName(string subjectName)
+        //{
+        //    var result = await _subjectsService.SearchBySubjectName(subjectName);
+        //    return Ok(result);
+        //}
 
         //Search by question bank name
-        [HttpGet("search-question-bank-name")]
-        public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionBankName(string subjectName, string questionBankName)
+        [HttpGet("question-bank")]
+        public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionBankName(string subjectId, string? questionBankName, int page, int pageSize)
         {
-            var result = await _subjectsService.SearchByQuestionBankName(subjectName, questionBankName);
+            var result = await _subjectsService.SearchByQuestionBankName(subjectId, questionBankName, page, pageSize);
             return Ok(result);
         }
 

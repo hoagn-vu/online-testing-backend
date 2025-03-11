@@ -16,6 +16,10 @@ namespace backend_online_testing.Services
         public async Task AddActionLog(string userId, UserLogsModel logData)
         {
             var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return;
+            }
 
             logData.LogId = ObjectId.GenerateNewId().ToString();
 

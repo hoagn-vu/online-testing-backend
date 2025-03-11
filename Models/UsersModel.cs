@@ -38,7 +38,7 @@ namespace backend_online_testing.Models
         public List<string>? GroupName { get; set; }
 
         [BsonElement("accountStatus")]
-        public string accountStatus { get; set; }
+        public string AccountStatus { get; set; }
 
         [BsonElement("authenticate")]
         public List<string>? Authenticate { get; set; }

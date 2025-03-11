@@ -1,4 +1,5 @@
-﻿using backend_online_testing.Models;
+﻿#pragma warning disable
+using backend_online_testing.Models;
 using DocumentFormat.OpenXml.Spreadsheet;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -90,6 +91,7 @@ namespace backend_online_testing.Services
             var filter = Builders<UsersModel>.Filter.Eq(x => x.Id, id);
             var update = Builders<UsersModel>.Update
                 .Set(x => x.UserName, updateUser.UserName)
+                .Set(x => x.FullName, updateUser.FullName)
                 .Set(x => x.Password, updateUser.Password)
                 .Set(x => x.Role, updateUser.Role)
                 .Set(x => x.Gender, updateUser.Gender)

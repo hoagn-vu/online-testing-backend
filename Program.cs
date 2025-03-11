@@ -1,3 +1,4 @@
+#pragma warning disable
 using backend_online_testing.Models;
 using backend_online_testing.Services;
 using MongoDB.Driver;
