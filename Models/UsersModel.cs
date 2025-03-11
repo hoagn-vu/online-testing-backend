@@ -25,9 +25,6 @@ namespace backend_online_testing.Models
         [BsonElement("role")]
         public string Role { get; set; }
 
-        [BsonElement("email")]
-        public string? Email { get; set; }
-
         [BsonElement("gender")]
         public string? Gender { get; set; }
 
@@ -39,6 +36,12 @@ namespace backend_online_testing.Models
 
         [BsonElement("groupName")]
         public List<string>? GroupName { get; set; }
+
+        [BsonElement("accountStatus")]
+        public string accountStatus { get; set; }
+
+        [BsonElement("authenticate")]
+        public List<string>? Authenticate { get; set; }
 
         [BsonElement("userLogs")]
         public List<UserLogsModel>? UserLog { get; set; }

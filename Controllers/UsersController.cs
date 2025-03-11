@@ -20,9 +20,10 @@ namespace backend_online_testing.Controllers
 
         //Get all user
         [HttpGet]
-        public async Task<IEnumerable<UsersModel>> Get()
+        public async Task<IActionResult> Get(string? keyword, int page, int pageSize)
         {
-            return await _userService.GetAllUsers();
+            var (users, total) = await _userService.GetAllUsers(keyword, page, pageSize);
+            return Ok(new { users, total });
         }
 
         //Get method with ID
