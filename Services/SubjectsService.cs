@@ -94,34 +94,53 @@ namespace Backend_online_testing.Services
             };
         }
 
-        public async Task<List<SubjectsModel>> SearchByQuestionName(string subjectName, string questionBankName, string questionName)
+        // Get by question
+        public async Task<List<QuestionDto>> SearchByQuestionName(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
         {
-            var filter = Builders<SubjectsModel>.Filter.And(
-                Builders<SubjectsModel>.Filter.Eq(s => s.SubjectName, subjectName), // Khớp 100%
-                Builders<SubjectsModel>.Filter.ElemMatch(
-                    s => s.QuestionBanks,
-                    qb => qb.QuestionBankName == questionBankName
-                    &&
-                    qb.List.Any(q => q.QuestionText.ToLower().Contains(questionName.ToLower())))); // Chứa questionName
+            var subject = await this._subjectsCollection
+               .Find(s => s.Id == subjectId)
+               .FirstOrDefaultAsync();
 
-            var projection = Builders<SubjectsModel>.Projection.Expression(subject => new SubjectsModel
+            if (subject == null)
             {
-                Id = subject.Id,
-                SubjectName = subject.SubjectName,
-                QuestionBanks = subject.QuestionBanks
-                .Where(qb => qb.QuestionBankName == questionBankName)
-                .Select(qb => new QuestionBanksModel
-                {
-                    QuestionBankId = qb.QuestionBankId,
-                    QuestionBankName = qb.QuestionBankName,
-                    List = qb.List
-                        .Where(q => q.QuestionText.ToLower().Contains(questionName.ToLower()))
-                        .ToList(),
-                })
-                .ToList(),
-            });
+                return new List<QuestionDto>();
+            }
 
-            return await this._subjectsCollection.Find(filter).Project(projection).ToListAsync();
+            var questionBank = subject.QuestionBanks?.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
+            if (questionBank == null || questionBank.List == null)
+            {
+                return new List<QuestionDto>();
+            }
+
+            var filteredQuestions = string.IsNullOrEmpty(keyWord)
+                ? questionBank.List
+                : questionBank.List.Where(q => q.QuestionText != null &&
+                                                q.QuestionText.Contains(keyWord, StringComparison.OrdinalIgnoreCase))
+                                   .ToList();
+
+            var totalRecords = filteredQuestions.Count;
+
+            if (pageSize == 0)
+            {
+                pageSize = totalRecords;
+            }
+
+            var paginatedQuestions = filteredQuestions
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+            var result = new QuestionDto
+            {
+                SubjectId = subject.Id,
+                SubjectName = subject.SubjectName,
+                QuestionBankId = questionBank.QuestionBankId,
+                QuestionBankName = questionBank.QuestionBankName,
+                TotalCount = totalRecords,
+                Questions = paginatedQuestions,
+            };
+
+            return new List<QuestionDto> { result };
         }
 
         // Add subject

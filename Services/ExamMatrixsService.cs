@@ -3,6 +3,7 @@ namespace Backend_online_testing.Services
 {
     using Backend_online_testing.Dtos;
     using Backend_online_testing.Models;
+    using DocumentFormat.OpenXml.Spreadsheet;
     using Microsoft.Extensions.Logging.Abstractions;
     using MongoDB.Bson;
     using MongoDB.Driver;
@@ -16,9 +17,26 @@ namespace Backend_online_testing.Services
             this._examMatrixsCollection = database.GetCollection<ExamMatrixsModel>("ExamMatrixs");
         }
 
-        public async Task<List<ExamMatrixsModel>> GetAllExamMatrix()
+        public async Task<(List<ExamMatrixsModel>, long)> GetAllExamMatrix(string? keyword, int page, int pageSize)
         {
-            return await this._examMatrixsCollection.Find(_ => true).ToListAsync();
+            var filter = Builders<ExamMatrixsModel>.Filter.Empty;
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                filter = Builders<ExamMatrixsModel>.Filter.Or(
+                    Builders<ExamMatrixsModel>.Filter.Regex(ex => ex.MatrixName, new BsonRegularExpression(keyword, "i")),
+                    Builders<ExamMatrixsModel>.Filter.Regex(ex => ex.MatrixStatus, new BsonRegularExpression(keyword, "i")));
+            }
+
+            var examMatrixs = await this._examMatrixsCollection
+                .Find(filter)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            var totalRecords = await this._examMatrixsCollection.CountDocumentsAsync(filter);
+
+            return (examMatrixs, totalRecords);
         }
 
         public async Task<ExamMatrixsModel> GetByIdExamMatrix(string id)
@@ -49,13 +67,13 @@ namespace Backend_online_testing.Services
                 MatrixChangeAt = DateTime.Now,
             };
 
-            if (examMatrixData.MatrixLogs == null)
-            {
-                examMatrixData.MatrixLogs = new List<MatrixLogsModel>();
-            }
+            // if (examMatrixData.MatrixLogs == null)
+            // {
+            //    examMatrixData.MatrixLogs = new List<MatrixLogsModel>();
+            // }
 
-            // Add log to exam matrix data
-            examMatrixData.MatrixLogs.Add(addLog);
+            //// Add log to exam matrix data
+            // examMatrixData.MatrixLogs.Add(addLog);
 
             // Create Id
             examMatrixData.Id = ObjectId.GenerateNewId().ToString();
@@ -81,13 +99,7 @@ namespace Backend_online_testing.Services
             }
 
             var update = Builders<ExamMatrixsModel>.Update
-                .PushEach(e => e.MatrixTags, examMatrixData.Tags)
-                .Push(e => e.MatrixLogs, new MatrixLogsModel
-                {
-                    MatrixLogUserId = examMatrixData.MatrixLogUserId,
-                    MatrixLogType = "Added new tags",
-                    MatrixChangeAt = DateTime.UtcNow,
-                });
+                .PushEach(e => e.MatrixTags, examMatrixData.Tags);
 
             var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
@@ -123,8 +135,7 @@ namespace Backend_online_testing.Services
                 .Set(x => x.MatrixStatus, examMatrixData.ExamMatrixStatus)
                 .Set(x => x.TotalGeneratedExams, examMatrixData.TotalGenerateExam)
                 .Set(x => x.SubjectId, examMatrixData.SubjectId)
-                .Set(x => x.ExamId, examMatrixData.ExamId)
-                .Push(x => x.MatrixLogs, updateLog);
+                .Set(x => x.ExamId, examMatrixData.ExamId);
 
             var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
@@ -155,8 +166,7 @@ namespace Backend_online_testing.Services
             }
 
             var update = Builders<ExamMatrixsModel>.Update
-                .Set(x => x.MatrixTags, tagsData.Tags)
-                .Push(x => x.MatrixLogs, updateLog);
+                .Set(x => x.MatrixTags, tagsData.Tags);
 
             var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
@@ -179,13 +189,7 @@ namespace Backend_online_testing.Services
             }
 
             var update = Builders<ExamMatrixsModel>.Update
-                .Set(x => x.MatrixStatus, "Unavailable")
-                .Push(x => x.MatrixLogs, new MatrixLogsModel
-                {
-                    MatrixLogUserId = matrixLogUserId,
-                    MatrixLogType = "Deleted exam matrix",
-                    MatrixChangeAt = DateTime.UtcNow,
-                });
+                .Set(x => x.MatrixStatus, "Unavailable");
 
             var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
@@ -216,14 +220,7 @@ namespace Backend_online_testing.Services
 
             // Delete record having tagname = TagName
             var update = Builders<ExamMatrixsModel>.Update
-                .PullFilter(x => x.MatrixTags, Builders<MatrixTagsModel>.Filter.Eq(t => t.TagName, tagName))
-
-                .Push(x => x.MatrixLogs, new MatrixLogsModel
-                {
-                    MatrixLogUserId = matrixLogUserId,
-                    MatrixLogType = $"Deleted tag: {tagName}",
-                    MatrixChangeAt = DateTime.UtcNow,
-                });
+                .PullFilter(x => x.MatrixTags, Builders<MatrixTagsModel>.Filter.Eq(t => t.TagName, tagName));
 
             var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
@@ -247,14 +244,11 @@ namespace Backend_online_testing.Services
                     TotalGeneratedExams = 1,
                     SubjectId = "MATH01",
                     ExamId = new List<string> { "67b7e27f152621e5bcd6c232" },
+                    QuestionBankId = "67ce3d5ac07467bf499bfdfe",
                     MatrixTags = new List<MatrixTagsModel>
                     {
                         new MatrixTagsModel { TagName = "Dễ", QuestionCount = 10, TagScore = 1 },
                         new MatrixTagsModel { TagName = "Khó", QuestionCount = 5, TagScore = 3 },
-                    },
-                    MatrixLogs = new List<MatrixLogsModel>
-                    {
-                        new MatrixLogsModel { MatrixLogUserId = "67b7e27f152621e5bcd6c22b", MatrixLogType = "Created exam matrix", MatrixChangeAt = DateTime.UtcNow },
                     },
                 },
                 new ExamMatrixsModel
@@ -265,14 +259,11 @@ namespace Backend_online_testing.Services
                     TotalGeneratedExams = 3,
                     SubjectId = "HIS001",
                     ExamId = new List<string> { "67b7e27f152621e5bcd6c232" },
+                    QuestionBankId = "67ce3d5ac07467bf499bfdfe",
                     MatrixTags = new List<MatrixTagsModel>
                     {
                         new MatrixTagsModel { TagName = "Trung bình", QuestionCount = 8, TagScore = 2 },
                         new MatrixTagsModel { TagName = "Rất khó", QuestionCount = 2, TagScore = 5 },
-                    },
-                    MatrixLogs = new List<MatrixLogsModel>
-                    {
-                        new MatrixLogsModel { MatrixLogUserId = "67b7e27f152621e5bcd6c22b", MatrixLogType = "Created exam matrix", MatrixChangeAt = DateTime.UtcNow },
                     },
                 },
                 new ExamMatrixsModel
@@ -283,14 +274,11 @@ namespace Backend_online_testing.Services
                     TotalGeneratedExams = 7,
                     SubjectId = "GEO001",
                     ExamId = new List<string> { "67b7e27f152621e5bcd6c232" },
+                    QuestionBankId = "67ce3d5ac07467bf499bfdfe",
                     MatrixTags = new List<MatrixTagsModel>
                     {
                         new MatrixTagsModel { TagName = "Cơ bản", QuestionCount = 12, TagScore = 1 },
                         new MatrixTagsModel { TagName = "Vận dụng cao", QuestionCount = 3, TagScore = 4 },
-                    },
-                    MatrixLogs = new List<MatrixLogsModel>
-                    {
-                        new MatrixLogsModel { MatrixLogUserId = "67b7e27f152621e5bcd6c22b", MatrixLogType = "Created exam matrix", MatrixChangeAt = DateTime.UtcNow },
                     },
                 },
             };

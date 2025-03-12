@@ -21,15 +21,11 @@ namespace Backend_online_testing.Controllers
 
         // Get all exam matrix
         [HttpGet]
-        public async Task<IActionResult> GetAllExamsMatrix()
+        public async Task<IActionResult> GetAllExamsMatrix(string? keyword, int page, int pageSize)
         {
-            var examMatrixs_list = await this._examMatrixsService.GetAllExamMatrix();
-            if (examMatrixs_list == null || !examMatrixs_list.Any())
-            {
-                return this.NotFound(new { message = "No exam founds" });
-            }
+            var (examMatrixs, total) = await this._examMatrixsService.GetAllExamMatrix(keyword, page, pageSize);
 
-            return this.Ok(new { status = "Success", data = examMatrixs_list });
+            return this.Ok(new { examMatrixs, total });
         }
 
         // Get by Id

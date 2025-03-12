@@ -19,8 +19,5 @@
 
         [BsonElement("roomStatus")]
         public string Status { get; set; } = "available";
-
-        [BsonElement("roomLogs")]
-        public List<RoomLogModel>? Logs { get; set; }
     }
 }

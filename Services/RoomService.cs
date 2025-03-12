@@ -20,8 +20,8 @@ namespace Backend_online_testing.Services
 
         public async Task CreateAsync(RoomModel room, ObjectId userId)
         {
-            room.Logs ??= new List<RoomLogModel>();
-            room.Logs.Add(new RoomLogModel { UserId = userId, Type = "created" });
+            // room.Logs ??= new List<RoomLogModel>();
+            // room.Logs.Add(new RoomLogModel { UserId = userId, Type = "created" });
             await this._roomCollection.InsertOneAsync(room);
         }
 
@@ -34,8 +34,9 @@ namespace Backend_online_testing.Services
             }
 
             room.Id = id;
-            room.Logs = existingRoom.Logs ?? new List<RoomLogModel>();
-            room.Logs.Add(new RoomLogModel { UserId = userId, Type = "updated" });
+
+            // room.Logs = existingRoom.Logs ?? new List<RoomLogModel>();
+            // room.Logs.Add(new RoomLogModel { UserId = userId, Type = "updated" });
             await this._roomCollection.ReplaceOneAsync(r => r.Id == id, room);
         }
 
@@ -47,8 +48,8 @@ namespace Backend_online_testing.Services
                 return;
             }
 
-            existingRoom.Logs ??= new List<RoomLogModel>();
-            existingRoom.Logs.Add(new RoomLogModel { UserId = userId, Type = "deleted" });
+            // existingRoom.Logs ??= new List<RoomLogModel>();
+            // existingRoom.Logs.Add(new RoomLogModel { UserId = userId, Type = "deleted" });
             await this._roomCollection.ReplaceOneAsync(r => r.Id == id, existingRoom);
             await this._roomCollection.DeleteOneAsync(p => p.Id == id);
         }
@@ -62,8 +63,9 @@ namespace Backend_online_testing.Services
             }
 
             existingRoom.Status = "deleted";
-            existingRoom.Logs ??= new List<RoomLogModel>();
-            existingRoom.Logs.Add(new RoomLogModel { UserId = userId, Type = "deleted" });
+
+            // existingRoom.Logs ??= new List<RoomLogModel>();
+            // existingRoom.Logs.Add(new RoomLogModel { UserId = userId, Type = "deleted" });
             await this._roomCollection.ReplaceOneAsync(r => r.Id == id, existingRoom);
         }
     }

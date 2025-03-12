@@ -24,7 +24,7 @@
         [BsonElement("examStatus")]
         public string? ExamStatus { get; set; }
 
-        [BsonElement("examLogs")]
-        public List<ExamLogsModel> ExamLogs { get; set; } = new List<ExamLogsModel>();
+        [BsonElement("questionBankId")]
+        public string? QuestionBankId { get; set; }
     }
 }

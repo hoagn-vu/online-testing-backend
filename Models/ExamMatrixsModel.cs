@@ -21,11 +21,11 @@
         [BsonElement("subjectId")]
         required public string SubjectId { get; set; }
 
+        [BsonElement("questionBankId")]
+        public string? QuestionBankId { get; set; }
+
         [BsonElement("matrixTags")]
         public List<MatrixTagsModel> MatrixTags { get; set; } = new List<MatrixTagsModel>();
-
-        [BsonElement("matrixLogs")]
-        public List<MatrixLogsModel>? MatrixLogs { get; set; }
 
         [BsonElement("examId")]
         public List<string> ExamId { get; set; } = new List<string>();

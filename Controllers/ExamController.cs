@@ -19,15 +19,11 @@ namespace Backend_online_testing.Controllers
 
         // Get all Exam
         [HttpGet]
-        public async Task<IActionResult> GetAllExam()
+        public async Task<IActionResult> GetAllExam(string? keyword, int page, int pageSize)
         {
-            var exams_list = await this._examsService.FindExam();
-            if (exams_list == null || !exams_list.Any())
-            {
-                return this.NotFound(new { message = "No exam founds" });
-            }
+            var (exams, total) = await this._examsService.GetAllExam(keyword, page, pageSize);
 
-            return this.Ok(new { status = "Success", data = exams_list });
+            return this.Ok(new { exams, total });
         }
 
         // Search by name

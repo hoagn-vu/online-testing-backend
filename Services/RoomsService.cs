@@ -4,6 +4,7 @@ namespace Backend_online_testing.Services
     using System.Xml.Linq;
     using Backend_online_testing.DTO;
     using Backend_online_testing.Models;
+    using MongoDB.Bson;
     using MongoDB.Bson.Serialization.IdGenerators;
     using MongoDB.Driver;
 
@@ -17,9 +18,27 @@ namespace Backend_online_testing.Services
         }
 
         // Get all room
-        public async Task<List<RoomsModel>> GetAllRooms()
+        public async Task<(List<RoomsModel>, long)> GetAllRooms(string? keyword, int page, int pageSize)
         {
-            return await this._rooms.Find(_ => true).ToListAsync();
+            var filter = Builders<RoomsModel>.Filter.Empty;
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                filter = Builders<RoomsModel>.Filter.Or(
+                    Builders<RoomsModel>.Filter.Regex(u => u.RoomName, new BsonRegularExpression(keyword, "i")),
+                    Builders<RoomsModel>.Filter.Regex(u => u.RoomLocation, new BsonRegularExpression(keyword, "i")),
+                    Builders<RoomsModel>.Filter.Regex(u => u.RoomStatus, new BsonRegularExpression(keyword, "i")));
+            }
+
+            var totalRecords = await this._rooms.CountDocumentsAsync(filter);
+
+            var rooms = await this._rooms
+            .Find(filter)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
+
+            return (rooms, totalRecords);
         }
 
         // Find room using RoomName
@@ -33,14 +52,13 @@ namespace Backend_online_testing.Services
         // Create Room
         public async Task InsertRoom(RoomDTO roomData)
         {
-            var roomLogData = new RoomLogsModel
-            {
-                LogId = "1",
-                RoomLogUserId = roomData.UserId,
-                RoomLogType = "Created",
-                RoomChangeAt = DateTime.UtcNow,
-            };
-
+            // var roomLogData = new RoomLogsModel
+            // {
+            //    LogId = "1",
+            //    RoomLogUserId = roomData.UserId,
+            //    RoomLogType = "Created",
+            //    RoomChangeAt = DateTime.UtcNow,
+            // };
             var lastRoom = await this._rooms
                 .Find(Builders<RoomsModel>.Filter.Empty) // Get all data
                 .Sort(Builders<RoomsModel>.Sort.Descending(r => r.Id)) // Sort ID
@@ -54,8 +72,9 @@ namespace Backend_online_testing.Services
                 Id = newId,
                 RoomName = roomData.RoomName,
                 RoomStatus = roomData.RoomStatus,
-                Capacity = roomData.Capacity,
-                RoomLogs = new List<RoomLogsModel> { roomLogData },
+                RoomCapacity = roomData.Capacity,
+
+                // RoomLogs = new List<RoomLogsModel> { roomLogData },
             };
 
             await this._rooms.InsertOneAsync(newRoom);
@@ -75,23 +94,24 @@ namespace Backend_online_testing.Services
             }
 
             // Get ID Room Log
-            string newLogId = (room.RoomLogs.Any() && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
-                ? (lastLogId + 1).ToString()
-                : "1";
+            // string newLogId = (room.RoomLogs.Any() && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
+            //    ? (lastLogId + 1).ToString()
+            //    : "1";
 
-            var roomLogData = new RoomLogsModel
-            {
-                LogId = newLogId,
-                RoomLogUserId = roomData.UserId,
-                RoomChangeAt = DateTime.UtcNow,
-                RoomLogType = "Updated",
-            };
+            // var roomLogData = new RoomLogsModel
+            // {
+            //    LogId = newLogId,
+            //    RoomLogUserId = roomData.UserId,
+            //    RoomChangeAt = DateTime.UtcNow,
+            //    RoomLogType = "Updated",
+            // };
 
             // Add another field
             var update = Builders<RoomsModel>.Update
                 .Set(r => r.RoomStatus, roomData.RoomStatus)
-                .Set(r => r.Capacity, roomData.Capacity)
-                .Push(r => r.RoomLogs, roomLogData);
+                .Set(r => r.RoomCapacity, roomData.Capacity);
+
+                // .Push(r => r.RoomLogs, roomLogData);
 
             // Update
             await this._rooms.UpdateOneAsync(filter, update);
@@ -110,20 +130,21 @@ namespace Backend_online_testing.Services
             else
             {
                 // Get ID from LogRoom
-                string newLogId = (room.RoomLogs.Count != 0 && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
-                    ? (lastLogId + 1).ToString() : "1";
-                var roomLogData = new RoomLogsModel
-                {
-                    LogId = newLogId,
-                    RoomLogUserId = roomData.UserId,
-                    RoomLogType = "Updated",
-                    RoomChangeAt = DateTime.Now,
-                };
+                // string newLogId = (room.RoomLogs.Count != 0 && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
+                //     ? (lastLogId + 1).ToString() : "1";
+                // var roomLogData = new RoomLogsModel
+                // {
+                //    LogId = newLogId,
+                //    RoomLogUserId = roomData.UserId,
+                //    RoomLogType = "Updated",
+                //    RoomChangeAt = DateTime.Now,
+                // };
 
                 // Update file
                 var update = Builders<RoomsModel>.Update
-                    .Set(r => r.RoomStatus, "Unavailable/Deleted")
-                    .Push(r => r.RoomLogs, roomLogData);
+                    .Set(r => r.RoomStatus, "Unavailable/Deleted");
+
+                    // .Push(r => r.RoomLogs, roomLogData);
 
                 // Update
                 await this._rooms.UpdateOneAsync(filter, update);
@@ -139,24 +160,16 @@ namespace Backend_online_testing.Services
                     Id = "1",
                     RoomName = "Room A",
                     RoomStatus = "Available",
-                    Capacity = 10,
-                    RoomLogs = new List<RoomLogsModel>
-                    {
-                        new RoomLogsModel { LogId = "1", RoomLogUserId = "1", RoomChangeAt = DateTime.Parse("2024-02-19"), RoomLogType = "Created" },
-                        new RoomLogsModel { LogId = "2", RoomLogUserId = "1", RoomChangeAt = DateTime.Parse("2024-02-19"), RoomLogType = "Updated" },
-                    },
+                    RoomCapacity = 10,
+                    RoomLocation = "Cơ sở 1",
                 },
                 new RoomsModel
                 {
                     Id = "2",
                     RoomName = "Room B",
                     RoomStatus = "Available",
-                    Capacity = 15,
-                    RoomLogs = new List<RoomLogsModel>
-                    {
-                        new RoomLogsModel { LogId = "1", RoomLogUserId = "1", RoomChangeAt = DateTime.Parse("2024-02-19"), RoomLogType = "Created" },
-                        new RoomLogsModel { LogId = "2", RoomLogUserId = "1", RoomChangeAt = DateTime.Parse("2024-02-19"), RoomLogType = "Updated" },
-                    },
+                    RoomCapacity = 15,
+                    RoomLocation = "Cơ sở 2",
                 },
             };
 

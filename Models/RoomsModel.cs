@@ -14,10 +14,10 @@
         [BsonElement("roomName")]
         public string? RoomName { get; set; } = string.Empty;
 
-        [BsonElement("capacity")]
-        public int? Capacity { get; set; }
+        [BsonElement("roomCapacity")]
+        public int? RoomCapacity { get; set; }
 
-        [BsonElement("roomLogs")]
-        public List<RoomLogsModel> RoomLogs { get; set; } = new List<RoomLogsModel>();
+        [BsonElement("roomLocation")]
+        public string? RoomLocation { get; set; }
     }
 }

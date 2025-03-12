@@ -37,10 +37,10 @@ namespace Backend_online_testing.Controllers
         }
 
         // Search by question name
-        [HttpGet("search-question-name")]
-        public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionName(string subjectName, string questionBankName, string questionName)
+        [HttpGet("question-name")]
+        public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionName(string subjectId, string questionBankId, string? questionName, int page, int pageSize)
         {
-            var result = await this._subjectsService.SearchByQuestionName(subjectName, questionBankName, questionName);
+            var result = await this._subjectsService.SearchByQuestionName(subjectId, questionBankId, questionName, page, pageSize);
             return this.Ok(result);
         }
 

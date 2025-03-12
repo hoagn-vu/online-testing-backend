@@ -3,6 +3,7 @@ namespace Backend_online_testing.Services
 {
     using Backend_online_testing.DTO;
     using Backend_online_testing.Models;
+    using DocumentFormat.OpenXml.Spreadsheet;
     using Microsoft.AspNetCore.Http.HttpResults;
     using Microsoft.AspNetCore.Mvc;
     using MongoDB.Bson;
@@ -18,9 +19,26 @@ namespace Backend_online_testing.Services
         }
 
         // Find all document
-        public async Task<List<ExamsModel>> FindExam()
+        public async Task<(List<ExamsModel>, long)> GetAllExam(string? keyword, int page, int pageSize)
         {
-            return await this._examsCollection.Find(_ => true).ToListAsync();
+            var filter = Builders<ExamsModel>.Filter.Empty;
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                filter = Builders<ExamsModel>.Filter.Or(
+                    Builders<ExamsModel>.Filter.Regex(e => e.ExamName, new BsonRegularExpression(keyword, "i")),
+                    Builders<ExamsModel>.Filter.Regex(e => e.ExamStatus, new BsonRegularExpression(keyword, "i")));
+            }
+
+            var users = await this._examsCollection
+                .Find(filter)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+            .ToListAsync();
+
+            var totalRecords = await this._examsCollection.CountDocumentsAsync(filter);
+
+            return (users, totalRecords);
         }
 
         // Find Exam using Name
@@ -46,13 +64,12 @@ namespace Backend_online_testing.Services
                 return "Exam name already exists.";
             }
 
-            var logCreateData = new ExamLogsModel
-            {
-                ExamLogUserId = createExamData.ExamLogUserId,
-                ExamLogType = "Created",
-                ExamChangeAt = DateTime.Now,
-            };
-
+            // var logCreateData = new ExamLogsModel
+            // {
+            //    ExamLogUserId = createExamData.ExamLogUserId,
+            //    ExamLogType = "Created",
+            //    ExamChangeAt = DateTime.Now,
+            // };
             var newExamData = new ExamsModel
             {
                 Id = ObjectId.GenerateNewId().ToString(),
@@ -61,7 +78,8 @@ namespace Backend_online_testing.Services
                 SubjectId = createExamData.SubjectId,
                 ExamStatus = createExamData.ExamStatus,
                 QuestionSet = new List<QuestionSetsModel>(),
-                ExamLogs = new List<ExamLogsModel> { logCreateData },
+
+                // ExamLogs = new List<ExamLogsModel> { logCreateData },
             };
 
             try
@@ -90,9 +108,9 @@ namespace Backend_online_testing.Services
                 .Set(e => e.ExamName, updateExamData.ExamName)
                 .Set(e => e.ExamCode, updateExamData.ExamCode)
                 .Set(e => e.SubjectId, updateExamData.SubjectId)
-                .Set(e => e.ExamStatus, updateExamData.ExamStatus)
-                .Push(e => e.ExamLogs, logUpdateData);
+                .Set(e => e.ExamStatus, updateExamData.ExamStatus);
 
+                // .Push(e => e.ExamLogs, logUpdateData);
             var result = await this._examsCollection.UpdateOneAsync(filter, update);
             return result.ModifiedCount > 0;
         }
@@ -113,17 +131,17 @@ namespace Backend_online_testing.Services
 
             if (result.ModifiedCount > 0)
             {
-                var createQuestionLog = new ExamLogsModel
-                {
-                    ExamLogUserId = questionData.ExamLogUserId,
-                    ExamLogType = "Create Question",
-                    ExamChangeAt = DateTime.Now,
-                };
+                // var createQuestionLog = new ExamLogsModel
+                // {
+                //    ExamLogUserId = questionData.ExamLogUserId,
+                //    ExamLogType = "Create Question",
+                //    ExamChangeAt = DateTime.Now,
+                // };
 
-                var addLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, createQuestionLog);
-                var logResult = await this._examsCollection.UpdateOneAsync(filter, addLog);
+                // var addLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, createQuestionLog);
+                // var logResult = await this._examsCollection.UpdateOneAsync(filter, addLog);
 
-                return logResult.ModifiedCount > 0 ? "Question added successfully" : "Failure update log";
+                // return logResult.ModifiedCount > 0 ? "Question added successfully" : "Failure update log";
             }
 
             return "Failure create question";
@@ -158,11 +176,11 @@ namespace Backend_online_testing.Services
 
             if (result.ModifiedCount > 0)
             {
-                var addLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, updateQuestionLog);
+                // var addLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, updateQuestionLog);
 
-                var logResult = await this._examsCollection.UpdateOneAsync(filter, addLog);
+                // var logResult = await this._examsCollection.UpdateOneAsync(filter, addLog);
 
-                return logResult.ModifiedCount > 0 ? "Question updated successfully" : "Failure update log";
+                // return logResult.ModifiedCount > 0 ? "Question updated successfully" : "Failure update log";
             }
 
             return "Question not found";
@@ -198,11 +216,10 @@ namespace Backend_online_testing.Services
             {
                 var filterExam = Builders<ExamsModel>.Filter.Eq(e => e.Id, questionData.Id);
 
-                var updateLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, deleteQuestionLog);
+                // var updateLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, deleteQuestionLog);
+                // var logResult = await this._examsCollection.UpdateOneAsync(filterExam, updateLog);
 
-                var logResult = await this._examsCollection.UpdateOneAsync(filterExam, updateLog);
-
-                return logResult.ModifiedCount > 0 ? "Question deleted successfully" : "Failure update log";
+                // return logResult.ModifiedCount > 0 ? "Question deleted successfully" : "Failure update log";
             }
 
             return "Question not found or already deleted";
@@ -218,48 +235,39 @@ namespace Backend_online_testing.Services
                     ExamCode = "EX123",
                     ExamName = "Math xam 1",
                     SubjectId = "MATH001",
+                    QuestionBankId = "67ce3d5ac07467bf499bfdfe",
                     QuestionSet = new List<QuestionSetsModel>
                     {
                         new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 5.0 },
                         new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 3.0 },
                     },
                     ExamStatus = "Active",
-                    ExamLogs = new List<ExamLogsModel>
-                    {
-                        new ExamLogsModel { ExamLogUserId = ObjectId.GenerateNewId().ToString(), ExamLogType = "Created", ExamChangeAt = DateTime.UtcNow },
-                    },
                 },
                 new ExamsModel
                 {
                     ExamCode = "EX124",
                     ExamName = "History exam 2",
                     SubjectId = "HIS002",
+                    QuestionBankId = "67ce3d5ac07467bf499bfdfe",
                     QuestionSet = new List<QuestionSetsModel>
                     {
                         new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 4.0 },
                         new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 2.5 },
                     },
                     ExamStatus = "Pending",
-                    ExamLogs = new List<ExamLogsModel>
-                    {
-                        new ExamLogsModel { ExamLogUserId = ObjectId.GenerateNewId().ToString(), ExamLogType = "Updated", ExamChangeAt = DateTime.UtcNow },
-                    },
                 },
                 new ExamsModel
                 {
                     ExamCode = "EX125",
                     ExamName = "Sample Exam 3",
                     SubjectId = "GEO003",
+                    QuestionBankId = "67ce3d5ac07467bf499bfdfe",
                     QuestionSet = new List<QuestionSetsModel>
                     {
                         new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 6.0 },
                         new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 4.5 },
                     },
                     ExamStatus = "Completed",
-                    ExamLogs = new List<ExamLogsModel>
-                    {
-                        new ExamLogsModel { ExamLogUserId = ObjectId.GenerateNewId().ToString(), ExamLogType = "Finalized", ExamChangeAt = DateTime.UtcNow },
-                    },
                 },
             };
 

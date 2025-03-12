@@ -20,10 +20,10 @@ namespace Backend_online_testing.Controllers
 
         // Get all room
         [HttpGet]
-        public async Task<ActionResult<RoomsModel>> GetAllRoom()
+        public async Task<ActionResult<RoomsModel>> GetAllRoom(string? keyword, int page, int pageSize)
         {
-            var rooms = await this._roomsService.GetAllRooms();
-            return this.Ok(rooms);
+            var (rooms, total) = await this._roomsService.GetAllRooms(keyword, page, pageSize);
+            return this.Ok(new { rooms, total });
         }
 
         // Search by name
