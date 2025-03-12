@@ -1,36 +1,37 @@
-﻿using backend_online_testing.Dtos;
-using backend_online_testing.Models;
-using Microsoft.Extensions.Logging.Abstractions;
-using MongoDB.Bson;
-using MongoDB.Driver;
-
-namespace backend_online_testing.Services
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Services
 {
+    using Backend_online_testing.Dtos;
+    using Backend_online_testing.Models;
+    using Microsoft.Extensions.Logging.Abstractions;
+    using MongoDB.Bson;
+    using MongoDB.Driver;
+
     public class ExamMatrixsService
     {
         private readonly IMongoCollection<ExamMatrixsModel> _examMatrixsCollection;
 
         public ExamMatrixsService(IMongoDatabase database)
         {
-            _examMatrixsCollection = database.GetCollection<ExamMatrixsModel>("ExamMatrixs");
+            this._examMatrixsCollection = database.GetCollection<ExamMatrixsModel>("ExamMatrixs");
         }
 
         public async Task<List<ExamMatrixsModel>> GetAllExamMatrix()
         {
-            return await _examMatrixsCollection.Find(_ => true).ToListAsync();
+            return await this._examMatrixsCollection.Find(_ => true).ToListAsync();
         }
 
         public async Task<ExamMatrixsModel> GetByIdExamMatrix(string id)
         {
             var filter = Builders<ExamMatrixsModel>.Filter.Eq(m => m.Id, id);
 
-            return await _examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
+            return await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
         }
 
         public async Task<List<ExamMatrixsModel>> SearchByName(string matrixName)
         {
             var filter = Builders<ExamMatrixsModel>.Filter.Regex("MatrixName", new BsonRegularExpression(matrixName, "i"));
-            return await _examMatrixsCollection.Find(filter).ToListAsync();
+            return await this._examMatrixsCollection.Find(filter).ToListAsync();
         }
 
         public async Task<string> AddExamMatrix(ExamMatrixsModel examMatrixData, string matrixLogUserId)
@@ -40,12 +41,12 @@ namespace backend_online_testing.Services
                 return "Failure: Invalid exam matrix data";
             }
 
-            //Add log information
+            // Add log information
             var addLog = new MatrixLogsModel
             {
                 MatrixLogUserId = matrixLogUserId,
                 MatrixLogType = "Create an exam matrix",
-                MatrixChangeAt = DateTime.Now
+                MatrixChangeAt = DateTime.Now,
             };
 
             if (examMatrixData.MatrixLogs == null)
@@ -53,15 +54,15 @@ namespace backend_online_testing.Services
                 examMatrixData.MatrixLogs = new List<MatrixLogsModel>();
             }
 
-            //Add log to exam matrix data
+            // Add log to exam matrix data
             examMatrixData.MatrixLogs.Add(addLog);
 
-            //Create Id
+            // Create Id
             examMatrixData.Id = ObjectId.GenerateNewId().ToString();
 
             try
             {
-                await _examMatrixsCollection.InsertOneAsync(examMatrixData);
+                await this._examMatrixsCollection.InsertOneAsync(examMatrixData);
                 return "Exam matrix created successfully";
             }
             catch (Exception ex)
@@ -85,15 +86,15 @@ namespace backend_online_testing.Services
                 {
                     MatrixLogUserId = examMatrixData.MatrixLogUserId,
                     MatrixLogType = "Added new tags",
-                    MatrixChangeAt = DateTime.UtcNow
+                    MatrixChangeAt = DateTime.UtcNow,
                 });
 
-            var result = await _examMatrixsCollection.UpdateOneAsync(filter, update);
+            var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
             return result.ModifiedCount > 0 ? "Tags added successfully" : "Failed to add tags. Exam matrix not found.";
         }
 
-        public async Task<string> UpdateExamMatrix(string ExamMatrixId, ExamMatrixUpdateDto examMatrixData)
+        public async Task<string> UpdateExamMatrix(string examMatrixId, ExamMatrixUpdateDto examMatrixData)
         {
             if (examMatrixData == null)
             {
@@ -104,19 +105,19 @@ namespace backend_online_testing.Services
             {
                 MatrixLogUserId = examMatrixData.MatrixLogUserId,
                 MatrixLogType = "Update exam matrix",
-                MatrixChangeAt = DateTime.UtcNow
+                MatrixChangeAt = DateTime.UtcNow,
             };
 
             var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, examMatrixData.ExamMatrixId);
 
-            var existingExamMatrix = await _examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
+            var existingExamMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (existingExamMatrix == null)
             {
                 return "Exam matrix not found";
             }
 
-            //Update data
+            // Update data
             var update = Builders<ExamMatrixsModel>.Update
                 .Set(x => x.MatrixName, examMatrixData.ExamMatrixName)
                 .Set(x => x.MatrixStatus, examMatrixData.ExamMatrixStatus)
@@ -125,7 +126,7 @@ namespace backend_online_testing.Services
                 .Set(x => x.ExamId, examMatrixData.ExamId)
                 .Push(x => x.MatrixLogs, updateLog);
 
-            var result = await _examMatrixsCollection.UpdateOneAsync(filter, update);
+            var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
             return result.ModifiedCount > 0 ? "Exam matrix updated successfully" : "No changes were made";
         }
@@ -146,7 +147,7 @@ namespace backend_online_testing.Services
 
             var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, tagsData.ExamMatrixId);
 
-            var existingExamMatrix = await _examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
+            var existingExamMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (existingExamMatrix == null)
             {
@@ -157,20 +158,20 @@ namespace backend_online_testing.Services
                 .Set(x => x.MatrixTags, tagsData.Tags)
                 .Push(x => x.MatrixLogs, updateLog);
 
-            var result = await _examMatrixsCollection.UpdateOneAsync(filter, update);
+            var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
             return result.ModifiedCount > 0 ? "Tags updated successfully" : "No changes were made";
         }
 
-        public async Task<String> DeleteExamMatrix(string ExamMatrixId, string MatrixLogUserId)
+        public async Task<string> DeleteExamMatrix(string examMatrixId, string matrixLogUserId)
         {
-            if (string.IsNullOrEmpty(ExamMatrixId))
+            if (string.IsNullOrEmpty(examMatrixId))
             {
                 return "Invalid ExamMatrixId";
             }
 
-            var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, ExamMatrixId);
-            var existingExamMatrix = await _examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
+            var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, examMatrixId);
+            var existingExamMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (existingExamMatrix == null)
             {
@@ -181,26 +182,26 @@ namespace backend_online_testing.Services
                 .Set(x => x.MatrixStatus, "Unavailable")
                 .Push(x => x.MatrixLogs, new MatrixLogsModel
                 {
-                    MatrixLogUserId = MatrixLogUserId,
+                    MatrixLogUserId = matrixLogUserId,
                     MatrixLogType = "Deleted exam matrix",
-                    MatrixChangeAt = DateTime.UtcNow
+                    MatrixChangeAt = DateTime.UtcNow,
                 });
 
-            var result = await _examMatrixsCollection.UpdateOneAsync(filter, update);
+            var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
             return result.ModifiedCount > 0 ? "Exam matrix marked as unavailable" : "No changes were made";
         }
 
-        //Can use update tags to upadte list tag again
-        public async Task<string> DeleteTag(string ExamMatrixId, string tagName, string MatrixLogUserId)
+        // Can use update tags to upadte list tag again
+        public async Task<string> DeleteTag(string examMatrixId, string tagName, string matrixLogUserId)
         {
-            if (string.IsNullOrEmpty(ExamMatrixId) || string.IsNullOrEmpty(tagName) || string.IsNullOrEmpty(MatrixLogUserId))
+            if (string.IsNullOrEmpty(examMatrixId) || string.IsNullOrEmpty(tagName) || string.IsNullOrEmpty(matrixLogUserId))
             {
                 return "Invalid input data";
             }
 
-            var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, ExamMatrixId);
-            var existingExamMatrix = await _examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
+            var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, examMatrixId);
+            var existingExamMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (existingExamMatrix == null)
             {
@@ -219,12 +220,12 @@ namespace backend_online_testing.Services
 
                 .Push(x => x.MatrixLogs, new MatrixLogsModel
                 {
-                    MatrixLogUserId = MatrixLogUserId,
+                    MatrixLogUserId = matrixLogUserId,
                     MatrixLogType = $"Deleted tag: {tagName}",
-                    MatrixChangeAt = DateTime.UtcNow
+                    MatrixChangeAt = DateTime.UtcNow,
                 });
 
-            var result = await _examMatrixsCollection.UpdateOneAsync(filter, update);
+            var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
             if (result.ModifiedCount > 0)
             {
@@ -245,16 +246,16 @@ namespace backend_online_testing.Services
                     MatrixStatus = "Active",
                     TotalGeneratedExams = 1,
                     SubjectId = "MATH01",
-                    ExamId = ["67b7e27f152621e5bcd6c232"],
+                    ExamId = new List<string> { "67b7e27f152621e5bcd6c232" },
                     MatrixTags = new List<MatrixTagsModel>
                     {
                         new MatrixTagsModel { TagName = "Dễ", QuestionCount = 10, TagScore = 1 },
-                        new MatrixTagsModel { TagName = "Khó", QuestionCount = 5, TagScore = 3 }
+                        new MatrixTagsModel { TagName = "Khó", QuestionCount = 5, TagScore = 3 },
                     },
                     MatrixLogs = new List<MatrixLogsModel>
                     {
-                        new MatrixLogsModel { MatrixLogUserId = "67b7e27f152621e5bcd6c22b", MatrixLogType = "Created exam matrix", MatrixChangeAt = DateTime.UtcNow }
-                    }
+                        new MatrixLogsModel { MatrixLogUserId = "67b7e27f152621e5bcd6c22b", MatrixLogType = "Created exam matrix", MatrixChangeAt = DateTime.UtcNow },
+                    },
                 },
                 new ExamMatrixsModel
                 {
@@ -263,16 +264,16 @@ namespace backend_online_testing.Services
                     MatrixStatus = "Inactive",
                     TotalGeneratedExams = 3,
                     SubjectId = "HIS001",
-                    ExamId = ["67b7e27f152621e5bcd6c233"],
+                    ExamId = new List<string> { "67b7e27f152621e5bcd6c232" },
                     MatrixTags = new List<MatrixTagsModel>
                     {
                         new MatrixTagsModel { TagName = "Trung bình", QuestionCount = 8, TagScore = 2 },
-                        new MatrixTagsModel { TagName = "Rất khó", QuestionCount = 2, TagScore = 5 }
+                        new MatrixTagsModel { TagName = "Rất khó", QuestionCount = 2, TagScore = 5 },
                     },
                     MatrixLogs = new List<MatrixLogsModel>
                     {
-                        new MatrixLogsModel { MatrixLogUserId = "67b7e27f152621e5bcd6c22b", MatrixLogType = "Created exam matrix", MatrixChangeAt = DateTime.UtcNow }
-                    }
+                        new MatrixLogsModel { MatrixLogUserId = "67b7e27f152621e5bcd6c22b", MatrixLogType = "Created exam matrix", MatrixChangeAt = DateTime.UtcNow },
+                    },
                 },
                 new ExamMatrixsModel
                 {
@@ -281,20 +282,20 @@ namespace backend_online_testing.Services
                     MatrixStatus = "Active",
                     TotalGeneratedExams = 7,
                     SubjectId = "GEO001",
-                    ExamId = ["67b7e27f152621e5bcd6c234"],
+                    ExamId = new List<string> { "67b7e27f152621e5bcd6c232" },
                     MatrixTags = new List<MatrixTagsModel>
                     {
                         new MatrixTagsModel { TagName = "Cơ bản", QuestionCount = 12, TagScore = 1 },
-                        new MatrixTagsModel { TagName = "Vận dụng cao", QuestionCount = 3, TagScore = 4 }
+                        new MatrixTagsModel { TagName = "Vận dụng cao", QuestionCount = 3, TagScore = 4 },
                     },
                     MatrixLogs = new List<MatrixLogsModel>
                     {
-                        new MatrixLogsModel { MatrixLogUserId = "67b7e27f152621e5bcd6c22b", MatrixLogType = "Created exam matrix", MatrixChangeAt = DateTime.UtcNow }
-                    }
-                }
+                        new MatrixLogsModel { MatrixLogUserId = "67b7e27f152621e5bcd6c22b", MatrixLogType = "Created exam matrix", MatrixChangeAt = DateTime.UtcNow },
+                    },
+                },
             };
 
-            await _examMatrixsCollection.InsertManyAsync(sampleData);
+            await this._examMatrixsCollection.InsertManyAsync(sampleData);
         }
     }
 }

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34622.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "backend_online_testing", "backend_online_testing.csproj", "{8A9E5124-1B10-40F1-A81F-52569F84BCD7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backend_online_testing", "Backend_online_testing.csproj", "{8A9E5124-1B10-40F1-A81F-52569F84BCD7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

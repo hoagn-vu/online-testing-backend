@@ -1,33 +1,36 @@
-﻿using MongoDB.Driver;
-using backend_online_testing.Models;
-using backend_online_testing.DTO;
-using System.Xml.Linq;
-using MongoDB.Bson.Serialization.IdGenerators;
-namespace backend_online_testing.Services
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Services
 {
+    using System.Xml.Linq;
+    using Backend_online_testing.DTO;
+    using Backend_online_testing.Models;
+    using MongoDB.Bson.Serialization.IdGenerators;
+    using MongoDB.Driver;
+
     public class RoomsService
     {
         private readonly IMongoCollection<RoomsModel> _rooms;
 
         public RoomsService(IMongoDatabase database)
         {
-            _rooms = database.GetCollection<RoomsModel>("Rooms");
+            this._rooms = database.GetCollection<RoomsModel>("Rooms");
         }
 
-        //Get all room
+        // Get all room
         public async Task<List<RoomsModel>> GetAllRooms()
         {
-            return await _rooms.Find(_ => true).ToListAsync();
+            return await this._rooms.Find(_ => true).ToListAsync();
         }
 
-        //Find room using RoomName
+        // Find room using RoomName
         public async Task<List<RoomsModel>> SearchByNameRoom(string name)
         {
             var filter = Builders<RoomsModel>.Filter.Regex(x => x.RoomName, new MongoDB.Bson.BsonRegularExpression(name, "i"));
 
-            return await _rooms.Find(filter).ToListAsync();
+            return await this._rooms.Find(filter).ToListAsync();
         }
-        //Create Room
+
+        // Create Room
         public async Task InsertRoom(RoomDTO roomData)
         {
             var roomLogData = new RoomLogsModel
@@ -38,7 +41,7 @@ namespace backend_online_testing.Services
                 RoomChangeAt = DateTime.UtcNow,
             };
 
-            var lastRoom = await _rooms
+            var lastRoom = await this._rooms
                 .Find(Builders<RoomsModel>.Filter.Empty) // Get all data
                 .Sort(Builders<RoomsModel>.Sort.Descending(r => r.Id)) // Sort ID
                 .Limit(1) // Get First Element
@@ -52,18 +55,18 @@ namespace backend_online_testing.Services
                 RoomName = roomData.RoomName,
                 RoomStatus = roomData.RoomStatus,
                 Capacity = roomData.Capacity,
-                RoomLogs = new List<RoomLogsModel> { roomLogData }
+                RoomLogs = new List<RoomLogsModel> { roomLogData },
             };
 
-            await _rooms.InsertOneAsync(newRoom);
+            await this._rooms.InsertOneAsync(newRoom);
         }
 
-        //Update Room
+        // Update Room
         public async Task UpdateRoom(RoomDTO roomData)
         {
-            //Find room following RoomName
+            // Find room following RoomName
             var filter = Builders<RoomsModel>.Filter.Eq(r => r.RoomName, roomData.RoomName);
-            var room = await _rooms.Find(filter).FirstOrDefaultAsync();
+            var room = await this._rooms.Find(filter).FirstOrDefaultAsync();
 
             if (room == null)
             {
@@ -71,7 +74,7 @@ namespace backend_online_testing.Services
                 return;
             }
 
-            //Get ID Room Log
+            // Get ID Room Log
             string newLogId = (room.RoomLogs.Any() && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
                 ? (lastLogId + 1).ToString()
                 : "1";
@@ -84,46 +87,47 @@ namespace backend_online_testing.Services
                 RoomLogType = "Updated",
             };
 
-            //Add another field
+            // Add another field
             var update = Builders<RoomsModel>.Update
                 .Set(r => r.RoomStatus, roomData.RoomStatus)
                 .Set(r => r.Capacity, roomData.Capacity)
                 .Push(r => r.RoomLogs, roomLogData);
 
-            //Update
-            await _rooms.UpdateOneAsync(filter, update);
+            // Update
+            await this._rooms.UpdateOneAsync(filter, update);
         }
 
-        //Update Room Status - Delete Room
+        // Update Room Status - Delete Room
         public async Task DeleteRoom(DeleteRoomDto roomData)
         {
             var filter = Builders<RoomsModel>.Filter.Eq(r => r.RoomName, roomData.RoomName);
-            var room = await _rooms.Find(filter).FirstOrDefaultAsync();
+            var room = await this._rooms.Find(filter).FirstOrDefaultAsync();
 
             if (room == null)
             {
                 Console.WriteLine("Room not exist");
             }
-
-            //Get ID from LogRoom
-            string newLogId = (room.RoomLogs.Any() && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
-                ? (lastLogId + 1).ToString() : "1";
-
-            var roomLogData = new RoomLogsModel
+            else
             {
-                LogId = newLogId,
-                RoomLogUserId = roomData.UserId,
-                RoomLogType = "Updated",
-                RoomChangeAt = DateTime.Now
-            };
+                // Get ID from LogRoom
+                string newLogId = (room.RoomLogs.Count != 0 && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
+                    ? (lastLogId + 1).ToString() : "1";
+                var roomLogData = new RoomLogsModel
+                {
+                    LogId = newLogId,
+                    RoomLogUserId = roomData.UserId,
+                    RoomLogType = "Updated",
+                    RoomChangeAt = DateTime.Now,
+                };
 
-            //Update file
-            var update = Builders<RoomsModel>.Update
-                .Set(r => r.RoomStatus, "Unavailable/Deleted")
-                .Push(r => r.RoomLogs, roomLogData);
+                // Update file
+                var update = Builders<RoomsModel>.Update
+                    .Set(r => r.RoomStatus, "Unavailable/Deleted")
+                    .Push(r => r.RoomLogs, roomLogData);
 
-            //Update
-            await _rooms.UpdateOneAsync(filter, update);
+                // Update
+                await this._rooms.UpdateOneAsync(filter, update);
+            }
         }
 
         public async Task SeedSampleData()
@@ -136,10 +140,11 @@ namespace backend_online_testing.Services
                     RoomName = "Room A",
                     RoomStatus = "Available",
                     Capacity = 10,
-                    RoomLogs = new List<RoomLogsModel> {
-                        new RoomLogsModel { LogId = "1", RoomLogUserId = "1",RoomChangeAt=DateTime.Parse("2024-02-19"), RoomLogType = "Created" },
-                        new RoomLogsModel { LogId = "2", RoomLogUserId = "1", RoomChangeAt=DateTime.Parse("2024-02-19"), RoomLogType = "Updated" }
-                    }
+                    RoomLogs = new List<RoomLogsModel>
+                    {
+                        new RoomLogsModel { LogId = "1", RoomLogUserId = "1", RoomChangeAt = DateTime.Parse("2024-02-19"), RoomLogType = "Created" },
+                        new RoomLogsModel { LogId = "2", RoomLogUserId = "1", RoomChangeAt = DateTime.Parse("2024-02-19"), RoomLogType = "Updated" },
+                    },
                 },
                 new RoomsModel
                 {
@@ -147,14 +152,15 @@ namespace backend_online_testing.Services
                     RoomName = "Room B",
                     RoomStatus = "Available",
                     Capacity = 15,
-                    RoomLogs = new List<RoomLogsModel> {
-                        new RoomLogsModel { LogId = "1", RoomLogUserId = "1", RoomChangeAt=DateTime.Parse("2024-02-19"), RoomLogType = "Created" },
-                        new RoomLogsModel { LogId = "2", RoomLogUserId = "1", RoomChangeAt=DateTime.Parse("2024-02-19"), RoomLogType = "Updated" }
-                    }
-                }
+                    RoomLogs = new List<RoomLogsModel>
+                    {
+                        new RoomLogsModel { LogId = "1", RoomLogUserId = "1", RoomChangeAt = DateTime.Parse("2024-02-19"), RoomLogType = "Created" },
+                        new RoomLogsModel { LogId = "2", RoomLogUserId = "1", RoomChangeAt = DateTime.Parse("2024-02-19"), RoomLogType = "Updated" },
+                    },
+                },
             };
 
-            await _rooms.InsertManyAsync(sampleRooms);
+            await this._rooms.InsertManyAsync(sampleRooms);
         }
     }
 }

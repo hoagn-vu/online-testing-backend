@@ -1,13 +1,12 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
-namespace backend_online_testing.Models
+﻿namespace Backend_online_testing.Models
 {
+    using MongoDB.Bson;
+    using MongoDB.Bson.Serialization.Attributes;
+
     public class RoomsModel
     {
         [BsonId]
-        //[BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; } = string.Empty;
+        public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("roomStatus")]
         public string? RoomStatus { get; set; } = string.Empty;
@@ -19,7 +18,6 @@ namespace backend_online_testing.Models
         public int? Capacity { get; set; }
 
         [BsonElement("roomLogs")]
-        //public List<RoomLogsModel> RoomLogs { get; set; } = new List<RoomLogsModel>();
-        public List<RoomLogsModel>? RoomLogs { get; set; }
+        public List<RoomLogsModel> RoomLogs { get; set; } = new List<RoomLogsModel>();
     }
 }

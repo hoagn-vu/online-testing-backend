@@ -1,4 +1,4 @@
-﻿namespace backend_online_testing.DTO
+﻿namespace Backend_online_testing.DTO
 {
     public class RoomDTO
     {
