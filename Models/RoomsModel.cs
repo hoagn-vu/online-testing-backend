@@ -6,7 +6,7 @@ namespace backend_online_testing.Models
     public class RoomsModel
     {
         [BsonId]
-        //[BsonRepresentation(BsonType.ObjectId)]
+        [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; } = string.Empty;
 
         [BsonElement("roomStatus")]

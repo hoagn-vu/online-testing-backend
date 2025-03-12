@@ -11,7 +11,7 @@ namespace backend_online_testing.Services
 
         public RoomsService(IMongoDatabase database)
         {
-            _rooms = database.GetCollection<RoomsModel>("Rooms");
+            _rooms = database.GetCollection<RoomsModel>("rooms");
         }
 
         //Get all room
