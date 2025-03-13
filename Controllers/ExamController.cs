@@ -2,6 +2,7 @@
 namespace Backend_online_testing.Controllers
 {
     using Backend_online_testing.DTO;
+    using Backend_online_testing.Dtos;
     using Backend_online_testing.Models;
     using Backend_online_testing.Services;
     using Microsoft.AspNetCore.Http.HttpResults;
@@ -65,15 +66,15 @@ namespace Backend_online_testing.Controllers
         }
 
         // Update exam
-        [HttpPost("update/{id}")]
-        public async Task<IActionResult> UpdateExam(string id, [FromBody] ExamDTO updateExamData)
+        [HttpPost("update/{examId}")]
+        public async Task<IActionResult> UpdateExam(string examId, [FromBody] ExamDTO updateExamData, string userLogId)
         {
-            if (updateExamData == null || string.IsNullOrEmpty(updateExamData.Id))
+            if (updateExamData == null || string.IsNullOrEmpty(examId))
             {
                 return this.BadRequest(new { status = "Error", message = "Invalid exam data provided." });
             }
 
-            bool updateSuccess = await this._examsService.UpdateExam(updateExamData);
+            bool updateSuccess = await this._examsService.UpdateExam(updateExamData, examId, userLogId);
 
             if (updateSuccess)
             {
@@ -84,10 +85,10 @@ namespace Backend_online_testing.Controllers
         }
 
         // Add questions to Exam
-        [HttpPost("{examId}/questions)")]
-        public async Task<IActionResult> AddQuestionExam([FromBody] ExamQuestionDTO addQuestionData)
+        [HttpPost("{examId}/questions")]
+        public async Task<IActionResult> AddQuestionExam(string examId, [FromBody] ExamQuestionDTO addQuestionData, string userLogId)
         {
-            string addStatus = await this._examsService.AddExamQuestion(addQuestionData);
+            string addStatus = await this._examsService.AddExamQuestion(addQuestionData, examId, userLogId);
 
             if (addStatus == "Question added successfully")
             {
@@ -99,9 +100,9 @@ namespace Backend_online_testing.Controllers
 
         // Update a question to exam
         [HttpPost("questions/{questionId}")]
-        public async Task<IActionResult> UpdateQuestionExam(string id, [FromBody] ExamQuestionDTO addQuestionData)
+        public async Task<IActionResult> UpdateQuestionExam(string examId, string questionId, string userLogId, double questionScore)
         {
-            string updateStatus = await this._examsService.UpdateExamQuestion(addQuestionData);
+            string updateStatus = await this._examsService.UpdateExamQuestion(examId, questionId, userLogId, questionScore);
 
             if (updateStatus == "Question updated successfully")
             {
@@ -113,9 +114,9 @@ namespace Backend_online_testing.Controllers
 
         // Delete question in Exam
         [HttpDelete("questions/{questionId}")]
-        public async Task<IActionResult> DeleteQuestionExam(string id, [FromBody] ExamQuestionDTO deleteQuestionData)
+        public async Task<IActionResult> DeleteQuestionExam(string examId, string questionId, string userLogId)
         {
-            string deleteStatus = await this._examsService.DeleteExamQuestion(deleteQuestionData);
+            string deleteStatus = await this._examsService.DeleteExamQuestion(examId, questionId, userLogId);
             if (deleteStatus == "Question deleted successfully")
             {
                 return this.Ok(new { status = "Success", message = "Delete question successfully." });
