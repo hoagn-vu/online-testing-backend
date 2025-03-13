@@ -6,7 +6,9 @@
 
         public string RoomStatus { get; set; } = string.Empty;
 
-        public int Capacity { get; set; }
+        public int RoomCapacity { get; set; }
+
+        public string RoomLocation { get; set; } = string.Empty;
 
         public string UserId { get; set; } = string.Empty;
     }

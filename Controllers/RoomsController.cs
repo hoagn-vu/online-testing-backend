@@ -38,24 +38,48 @@ namespace Backend_online_testing.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDTO)
         {
-            await this._roomsService.InsertRoom(roomDTO);
-            return this.Ok(new { message = "Room created sucessfully" });
+            string result = await this._roomsService.CreateRoom(roomDTO);
+
+            if (result == "Success")
+            {
+                return this.Ok(new { message = "Room created successfully" });
+            }
+            else
+            {
+                return this.BadRequest(new { message = result });
+            }
         }
 
         // Update Room
         [HttpPost("{roomId}")]
-        public async Task<IActionResult> UpdateRoom([FromBody] RoomDTO roomDTO)
+        public async Task<IActionResult> UpdateRoom([FromBody] RoomDTO roomDTO, string roomId)
         {
-            await this._roomsService.UpdateRoom(roomDTO);
-            return this.Ok(new { message = "Room updated successfully" });
+            string result = await this._roomsService.UpdateRoom(roomDTO, roomId);
+
+            if (result == "Success")
+            {
+                return this.Ok(new { message = "Room updated successfully" });
+            }
+            else
+            {
+                return this.BadRequest(new { error = result });
+            }
         }
 
         // Delete Room
-        [HttpDelete("delete-room")]
-        public async Task<IActionResult> DeleteRoom([FromBody] DeleteRoomDto roomDeleteDTO)
+        [HttpDelete("delete-room/{roomId}")]
+        public async Task<IActionResult> DeleteRoom(string roomId, string userLogId)
         {
-            await this._roomsService.DeleteRoom(roomDeleteDTO);
-            return this.Ok(new { message = "Room delete/change status sucessfully" });
+            string result = await this._roomsService.DeleteRoom(roomId, userLogId);
+
+            if (result == "Success")
+            {
+                return this.Ok(new { message = "Success" });
+            }
+            else
+            {
+                return this.BadRequest(new { error = result });
+            }
         }
 
         // Insert sample data
