@@ -1,26 +1,28 @@
-﻿using backend_online_testing.Models;
-using backend_online_testing.Services;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Cryptography.X509Certificates;
-
-namespace backend_online_testing.Controllers
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Controllers
 {
+    using System.Security.Cryptography.X509Certificates;
+    using Backend_online_testing.Models;
+    using Backend_online_testing.Services;
+    using Microsoft.AspNetCore.Mvc;
+
     public class FileManagementController : ControllerBase
     {
         private readonly FileManagementService _fileService;
 
         public FileManagementController(FileManagementService fileService)
         {
-            _fileService = fileService;
+            this._fileService = fileService;
         }
 
         [HttpPost("upload-file-question")]
         public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] string subjectId, [FromQuery] string userLogId)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("Vui lòng chọn file hợp lệ.");
+            {
+                return this.BadRequest("Vui lòng chọn file hợp lệ.");
+            }
 
-            List<QuestionBanksModel> questionBanks;
             string result;
 
             try
@@ -31,34 +33,32 @@ namespace backend_online_testing.Controllers
                     {
                         using (var reader = new StreamReader(stream))
                         {
-                            //questionBanks = await _fileService.ProcessFileTxt(reader, subjectId, userLogId);
-                            result = await _fileService.ProcessFileTxt(reader, subjectId, userLogId);
+                            result = await this._fileService.ProcessFileTxt(reader, subjectId, userLogId);
                         }
                     }
                     else if (file.FileName.EndsWith(".docx"))
                     {
-                        //questionBanks = await _fileService.ProcessFileDocx(stream, subjectId, userLogId);
-                        result = await _fileService.ProcessFileDocx(stream, subjectId, userLogId);
+                        result = await this._fileService.ProcessFileDocx(stream, subjectId, userLogId);
                     }
                     else
                     {
-                        return BadRequest("Chỉ hỗ trợ file .txt và .docx.");
+                        return this.BadRequest("Chỉ hỗ trợ file .txt và .docx.");
                     }
                 }
 
-                //return Ok(new { Message = "Tải lên thành công!", Data = questionBanks });
-                if(result == "Insert question bank successfully")
+                if
+                (result == "Insert question bank successfully")
                 {
-                    return Ok(new { message = "Insert question bank successfully" });
+                    return this.Ok(new { message = "Insert question bank successfully" });
                 }
                 else
                 {
-                    return BadRequest(new {message = result});
+                    return this.BadRequest(new { message = result });
                 }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Đã xảy ra lỗi khi xử lý file.");
+                return this.StatusCode(500, $"Error: {ex.Message}");
             }
         }
 
@@ -75,11 +75,16 @@ namespace backend_online_testing.Controllers
                 await file.CopyToAsync(stream);
                 stream.Position = 0;
 
-                var users = await _fileService.UsersFileExcel(stream, userLogId);
-                return Ok(users);
+                var users = await this._fileService.UsersFileExcel(stream, userLogId);
+
+                if (users == null)
+                {
+                    return this.BadRequest("File is uploaded");
+                }
+
+                return this.Ok(users);
             }
         }
-
 
         [HttpPost("upload-file-user-group")]
         public async Task<IActionResult> UploadFileUserGroup(IFormFile file, [FromQuery] string userLogId)
@@ -94,8 +99,8 @@ namespace backend_online_testing.Controllers
                 await file.CopyToAsync(stream);
                 stream.Position = 0;
 
-                var result = await _fileService.GroupUser(stream, userLogId);
-                return Ok(result);
+                var result = await this._fileService.GroupUser(stream, userLogId);
+                return this.Ok(result);
             }
         }
     }

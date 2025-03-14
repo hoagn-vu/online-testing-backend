@@ -1,84 +1,149 @@
-﻿using backend_online_testing.Dtos;
-using backend_online_testing.Models;
-using DocumentFormat.OpenXml.Packaging;
-using Microsoft.Extensions.Logging.Abstractions;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-
-namespace backend_online_testing.Services
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Services
 {
+    using Backend_online_testing.Dtos;
+    using Backend_online_testing.Models;
+    using MongoDB.Bson;
+    using MongoDB.Driver;
+
     public class SubjectsService
     {
         private readonly IMongoCollection<SubjectsModel> _subjectsCollection;
 
         public SubjectsService(IMongoDatabase database)
         {
-            _subjectsCollection = database.GetCollection<SubjectsModel>("Subjects");
+            this._subjectsCollection = database.GetCollection<SubjectsModel>("Subjects");
         }
-        //Find all
-        public async Task<List<SubjectsModel>> GetAllSubjects()
+
+        // Find all
+        public async Task<object> GetAllSubjects(string keyword, int page, int pageSize)
         {
-            return await _subjectsCollection.Find(_ => true).ToListAsync();
+            var filter = Builders<SubjectsModel>.Filter.Empty;
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                filter = Builders<SubjectsModel>.Filter.Regex(s => s.SubjectName, new BsonRegularExpression(keyword, "i"));
+            }
+
+            // Get all records
+            var totalRecords = await this._subjectsCollection.CountDocumentsAsync(filter);
+
+            // Get neccessary filed
+            var protection = Builders<SubjectsModel>.Projection.Expression(s => new
+            {
+                Id = s.Id,
+                SubjectName = s.SubjectName,
+            });
+
+            var subjects = await this._subjectsCollection
+                .Find(filter)
+                .Project(protection)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            return new
+            {
+                TotalRecords = totalRecords,
+                Subjects = subjects,
+            };
         }
-        //Search by Subject name
+
+        // Search by Subject name
         public async Task<List<SubjectsModel>> SearchBySubjectName(string subjectName)
         {
             var filter = Builders<SubjectsModel>.Filter.Regex(s => s.SubjectName, new MongoDB.Bson.BsonRegularExpression(subjectName, "i"));
-            return await _subjectsCollection.Find(filter).ToListAsync();
-        }
-        //Search by Question Bank Name
-        public async Task<List<SubjectsModel>> SearchByQuestionBankName(string subjectName, string questionBankName)
-        {
-            var filter = Builders<SubjectsModel>.Filter.And(
-                Builders<SubjectsModel>.Filter.Regex(s => s.SubjectName, new MongoDB.Bson.BsonRegularExpression(subjectName, "i")),
-                Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb =>
-                qb.QuestionBankName.ToLower().Contains(questionBankName.ToLower()))
-            );
-
-            var projection = Builders<SubjectsModel>.Projection.Expression(subject => new SubjectsModel
-            {
-                Id = subject.Id,
-                SubjectName = subject.SubjectName,
-                QuestionBanks = subject.QuestionBanks
-                .Where(qb => qb.QuestionBankName.ToLower().Contains(questionBankName.ToLower()))
-                .ToList()
-            });
-
-            return await _subjectsCollection.Find(filter).Project(projection).ToListAsync();
+            return await this._subjectsCollection.Find(filter).ToListAsync();
         }
 
-        public async Task<List<SubjectsModel>> SearchByQuestionName(string subjectName, string questionBankName, string questionName)
+        // Search or Get All Question Bank Name
+        public async Task<SearchQuestionBankResult> SearchByQuestionBankName(string subjectId, string? questionBankName, int page, int pageSize)
         {
-            var filter = Builders<SubjectsModel>.Filter.And(
-                Builders<SubjectsModel>.Filter.Eq(s => s.SubjectName, subjectName), // Khớp 100%
-                Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb =>
-                    qb.QuestionBankName == questionBankName && // Khớp 100%
-                    qb.List.Any(q => q.QuestionText.ToLower().Contains(questionName.ToLower())) // Chứa questionName
-                )
-            );
+            var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
 
-            var projection = Builders<SubjectsModel>.Projection.Expression(subject => new SubjectsModel
+            if (!string.IsNullOrEmpty(questionBankName))
             {
-                Id = subject.Id,
-                SubjectName = subject.SubjectName,
-                QuestionBanks = subject.QuestionBanks
-                .Where(qb => qb.QuestionBankName == questionBankName) // Chỉ lấy đúng QuestionBankName
-                .Select(qb => new QuestionBanksModel
+                filter = Builders<SubjectsModel>.Filter.And(
+                    filter,
+                    Builders<SubjectsModel>.Filter.ElemMatch(
+                        s => s.QuestionBanks,
+                        Builders<QuestionBanksModel>.Filter.Regex(q => q.QuestionBankName, new BsonRegularExpression(questionBankName, "i"))));
+            }
+
+            var subjects = await this._subjectsCollection
+            .Find(filter)
+            .ToListAsync();
+
+            var listQuestionBanks = subjects
+            .SelectMany(s => s.QuestionBanks
+                .Where(qb => string.IsNullOrEmpty(questionBankName) ||
+                                qb.QuestionBankName.ToLower().Contains(questionBankName.ToLower()))
+                .Select(qb => new QuestionBankDto
                 {
+                    SubjectId = s.Id,
                     QuestionBankId = qb.QuestionBankId,
                     QuestionBankName = qb.QuestionBankName,
-                    List = qb.List
-                        .Where(q => q.QuestionText.ToLower().Contains(questionName.ToLower())) // Lọc câu hỏi
-                        .ToList()
-                })
-                .ToList()
-            });
+                }))
+            .ToList();
 
-            return await _subjectsCollection.Find(filter).Project(projection).ToListAsync();
+            int totalCount = listQuestionBanks.Count;
+
+            return new SearchQuestionBankResult
+            {
+                QuestionBanks = listQuestionBanks.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+                TotalCount = totalCount,
+            };
         }
-        //Add subject
+
+        // Get by question
+        public async Task<List<QuestionDto>> SearchByQuestionName(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
+        {
+            var subject = await this._subjectsCollection
+               .Find(s => s.Id == subjectId)
+               .FirstOrDefaultAsync();
+
+            if (subject == null)
+            {
+                return new List<QuestionDto>();
+            }
+
+            var questionBank = subject.QuestionBanks?.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
+            if (questionBank == null || questionBank.List == null)
+            {
+                return new List<QuestionDto>();
+            }
+
+            var filteredQuestions = string.IsNullOrEmpty(keyWord)
+                ? questionBank.List
+                : questionBank.List.Where(q => q.QuestionText != null &&
+                                                q.QuestionText.Contains(keyWord, StringComparison.OrdinalIgnoreCase))
+                                   .ToList();
+
+            var totalRecords = filteredQuestions.Count;
+
+            if (pageSize == 0)
+            {
+                pageSize = totalRecords;
+            }
+
+            var paginatedQuestions = filteredQuestions
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+            var result = new QuestionDto
+            {
+                SubjectId = subject.Id,
+                SubjectName = subject.SubjectName,
+                QuestionBankId = questionBank.QuestionBankId,
+                QuestionBankName = questionBank.QuestionBankName,
+                TotalCount = totalRecords,
+                Questions = paginatedQuestions,
+            };
+
+            return new List<QuestionDto> { result };
+        }
+
+        // Add subject
         public async Task<string> AddSubject(string subjectName)
         {
             try
@@ -86,11 +151,11 @@ namespace backend_online_testing.Services
                 var subject = new SubjectsModel
                 {
                     SubjectName = subjectName,
-                    QuestionBanks = new List<QuestionBanksModel>()
+                    QuestionBanks = new List<QuestionBanksModel>(),
                 };
 
-                await _subjectsCollection.InsertOneAsync(subject);
-                return ("Add subject successfully");
+                await this._subjectsCollection.InsertOneAsync(subject);
+                return "Add subject successfully";
             }
             catch (Exception ex)
             {
@@ -98,12 +163,12 @@ namespace backend_online_testing.Services
             }
         }
 
-        //Add question bank
+        // Add question bank
         public async Task<string> AddQuestionBank(string subjectNameId, string questionBankName)
         {
             try
             {
-                var subject = await _subjectsCollection.Find(s => s.Id == subjectNameId).FirstOrDefaultAsync();
+                var subject = await this._subjectsCollection.Find(s => s.Id == subjectNameId).FirstOrDefaultAsync();
 
                 if (subject == null)
                 {
@@ -113,13 +178,13 @@ namespace backend_online_testing.Services
                 var newQuestionBank = new QuestionBanksModel
                 {
                     QuestionBankName = questionBankName,
-                    List = new List<QuestionListModel>()
+                    List = new List<QuestionListModel>(),
                 };
 
                 subject.QuestionBanks.Add(newQuestionBank);
 
                 var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
-                await _subjectsCollection.UpdateOneAsync(s => s.Id == subjectNameId, update);
+                await this._subjectsCollection.UpdateOneAsync(s => s.Id == subjectNameId, update);
 
                 return $"Add question bank successfully";
             }
@@ -128,16 +193,18 @@ namespace backend_online_testing.Services
                 return $"Error: {ex.Message}";
             }
         }
-        //Add Question List
+
+        // Add Question List
         public async Task<string> AddQuestionsList(string id, string questionBankId, string questionLogUserId, List<SubjectQuestionDto> questionsList)
         {
             try
             {
-                var subject = await _subjectsCollection.Find(s => s.Id == id).FirstOrDefaultAsync();
+                var subject = await this._subjectsCollection.Find(s => s.Id == id).FirstOrDefaultAsync();
                 if (subject == null)
                 {
                     return "Not found subject";
                 }
+
                 var questionBank = subject.QuestionBanks.Find(qb => qb.QuestionBankId == questionBankId);
                 if (questionBank == null)
                 {
@@ -161,14 +228,14 @@ namespace backend_online_testing.Services
                         QuestionStatus = questionDto.QuestionStatus,
                         IsRandomOrder = questionDto.IsRandomOrder,
                         Tags = questionDto.Tags,
-                        QuestionLogs = new List<QuestionLogsModel> { questionAddLog }
+                        QuestionLogs = new List<QuestionLogsModel> { questionAddLog },
                     };
 
                     questionBank.List.Add(newQuestion);
                 }
 
                 var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
-                await _subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
+                await this._subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
 
                 return $"Add question list successfully";
             }
@@ -177,7 +244,8 @@ namespace backend_online_testing.Services
                 return $"Error: Add question failure {ex.Message}";
             }
         }
-        //Update Subject Name
+
+        // Update Subject Name
         public async Task<string> UpdateSubjectName(string id, string subjectName)
         {
             try
@@ -185,12 +253,13 @@ namespace backend_online_testing.Services
                 var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, id);
                 var update = Builders<SubjectsModel>.Update.Set(s => s.SubjectName, subjectName);
 
-                var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+                var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
 
                 if (result.ModifiedCount > 0)
                 {
                     return "Update subject name successfully";
                 }
+
                 return "Subject not found or no changes made";
             }
             catch (Exception ex)
@@ -199,24 +268,24 @@ namespace backend_online_testing.Services
             }
         }
 
-        //Update Question Bank Name
+        // Update Question Bank Name
         public async Task<string> UpdateQuestionBankName(string id, string questionBankId, string questionBankName)
         {
             try
             {
                 var filter = Builders<SubjectsModel>.Filter.And(
                     Builders<SubjectsModel>.Filter.Eq(s => s.Id, id),
-                    Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankId == questionBankId)
-                );
+                    Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankId == questionBankId));
 
                 var update = Builders<SubjectsModel>.Update.Set("QuestionBanks.$.QuestionBankName", questionBankName);
 
-                var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+                var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
 
                 if (result.ModifiedCount > 0)
                 {
                     return "Update question bank name successfully";
                 }
+
                 return "Question bank not found or no changes made";
             }
             catch (Exception ex)
@@ -225,29 +294,36 @@ namespace backend_online_testing.Services
             }
         }
 
-        //Update Question List
+        // Update Question List
         public async Task<string> UpdateQuestion(string id, string questionBankId, string questionId, string userLogId, SubjectQuestionDto questionData)
         {
             try
             {
-                var subject = await _subjectsCollection.Find(s => s.Id == id).FirstOrDefaultAsync();
+                var subject = await this._subjectsCollection.Find(s => s.Id == id).FirstOrDefaultAsync();
                 if (subject == null)
+                {
                     return "Subject not found";
+                }
 
                 // Find question bank
                 var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
                 if (questionBank == null)
+                {
                     return "QuestionBank not found";
+                }
 
                 // Find question
                 var questionIndex = questionBank.List.FindIndex(q => q.QuestionId == questionId);
                 if (questionIndex == -1)
+                {
                     return "Question not found";
+                }
+
                 var updateLog = new QuestionLogsModel
                 {
                     QuestionLogType = "Updated question",
                     QuestionLogUserId = userLogId,
-                    QuestionLogAt = DateTime.Now
+                    QuestionLogAt = DateTime.Now,
                 };
 
                 // Update question data
@@ -257,11 +333,17 @@ namespace backend_online_testing.Services
                 questionBank.List[questionIndex].QuestionText = questionData.QuestionText;
                 questionBank.List[questionIndex].IsRandomOrder = questionData.IsRandomOrder;
                 questionBank.List[questionIndex].Tags = questionData.Tags;
+
+                if (questionBank.List[questionIndex].QuestionLogs == null)
+                {
+                    questionBank.List[questionIndex].QuestionLogs = new List<QuestionLogsModel>();
+                }
+
                 questionBank.List[questionIndex].QuestionLogs.Add(updateLog);
 
                 // Update data
                 var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
-                var result = await _subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
+                var result = await this._subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
 
                 return result.ModifiedCount > 0 ? "Update question successfully" : "Update failed";
             }
@@ -270,7 +352,8 @@ namespace backend_online_testing.Services
                 return $"Error: {ex.Message}";
             }
         }
-        //Delete subject
+
+        // Delete subject
         public async Task<string> DeleteSubject(string subjectId)
         {
             try
@@ -279,7 +362,7 @@ namespace backend_online_testing.Services
 
                 var update = Builders<SubjectsModel>.Update.Set(s => s.SubjectStatus, "Deleted/Disable");
 
-                var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+                var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
 
                 if (result.ModifiedCount > 0)
                 {
@@ -295,25 +378,26 @@ namespace backend_online_testing.Services
                 return $"Error: {ex.Message}";
             }
         }
-        //Delete question bank
+
+        // Delete question bank
         public async Task<string> DeleteQuestionBank(string subjectId, string questionBankId)
         {
             try
             {
                 var filter = Builders<SubjectsModel>.Filter.And(
                     Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
-                    Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankId == questionBankId)
-                );
+                    Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankId == questionBankId));
 
                 var update = Builders<SubjectsModel>.Update
                     .Set("questionBanks.$.questionBankStatus", "Deleted/Disable"); // Hoặc "Disabled"
 
-                var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+                var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
 
                 if (result.ModifiedCount > 0)
                 {
                     return "Delete question bank successfully";
                 }
+
                 return "Not found question bank";
             }
             catch (Exception ex)
@@ -321,11 +405,12 @@ namespace backend_online_testing.Services
                 return $"Error: {ex.Message}";
             }
         }
-        //Delete question in question list
+
+        // Delete question in question list
         public async Task<string> DeleteQuestion(string subjectId, string questionBankId, string questionId, string userLogId)
         {
             var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
-            var subject = await _subjectsCollection.Find(filter).FirstOrDefaultAsync();
+            var subject = await this._subjectsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (subject == null)
             {
@@ -351,11 +436,11 @@ namespace backend_online_testing.Services
             {
                 QuestionLogUserId = userLogId,
                 QuestionLogType = "Disabled",
-                QuestionLogAt = DateTime.UtcNow
+                QuestionLogAt = DateTime.UtcNow,
             });
 
             var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
-            var result = await _subjectsCollection.UpdateOneAsync(filter, update);
+            var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
 
             if (result.ModifiedCount > 0)
             {
@@ -367,7 +452,7 @@ namespace backend_online_testing.Services
             }
         }
 
-        //Insert sample data
+        // Insert sample data
         public async Task InsertSampleDataAsync()
         {
             var sampleData = new List<SubjectsModel>
@@ -388,12 +473,12 @@ namespace backend_online_testing.Services
                                     QuestionType = "Multiple Choice",
                                     QuestionStatus = "Active",
                                     IsRandomOrder = true,
-                                    Tags = new List<string> { "math", "addition"}, // Thêm tags
+                                    Tags = new List<string> { "math", "addition" }, // Thêm tags
                                     Options = new List<OptionsModel>
                                     {
                                         new OptionsModel { OptionText = "3", IsCorrect = false },
                                         new OptionsModel { OptionText = "4", IsCorrect = true },
-                                        new OptionsModel { OptionText = "5", IsCorrect = false }
+                                        new OptionsModel { OptionText = "5", IsCorrect = false },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel> // Thêm logs
                                     {
@@ -401,9 +486,9 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
                                 },
                                 new QuestionListModel
                                 {
@@ -411,12 +496,12 @@ namespace backend_online_testing.Services
                                     QuestionType = "Multiple Choice",
                                     QuestionStatus = "Active",
                                     IsRandomOrder = true,
-                                    Tags = new List<string> { "math", "addition"}, // Thêm tags
+                                    Tags = new List<string> { "math", "addition" }, // Thêm tags
                                     Options = new List<OptionsModel>
                                     {
                                         new OptionsModel { OptionText = "3", IsCorrect = false },
                                         new OptionsModel { OptionText = "4", IsCorrect = false },
-                                        new OptionsModel { OptionText = "5", IsCorrect = true }
+                                        new OptionsModel { OptionText = "5", IsCorrect = true },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel> // Thêm logs
                                     {
@@ -424,9 +509,9 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
                                 },
                                 new QuestionListModel
                                 {
@@ -434,12 +519,12 @@ namespace backend_online_testing.Services
                                     QuestionType = "Multiple Choice",
                                     QuestionStatus = "Active",
                                     IsRandomOrder = true,
-                                    Tags = new List<string> { "math", "addition"}, // Thêm tags
+                                    Tags = new List<string> { "math", "addition" }, // Thêm tags
                                     Options = new List<OptionsModel>
                                     {
                                         new OptionsModel { OptionText = "13", IsCorrect = true },
                                         new OptionsModel { OptionText = "14", IsCorrect = false },
-                                        new OptionsModel { OptionText = "25", IsCorrect = false }
+                                        new OptionsModel { OptionText = "25", IsCorrect = false },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel> // Thêm logs
                                     {
@@ -447,11 +532,11 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
-                                }
-                            }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
+                                },
+                            },
                         },
                         new QuestionBanksModel
                         {
@@ -464,12 +549,12 @@ namespace backend_online_testing.Services
                                     QuestionType = "Multiple Choice",
                                     QuestionStatus = "Active",
                                     IsRandomOrder = true,
-                                    Tags = new List<string> { "math", "addition"}, // Thêm tags
+                                    Tags = new List<string> { "math", "addition" }, // Thêm tags
                                     Options = new List<OptionsModel>
                                     {
                                         new OptionsModel { OptionText = "3", IsCorrect = false },
                                         new OptionsModel { OptionText = "4", IsCorrect = true },
-                                        new OptionsModel { OptionText = "5", IsCorrect = false }
+                                        new OptionsModel { OptionText = "5", IsCorrect = false },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel> // Thêm logs
                                     {
@@ -477,9 +562,9 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
                                 },
                                 new QuestionListModel
                                 {
@@ -487,12 +572,12 @@ namespace backend_online_testing.Services
                                     QuestionType = "Multiple Choice",
                                     QuestionStatus = "Active",
                                     IsRandomOrder = true,
-                                    Tags = new List<string> { "math", "addition"}, // Thêm tags
+                                    Tags = new List<string> { "math", "addition" }, // Thêm tags
                                     Options = new List<OptionsModel>
                                     {
                                         new OptionsModel { OptionText = "3", IsCorrect = false },
                                         new OptionsModel { OptionText = "4", IsCorrect = false },
-                                        new OptionsModel { OptionText = "5", IsCorrect = true }
+                                        new OptionsModel { OptionText = "5", IsCorrect = true },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel> // Thêm logs
                                     {
@@ -500,9 +585,9 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
                                 },
                                 new QuestionListModel
                                 {
@@ -510,12 +595,12 @@ namespace backend_online_testing.Services
                                     QuestionType = "Multiple Choice",
                                     QuestionStatus = "Active",
                                     IsRandomOrder = true,
-                                    Tags = new List<string> { "math", "addition"}, // Thêm tags
+                                    Tags = new List<string> { "math", "addition" }, // Thêm tags
                                     Options = new List<OptionsModel>
                                     {
                                         new OptionsModel { OptionText = "13", IsCorrect = true },
                                         new OptionsModel { OptionText = "14", IsCorrect = false },
-                                        new OptionsModel { OptionText = "25", IsCorrect = false }
+                                        new OptionsModel { OptionText = "25", IsCorrect = false },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel> // Thêm logs
                                     {
@@ -523,11 +608,11 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
-                                }
-                            }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
+                                },
+                            },
                         },
                         new QuestionBanksModel
                         {
@@ -540,12 +625,12 @@ namespace backend_online_testing.Services
                                     QuestionType = "Multiple Choice",
                                     QuestionStatus = "Active",
                                     IsRandomOrder = true,
-                                    Tags = new List<string> { "math", "addition"}, // Thêm tags
+                                    Tags = new List<string> { "math", "addition" }, // Thêm tags
                                     Options = new List<OptionsModel>
                                     {
                                         new OptionsModel { OptionText = "3", IsCorrect = false },
                                         new OptionsModel { OptionText = "4", IsCorrect = true },
-                                        new OptionsModel { OptionText = "5", IsCorrect = false }
+                                        new OptionsModel { OptionText = "5", IsCorrect = false },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel> // Thêm logs
                                     {
@@ -553,9 +638,9 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
                                 },
                                 new QuestionListModel
                                 {
@@ -563,12 +648,12 @@ namespace backend_online_testing.Services
                                     QuestionType = "Multiple Choice",
                                     QuestionStatus = "Active",
                                     IsRandomOrder = true,
-                                    Tags = new List<string> { "math", "addition"}, // Thêm tags
+                                    Tags = new List<string> { "math", "addition" }, // Thêm tags
                                     Options = new List<OptionsModel>
                                     {
                                         new OptionsModel { OptionText = "3", IsCorrect = false },
                                         new OptionsModel { OptionText = "4", IsCorrect = false },
-                                        new OptionsModel { OptionText = "5", IsCorrect = true }
+                                        new OptionsModel { OptionText = "5", IsCorrect = true },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel> // Thêm logs
                                     {
@@ -576,9 +661,9 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
                                 },
                                 new QuestionListModel
                                 {
@@ -586,12 +671,12 @@ namespace backend_online_testing.Services
                                     QuestionType = "Multiple Choice",
                                     QuestionStatus = "Active",
                                     IsRandomOrder = true,
-                                    Tags = new List<string> { "math", "addition"}, // Thêm tags
+                                    Tags = new List<string> { "math", "addition" }, // Thêm tags
                                     Options = new List<OptionsModel>
                                     {
                                         new OptionsModel { OptionText = "13", IsCorrect = true },
                                         new OptionsModel { OptionText = "14", IsCorrect = false },
-                                        new OptionsModel { OptionText = "25", IsCorrect = false }
+                                        new OptionsModel { OptionText = "25", IsCorrect = false },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel> // Thêm logs
                                     {
@@ -599,13 +684,13 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
-                                }
-                            }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
+                                },
+                            },
                         },
-                    }
+                    },
                 },
                 new SubjectsModel
                 {
@@ -628,7 +713,7 @@ namespace backend_online_testing.Services
                                     {
                                         new OptionsModel { OptionText = "3x10^8 m/s", IsCorrect = true },
                                         new OptionsModel { OptionText = "3x10^6 m/s", IsCorrect = false },
-                                        new OptionsModel { OptionText = "3x10^10 m/s", IsCorrect = false }
+                                        new OptionsModel { OptionText = "3x10^10 m/s", IsCorrect = false },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel>
                                     {
@@ -636,9 +721,9 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
                                 },
                                 new QuestionListModel
                                 {
@@ -651,7 +736,7 @@ namespace backend_online_testing.Services
                                     {
                                         new OptionsModel { OptionText = "Newton's First Law", IsCorrect = true },
                                         new OptionsModel { OptionText = "Newton's Second Law", IsCorrect = false },
-                                        new OptionsModel { OptionText = "Newton's Third Law", IsCorrect = false }
+                                        new OptionsModel { OptionText = "Newton's Third Law", IsCorrect = false },
                                     },
                                     QuestionLogs = new List<QuestionLogsModel>
                                     {
@@ -659,17 +744,17 @@ namespace backend_online_testing.Services
                                         {
                                             QuestionLogType = "Created",
                                             QuestionLogUserId = "67be73d4bf5972f0ae87fb37",
-                                            QuestionLogAt = DateTime.UtcNow
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
+                                            QuestionLogAt = DateTime.UtcNow,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             };
-            await _subjectsCollection.InsertManyAsync(sampleData);
+
+            await this._subjectsCollection.InsertManyAsync(sampleData);
         }
     }
 }

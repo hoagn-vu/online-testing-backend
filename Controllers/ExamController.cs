@@ -1,11 +1,13 @@
-﻿using backend_online_testing.DTO;
-using backend_online_testing.Models;
-using backend_online_testing.Services;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-
-namespace backend_online_testing.Controllers
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Controllers
 {
+    using Backend_online_testing.DTO;
+    using Backend_online_testing.Dtos;
+    using Backend_online_testing.Models;
+    using Backend_online_testing.Services;
+    using Microsoft.AspNetCore.Http.HttpResults;
+    using Microsoft.AspNetCore.Mvc;
+
     [Route("api/exams")]
     public class ExamController : ControllerBase
     {
@@ -13,126 +15,121 @@ namespace backend_online_testing.Controllers
 
         public ExamController(ExamsService examsService)
         {
-            _examsService = examsService;
+            this._examsService = examsService;
         }
 
-        //Get all Exam
+        // Get all Exam
         [HttpGet]
-        public async Task<IActionResult> GetAllExam()
+        public async Task<IActionResult> GetAllExam(string? keyword, int page, int pageSize)
         {
-            var exams_list = await _examsService.FindExam();
-            if (exams_list == null || !exams_list.Any())
-            {
-                return NotFound(new { message = "No exam founds" });
-            }
-            return Ok(new { status = "Success", data = exams_list });
+            var (exams, total) = await this._examsService.GetAllExam(keyword, page, pageSize);
+
+            return this.Ok(new { exams, total });
         }
 
-        //Search by name
+        // Search by name
         [HttpPost("search")]
         public async Task<IActionResult> SearchByName(string name, [FromBody] string examName)
         {
-            var exams_list = await _examsService.FindExamByName(examName);
+            var exams_list = await this._examsService.FindExamByName(examName);
             if (exams_list == null || !exams_list.Any())
             {
-                return NotFound(new { message = "No exam founds" });
+                return this.NotFound(new { message = "No exam founds" });
             }
-            return Ok(new { message = "Success", exams_list });
+
+            return this.Ok(new { message = "Success", exams_list });
         }
 
-        //Create Exam
+        // Create Exam
         [HttpPost]
         public async Task<IActionResult> CreateExam([FromBody] ExamDTO createExamData)
         {
             if (createExamData == null)
             {
-                return BadRequest(new { Message = "Invalid request data." });
+                return this.BadRequest(new { Message = "Invalid request data." });
             }
 
-            string result = await _examsService.CreateExam(createExamData);
+            string result = await this._examsService.CreateExam(createExamData);
 
             if (result == "Exam name already exists.")
             {
-                return Conflict(new { Message = result });
+                return this.Conflict(new { Message = result });
             }
             else if (result == "Exam created successfully.")
             {
-                return Ok(new { Message = result });
+                return this.Ok(new { Message = result });
             }
             else
             {
-                return StatusCode(500, new { Message = result });
+                return this.StatusCode(500, new { Message = result });
             }
         }
 
-        //Update exam
-        [HttpPost("update/{id}")]
-        public async Task<IActionResult> UpdateExam(string id, [FromBody] ExamDTO updateExamData)
+        // Update exam
+        [HttpPost("update/{examId}")]
+        public async Task<IActionResult> UpdateExam(string examId, [FromBody] ExamDTO updateExamData, string userLogId)
         {
-            if (updateExamData == null || string.IsNullOrEmpty(updateExamData.Id))
+            if (updateExamData == null || string.IsNullOrEmpty(examId))
             {
-                return BadRequest(new { status = "Error", message = "Invalid exam data provided." });
+                return this.BadRequest(new { status = "Error", message = "Invalid exam data provided." });
             }
 
-            //var existingExam = await _examsService.FindExamById(updateExamData.Id);
-            //if (existingExam == null)
-            //{
-            //    return NotFound(new { status = "Error", message = "Exam not found." });
-            //}
-
-            bool updateSuccess = await _examsService.UpdateExam(updateExamData);
+            bool updateSuccess = await this._examsService.UpdateExam(updateExamData, examId, userLogId);
 
             if (updateSuccess)
             {
-                return Ok(new { status = "Success", message = "Exam updated successfully." });
+                return this.Ok(new { status = "Success", message = "Exam updated successfully." });
             }
 
-            return NotFound(new { status = "Error", message = "Exam update failed." });
+            return this.NotFound(new { status = "Error", message = "Exam update failed." });
         }
 
-        //Add questions to Exam
-        [HttpPost("{examId}/questions)")]
-        public async Task<IActionResult> AddQuestionExam([FromBody] ExamQuestionDTO addQuestionData)
+        // Add questions to Exam
+        [HttpPost("{examId}/questions")]
+        public async Task<IActionResult> AddQuestionExam(string examId, [FromBody] ExamQuestionDTO addQuestionData, string userLogId)
         {
-            string addStatus = await _examsService.AddExamQuestion(addQuestionData);
+            string addStatus = await this._examsService.AddExamQuestion(addQuestionData, examId, userLogId);
 
             if (addStatus == "Question added successfully")
             {
-                return Ok(new { status = "Success", message = "Added question successfully." });
+                return this.Ok(new { status = "Success", message = "Added question successfully." });
             }
-            return BadRequest(new { status = "Failed", message = addStatus });
+
+            return this.BadRequest(new { status = "Failed", message = addStatus });
         }
 
-        //Update a question to exam
+        // Update a question to exam
         [HttpPost("questions/{questionId}")]
-        public async Task<IActionResult> UpdateQuestionExam(string id, [FromBody] ExamQuestionDTO addQuestionData)
+        public async Task<IActionResult> UpdateQuestionExam(string examId, string questionId, string userLogId, double questionScore)
         {
-            string updateStatus = await _examsService.UpdateExamQuestion(addQuestionData);
+            string updateStatus = await this._examsService.UpdateExamQuestion(examId, questionId, userLogId, questionScore);
 
             if (updateStatus == "Question updated successfully")
             {
-                return Ok(new { status = "Success", message = "Update question successfully." });
+                return this.Ok(new { status = "Success", message = "Update question successfully." });
             }
-            return BadRequest(new { status = "Failed", message = updateStatus });
+
+            return this.BadRequest(new { status = "Failed", message = updateStatus });
         }
 
-        //Delete question in Exam
+        // Delete question in Exam
         [HttpDelete("questions/{questionId}")]
-        public async Task<IActionResult> DeleteQuestionExam(string id, [FromBody] ExamQuestionDTO deleteQuestionData)
+        public async Task<IActionResult> DeleteQuestionExam(string examId, string questionId, string userLogId)
         {
-            string deleteStatus = await _examsService.DeleteExamQuestion(deleteQuestionData);
+            string deleteStatus = await this._examsService.DeleteExamQuestion(examId, questionId, userLogId);
             if (deleteStatus == "Question deleted successfully")
             {
-                return Ok(new { status = "Success", message = "Delete question successfully." });
+                return this.Ok(new { status = "Success", message = "Delete question successfully." });
             }
-            return BadRequest(new { status = "Failed", message = deleteStatus });
+
+            return this.BadRequest(new { status = "Failed", message = deleteStatus });
         }
 
-        //Insert data to database
+        // Insert data to database
         [HttpGet("seed")]
         public async Task<IActionResult> SeedData()
         {
-            await _examsService.SeedData();
+            await this._examsService.SeedData();
             return new OkObjectResult(new { status = "Success", message = "Example exam data seeded successfully." });
         }
     }

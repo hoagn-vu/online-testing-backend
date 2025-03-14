@@ -1,15 +1,14 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
-namespace backend_online_testing.Models
+﻿namespace Backend_online_testing.Models
 {
+    using MongoDB.Bson;
+    using MongoDB.Bson.Serialization.Attributes;
+
     public class RoomLogsModel
     {
         [BsonId]
         public string LogId { get; set; } = string.Empty;
 
         [BsonElement("roomLogUserId")]
-        //[BsonRepresentation(BsonType.ObjectId)]
         public string RoomLogUserId { get; set; } = string.Empty;
 
         [BsonElement("roomChangeAt")]
@@ -17,6 +16,5 @@ namespace backend_online_testing.Models
 
         [BsonElement("roomLogsType")]
         public string RoomLogType { get; set; } = string.Empty;
-
     }
 }

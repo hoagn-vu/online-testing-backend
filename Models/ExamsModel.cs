@@ -1,13 +1,13 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
-namespace backend_online_testing.Models
+﻿namespace Backend_online_testing.Models
 {
+    using MongoDB.Bson;
+    using MongoDB.Bson.Serialization.Attributes;
+
     public class ExamsModel
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("examCode")]
         public string? ExamCode { get; set; }
@@ -19,12 +19,12 @@ namespace backend_online_testing.Models
         public string? SubjectId { get; set; }
 
         [BsonElement("questionSet")]
-        public List<QuestionSetsModel> QuestionSet { get; set; }
+        public List<QuestionSetsModel> QuestionSet { get; set; } = new List<QuestionSetsModel>();
 
         [BsonElement("examStatus")]
         public string? ExamStatus { get; set; }
 
-        [BsonElement("examLogs")]
-        public List<ExamLogsModel> ExamLogs { get; set; }
+        [BsonElement("questionBankId")]
+        public string? QuestionBankId { get; set; }
     }
 }

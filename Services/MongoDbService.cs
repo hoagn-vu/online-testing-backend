@@ -1,7 +1,8 @@
-﻿using MongoDB.Driver;
-
-namespace backend_online_testing.Services
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Services
 {
+    using MongoDB.Driver;
+
     public class MongoDbService
     {
         private readonly IConfiguration _configuration;
@@ -9,15 +10,15 @@ namespace backend_online_testing.Services
 
         public MongoDbService(IConfiguration configuration)
         {
-            _configuration = configuration;
+            this._configuration = configuration;
 
-            var connectionString = _configuration.GetConnectionString("");
+            var connectionString = this._configuration.GetConnectionString(" ");
             var mongoUrl = MongoUrl.Create(connectionString);
             var mongoClient = new MongoClient(mongoUrl);
 
-            _database = mongoClient.GetDatabase(mongoUrl.DatabaseName);
+            this._database = mongoClient.GetDatabase(mongoUrl.DatabaseName);
         }
 
-        public IMongoDatabase? Database => _database;
+        public IMongoDatabase? Database => this._database;
     }
 }
