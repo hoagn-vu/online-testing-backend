@@ -1,13 +1,13 @@
-﻿namespace backend_online_testing.DTO
+﻿namespace Backend_online_testing.DTO
 {
-    public class RoomDTO
+    public class RoomDto
     {
         public string RoomName { get; set; } = string.Empty;
 
         public string RoomStatus { get; set; } = string.Empty;
 
-        public int Capacity { get; set; }
+        public int RoomCapacity { get; set; }
 
-        public string UserId { get; set; } = string.Empty;
+        public string RoomLocation { get; set; } = string.Empty;
     }
 }

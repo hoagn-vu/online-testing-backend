@@ -1,21 +1,26 @@
-﻿using backend_online_testing.Models;
-using MongoDB.Bson;
-using MongoDB.Driver;
-
-namespace backend_online_testing.Services
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Services
 {
+    using Backend_online_testing.Models;
+    using MongoDB.Bson;
+    using MongoDB.Driver;
+
     public class AddLogService
     {
         private readonly IMongoCollection<UsersModel> _users;
 
         public AddLogService(IMongoDatabase database)
         {
-            _users = database.GetCollection<UsersModel>("Users");
+            this._users = database.GetCollection<UsersModel>("users");
         }
 
         public async Task AddActionLog(string userId, UserLogsModel logData)
         {
-            var user = await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            var user = await this._users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return;
+            }
 
             logData.LogId = ObjectId.GenerateNewId().ToString();
 
@@ -27,7 +32,7 @@ namespace backend_online_testing.Services
             user.UserLog.Add(logData);
 
             var update = Builders<UsersModel>.Update.Push(u => u.UserLog, logData);
-            await _users.UpdateOneAsync(u => u.Id == userId, update);
+            await this._users.UpdateOneAsync(u => u.Id == userId, update);
         }
     }
 }
