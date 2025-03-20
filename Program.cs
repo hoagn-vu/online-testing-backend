@@ -1,5 +1,7 @@
-using backend_online_testing.Models;
-using backend_online_testing.Services;
+using System.Text;
+using Backend_online_testing.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,26 +21,49 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     return client.GetDatabase("onlineTestingDB");
 });
 
-builder.Services.AddSingleton<RoomService>();
-builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<UsersService>();
 builder.Services.AddSingleton<RoomsService>();
 builder.Services.AddSingleton<ExamsService>();
-builder.Services.AddSingleton<ExamMatrixsService>();
+builder.Services.AddSingleton<ExamMatricesService>();
+builder.Services.AddSingleton<AddLogService>();
+builder.Services.AddSingleton<FileManagementService>();
 builder.Services.AddSingleton<SubjectsService>();
+builder.Services.AddSingleton<OrganizeExamService>();
+
+// JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Secret"] ?? string.Empty);
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+        };
+    });
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
+    options.AddPolicy(
+        "AllowAll",
         policy =>
         {
-            policy.AllowAnyOrigin()    // Cho phép tất cả nguồn (có thể giới hạn bằng .WithOrigins())
-                .AllowAnyMethod()    // Cho phép tất cả phương thức (GET, POST, PUT, DELETE,...)
-                .AllowAnyHeader();   // Cho phép tất cả headers
+            policy.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
         });
 });
 
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -51,11 +76,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseCors("AllowAll");
 
 app.UseRouting();
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

@@ -1,11 +1,15 @@
-﻿using backend_online_testing.Models;
-using backend_online_testing.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
-namespace backend_online_testing.Controllers
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Controllers
 {
-    [Route("api/[controller]")]
+    using Backend_online_testing.Models;
+    using Backend_online_testing.Services;
+    using DocumentFormat.OpenXml.Spreadsheet;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Mvc;
+    using MongoDB.Bson;
+    using MongoDB.Driver;
+
+    [Route("api/users")]
     [ApiController]
     public class UsersController : ControllerBase
     {
@@ -13,47 +17,68 @@ namespace backend_online_testing.Controllers
 
         public UsersController(UsersService userService)
         {
-            _userService = userService;
+            this._userService = userService;
         }
 
-        //Get method
+        // Get all user
         [HttpGet]
-        public async Task<IEnumerable<UsersModel>> Get()
+        public async Task<IActionResult> Get(string? keyword, int page, int pageSize)
         {
-            return await _userService.GetAllUsers();
+            var (users, total) = await this._userService.GetAllUsers(keyword, page, pageSize);
+            return this.Ok(new { users, total });
         }
 
-        //Get method with ID
-        [HttpGet("getUserById/{id}")]
+        // Get method with ID
+        [HttpGet("{id}")]
         public async Task<ActionResult<UsersModel?>> GetById(string id)
         {
-            return await _userService.GetUserById(id);
+            return await this._userService.GetUserById(id);
         }
 
-        //Update Method
-        [HttpPost("updateUserById/{id}")]
+        // Add on User
+        [HttpPost]
+        public async Task<ActionResult<UsersModel>> AddUser(UsersModel userData, string userLogId)
+        {
+            if (userData == null)
+            {
+                return this.BadRequest(new { message = "Invalid data" });
+            }
+
+            var result = await this._userService.AddUser(userData, userLogId);
+
+            if (result == "User is added successfully")
+            {
+                return this.Ok("User is add successfully");
+            }
+
+            return this.BadRequest(new { message = "Error: " + (result ?? "Unknown error") });
+        }
+
+        // Update Method
+        [HttpPost("update/{id}")]
         public async Task<ActionResult> UpdateUserById(string id, [FromBody] UsersModel updateUser)
         {
             if (updateUser == null)
             {
-                return BadRequest(new { message = "Invalid data" });
+                return this.BadRequest(new { message = "Invalid data" });
             }
 
-            bool isUpdated = await _userService.UpdateUserbByID(id, updateUser);
+            bool isUpdated = await this._userService.UpdateUserbByID(id, updateUser);
 
             if (!isUpdated)
             {
-                return NotFound(new { message = "User not found or not changes" });
+                return this.NotFound(new { message = "User not found or not changes" });
             }
-            return Ok(new { message = "User updated sucessfully" });
+
+            return this.Ok(new { message = "User updated sucessfully" });
         }
 
-        //Insert sample data
+        // Insert sample data
         [HttpPost("seed")]
         public async Task<IActionResult> SeedData()
         {
-            await _userService.InsertSampleData();
-            return Ok("Sample data inserted successfully");
+            await this._userService.InsertSampleData();
+            return this.Ok("Sample data inserted successfully");
         }
     }
 }

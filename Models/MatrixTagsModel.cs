@@ -1,12 +1,12 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
-namespace backend_online_testing.Models
+﻿namespace Backend_online_testing.Models
 {
+    using MongoDB.Bson;
+    using MongoDB.Bson.Serialization.Attributes;
+
     public class MatrixTagsModel
     {
         [BsonElement("tagName")]
-        public string TagName { get; set; }
+        public string TagName { get; set; } = string.Empty;
 
         [BsonElement("questionCount")]
         public int QuestionCount { get; set; }

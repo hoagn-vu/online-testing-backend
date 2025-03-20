@@ -1,129 +1,150 @@
-﻿using MongoDB.Driver;
-using backend_online_testing.Models;
-using backend_online_testing.DTO;
-using System.Xml.Linq;
-using MongoDB.Bson.Serialization.IdGenerators;
-namespace backend_online_testing.Services
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Services
 {
+    using System.Xml.Linq;
+    using Backend_online_testing.DTO;
+    using Backend_online_testing.Models;
+    using MongoDB.Bson;
+    using MongoDB.Bson.Serialization.IdGenerators;
+    using MongoDB.Driver;
+
     public class RoomsService
     {
         private readonly IMongoCollection<RoomsModel> _rooms;
 
         public RoomsService(IMongoDatabase database)
         {
-            _rooms = database.GetCollection<RoomsModel>("Rooms");
+            _rooms = database.GetCollection<RoomsModel>("rooms");
         }
 
-        //Get all room
-        public async Task<List<RoomsModel>> GetAllRooms()
+        // Get all room
+        public async Task<(List<RoomsModel>, long)> GetRooms(string? keyword, int page, int pageSize)
         {
-            return await _rooms.Find(_ => true).ToListAsync();
+            var filter = Builders<RoomsModel>.Filter.Ne(r => r.RoomStatus, "deleted");
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                filter = Builders<RoomsModel>.Filter.Regex(r => r.RoomName, new BsonRegularExpression(keyword, "i"));
+                // filter = Builders<RoomsModel>.Filter.Or(
+                //     Builders<RoomsModel>.Filter.Regex(u => u.RoomName, new BsonRegularExpression(keyword, "i")),
+                //     Builders<RoomsModel>.Filter.Regex(u => u.RoomLocation, new BsonRegularExpression(keyword, "i")),
+                //     Builders<RoomsModel>.Filter.Regex(u => u.RoomStatus, new BsonRegularExpression(keyword, "i")));
+            }
+
+            var totalCount = await _rooms.CountDocumentsAsync(filter);
+
+            var rooms = await _rooms
+            .Find(filter)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
+
+            return (rooms, totalCount);
         }
 
-        //Find room using RoomName
+        // Find room using RoomName
         public async Task<List<RoomsModel>> SearchByNameRoom(string name)
         {
             var filter = Builders<RoomsModel>.Filter.Regex(x => x.RoomName, new MongoDB.Bson.BsonRegularExpression(name, "i"));
 
-            return await _rooms.Find(filter).ToListAsync();
+            return await this._rooms.Find(filter).ToListAsync();
         }
-        //Create Room
-        public async Task InsertRoom(RoomDTO roomData)
+
+        // Create Room
+        public async Task<string> CreateRoom(RoomDto roomData)
         {
-            var roomLogData = new RoomLogsModel
+            if (string.IsNullOrWhiteSpace(roomData.RoomName))
             {
-                LogId = "1",
-                RoomLogUserId = roomData.UserId,
-                RoomLogType = "Created",
-                RoomChangeAt = DateTime.UtcNow,
-            };
+                return "Room name cannot be empty.";
+            }
 
-            var lastRoom = await _rooms
-                .Find(Builders<RoomsModel>.Filter.Empty) // Get all data
-                .Sort(Builders<RoomsModel>.Sort.Descending(r => r.Id)) // Sort ID
-                .Limit(1) // Get First Element
-                .FirstOrDefaultAsync();
-
-            string newId = (int.TryParse(lastRoom?.Id, out int lastId) ? lastId + 1 : 1).ToString();
+            var newId = ObjectId.GenerateNewId().ToString();
 
             var newRoom = new RoomsModel
             {
                 Id = newId,
                 RoomName = roomData.RoomName,
-                RoomStatus = roomData.RoomStatus,
-                Capacity = roomData.Capacity,
-                RoomLogs = new List<RoomLogsModel> { roomLogData }
+                RoomStatus = "Active",
+                RoomCapacity = roomData.RoomCapacity,
+                RoomLocation = roomData.RoomLocation,
             };
 
-            await _rooms.InsertOneAsync(newRoom);
+            await this._rooms.InsertOneAsync(newRoom);
+
+            var insertedRoom = await this._rooms.Find(r => r.Id == newId).FirstOrDefaultAsync();
+            return insertedRoom != null ? "Success" : "Failed to create room.";
         }
 
-        //Update Room
-        public async Task UpdateRoom(RoomDTO roomData)
+        // Update Room
+        public async Task<string> UpdateRoom(RoomDto roomData, string roomId)
         {
-            //Find room following RoomName
-            var filter = Builders<RoomsModel>.Filter.Eq(r => r.RoomName, roomData.RoomName);
-            var room = await _rooms.Find(filter).FirstOrDefaultAsync();
+            // Find room following RoomName
+            var filter = Builders<RoomsModel>.Filter.Eq(r => r.Id, roomId);
+            var room = await this._rooms.Find(filter).FirstOrDefaultAsync();
 
             if (room == null)
             {
-                Console.WriteLine("Room Not Found!");
-                return;
+                return "Room Not Found!";
             }
 
-            //Get ID Room Log
-            string newLogId = (room.RoomLogs.Any() && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
-                ? (lastLogId + 1).ToString()
-                : "1";
-
-            var roomLogData = new RoomLogsModel
-            {
-                LogId = newLogId,
-                RoomLogUserId = roomData.UserId,
-                RoomChangeAt = DateTime.UtcNow,
-                RoomLogType = "Updated",
-            };
-
-            //Add another field
+            // Add another field
             var update = Builders<RoomsModel>.Update
                 .Set(r => r.RoomStatus, roomData.RoomStatus)
-                .Set(r => r.Capacity, roomData.Capacity)
-                .Push(r => r.RoomLogs, roomLogData);
+                .Set(r => r.RoomCapacity, roomData.RoomCapacity)
+                .Set(r => r.RoomName, roomData.RoomName)
+                .Set(r => r.RoomLocation, roomData.RoomLocation);
 
-            //Update
-            await _rooms.UpdateOneAsync(filter, update);
+            // Update
+            var result = await this._rooms.UpdateOneAsync(filter, update);
+
+            if (result.MatchedCount > 0 && result.ModifiedCount > 0)
+            {
+                return "Success";
+            }
+            else if (result.MatchedCount > 0)
+            {
+                return "No changes made";
+            }
+            else
+            {
+                return "Update Failed";
+            }
         }
 
-        //Update Room Status - Delete Room
-        public async Task DeleteRoom(DeleteRoomDto roomData)
+        // Update Room Status - Delete Room
+        public async Task<string> DeleteRoom(string roomId, string userLogId)
         {
-            var filter = Builders<RoomsModel>.Filter.Eq(r => r.RoomName, roomData.RoomName);
-            var room = await _rooms.Find(filter).FirstOrDefaultAsync();
+            var filter = Builders<RoomsModel>.Filter.Eq(r => r.Id, roomId);
+            var room = await this._rooms.Find(filter).FirstOrDefaultAsync();
 
             if (room == null)
             {
-                Console.WriteLine("Room not exist");
+                return "Room Not Found!";
             }
-
-            //Get ID from LogRoom
-            string newLogId = (room.RoomLogs.Any() && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
-                ? (lastLogId + 1).ToString() : "1";
-
-            var roomLogData = new RoomLogsModel
+            else
             {
-                LogId = newLogId,
-                RoomLogUserId = roomData.UserId,
-                RoomLogType = "Updated",
-                RoomChangeAt = DateTime.Now
-            };
+                // Get ID from LogRoom
+                // string newLogId = (room.RoomLogs.Count != 0 && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
+                //     ? (lastLogId + 1).ToString() : "1";
+                // var roomLogData = new RoomLogsModel
+                // {
+                //    LogId = newLogId,
+                //    RoomLogUserId = roomData.UserId,
+                //    RoomLogType = "Updated",
+                //    RoomChangeAt = DateTime.Now,
+                // };
 
-            //Update file
-            var update = Builders<RoomsModel>.Update
-                .Set(r => r.RoomStatus, "Unavailable/Deleted")
-                .Push(r => r.RoomLogs, roomLogData);
+                // Update file
+                var update = Builders<RoomsModel>.Update
+                    .Set(r => r.RoomStatus, "Disable");
 
-            //Update
-            await _rooms.UpdateOneAsync(filter, update);
+                // .Push(r => r.RoomLogs, roomLogData);
+
+                // Update
+                var result = await this._rooms.UpdateOneAsync(filter, update);
+
+                return result.ModifiedCount > 0 ? "Success" : "Disable room error";
+            }
         }
 
         public async Task SeedSampleData()
@@ -132,29 +153,23 @@ namespace backend_online_testing.Services
             {
                 new RoomsModel
                 {
-                    Id = "1",
+                    Id = ObjectId.GenerateNewId().ToString(),
                     RoomName = "Room A",
-                    RoomStatus = "Available",
-                    Capacity = 10,
-                    RoomLogs = new List<RoomLogsModel> {
-                        new RoomLogsModel { LogId = "1", RoomLogUserId = "1",RoomChangeAt=DateTime.Parse("2024-02-19"), RoomLogType = "Created" },
-                        new RoomLogsModel { LogId = "2", RoomLogUserId = "1", RoomChangeAt=DateTime.Parse("2024-02-19"), RoomLogType = "Updated" }
-                    }
+                    RoomStatus = "available",
+                    RoomCapacity = 10,
+                    RoomLocation = "Cơ sở 1",
                 },
                 new RoomsModel
                 {
-                    Id = "2",
+                    Id = ObjectId.GenerateNewId().ToString(),
                     RoomName = "Room B",
-                    RoomStatus = "Available",
-                    Capacity = 15,
-                    RoomLogs = new List<RoomLogsModel> {
-                        new RoomLogsModel { LogId = "1", RoomLogUserId = "1", RoomChangeAt=DateTime.Parse("2024-02-19"), RoomLogType = "Created" },
-                        new RoomLogsModel { LogId = "2", RoomLogUserId = "1", RoomChangeAt=DateTime.Parse("2024-02-19"), RoomLogType = "Updated" }
-                    }
-                }
+                    RoomStatus = "available",
+                    RoomCapacity = 15,
+                    RoomLocation = "Cơ sở 2",
+                },
             };
 
-            await _rooms.InsertManyAsync(sampleRooms);
+            await this._rooms.InsertManyAsync(sampleRooms);
         }
     }
 }

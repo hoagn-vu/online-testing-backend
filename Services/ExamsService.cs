@@ -1,54 +1,107 @@
-﻿using backend_online_testing.DTO;
-using backend_online_testing.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
-using MongoDB.Driver;
-
-namespace backend_online_testing.Services
+﻿namespace Backend_online_testing.Services
 {
+    using Backend_online_testing.DTO;
+    using Backend_online_testing.Models;
+    using Backend_online_testing.Services;
+    using DocumentFormat.OpenXml.Spreadsheet;
+    using Microsoft.AspNetCore.Http.HttpResults;
+    using Microsoft.AspNetCore.Mvc;
+    using MongoDB.Bson;
+    using MongoDB.Driver;
+
     public class ExamsService
     {
-        public readonly IMongoCollection<ExamsModel> _examsCollection;
+        private readonly IMongoCollection<ExamsModel> _examsCollection;
+        private readonly IMongoCollection<SubjectsModel> _subjectsCollection;
 
         public ExamsService(IMongoDatabase database)
         {
-            _examsCollection = database.GetCollection<ExamsModel>("Exams");
+            this._examsCollection = database.GetCollection<ExamsModel>("exams");
+            this._subjectsCollection = database.GetCollection<SubjectsModel>("subjects");
         }
-        //Find all document
-        public async Task<List<ExamsModel>> FindExam()
+        
+        // Find all document
+        public async Task<(List<ExamResponseDto>, long)> GetExams(string? keyword, int page, int pageSize)
         {
-            return await _examsCollection.Find(_ => true).ToListAsync();
+            var filter = Builders<ExamsModel>.Filter.Ne(ex => ex.ExamStatus, "deleted");
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                // filter = Builders<ExamsModel>.Filter.Regex(ex => ex.ExamName, new BsonRegularExpression(keyword, "i"));
+                filter = Builders<ExamsModel>.Filter.Or(
+                    Builders<ExamsModel>.Filter.Regex(ex => ex.ExamName, new BsonRegularExpression(keyword, "i")),
+                    Builders<ExamsModel>.Filter.Regex(ex => ex.ExamCode, new BsonRegularExpression(keyword, "i")));
+            }
+            
+            var exams = await _examsCollection
+                .Find(filter)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+            
+            var totalCount = await _examsCollection.CountDocumentsAsync(filter);
+
+            var examResponseList = new List<ExamResponseDto>();
+
+            foreach (var exam in exams)
+            {
+                // Lấy thông tin môn học
+                var subject = await _subjectsCollection.Find(s => s.Id == exam.SubjectId).FirstOrDefaultAsync();
+                var subjectName = subject?.SubjectName ?? string.Empty;
+
+                // Lấy thông tin ngân hàng câu hỏi từ danh sách QuestionBanks trong Subject
+                var questionBankName = string.Empty;
+                if (subject != null)
+                {
+                    var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
+                    questionBankName = questionBank?.QuestionBankName ?? string.Empty;
+                }
+
+                examResponseList.Add(new ExamResponseDto
+                {
+                    Id = exam.Id,
+                    ExamCode = exam.ExamCode,
+                    ExamName = exam.ExamName,
+                    SubjectId = exam.SubjectId,
+                    SubjectName = subjectName,
+                    ExamStatus = exam.ExamStatus,
+                    QuestionBankId = exam.QuestionBankId,
+                    QuestionBankName = questionBankName
+                });
+            }
+
+            return (examResponseList, totalCount);
         }
 
-        //Find Exam using Name
+
+        // Find Exam using Name
         public async Task<List<ExamsModel>> FindExamByName(string examName)
         {
             if (string.IsNullOrEmpty(examName))
+            {
                 return new List<ExamsModel>();
+            }
 
             var filter = Builders<ExamsModel>.Filter.Regex(e => e.ExamName, new BsonRegularExpression(examName, "i"));
 
-            return await _examsCollection.Find(filter).ToListAsync();
+            return await this._examsCollection.Find(filter).ToListAsync();
         }
 
-        //Create Exam 
-        public async Task<string> CreateExam(ExamDTO createExamData)
+        // Create Exam
+        public async Task<string> CreateExam(ExamDto createExamData)
         {
-            //Check name exam is existed
-            var existingExam = await _examsCollection.Find(e => e.ExamName == createExamData.ExamName).FirstOrDefaultAsync();
+            // Check name exam is existed
+            var existingExam = await this._examsCollection.Find(e => e.ExamName == createExamData.ExamName).FirstOrDefaultAsync();
             if (existingExam != null)
             {
                 return "Exam name already exists.";
             }
 
-            var logCreateData = new ExamLogsModel
-            {
-                ExamLogUserId = createExamData.ExamLogUserId,
-                ExamLogType = "Created",
-                ExamChangeAt = DateTime.Now
-            };
-
+            // var logCreateData = new ExamLogsModel
+            // {
+            //    ExamLogUserId = createExamData.ExamLogUserId,
+            //    ExamLogType = "Created",
+            //    ExamChangeAt = DateTime.Now,
+            // };
             var newExamData = new ExamsModel
             {
                 Id = ObjectId.GenerateNewId().ToString(),
@@ -56,150 +109,145 @@ namespace backend_online_testing.Services
                 ExamName = createExamData.ExamName,
                 SubjectId = createExamData.SubjectId,
                 ExamStatus = createExamData.ExamStatus,
+                QuestionBankId = createExamData.QuestionBankId,
                 QuestionSet = new List<QuestionSetsModel>(),
-                ExamLogs = new List<ExamLogsModel> { logCreateData }
+
+                // ExamLogs = new List<ExamLogsModel> { logCreateData },
             };
+
             try
             {
-                await _examsCollection.InsertOneAsync(newExamData);
+                await this._examsCollection.InsertOneAsync(newExamData);
                 return "Exam created successfully.";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error inserting exam: {ex.Message}");
-                return "Failed to create exam.";
+                // Console.WriteLine($"Error inserting exam: {ex.Message}");
+                return $"Failed to create exam: {ex.Message}";
             }
-
         }
 
-        //Update Exam(Not include question)
-        public async Task<bool> UpdateExam(ExamDTO updateExamData)
+        // Update Exam(Not include question)
+        public async Task<bool> UpdateExam(ExamDto updateExamData, string examId, string userLogId)
         {
-            var logUpdateData = new ExamLogsModel
-            {
-                ExamLogUserId = updateExamData.ExamLogUserId,
-                ExamLogType = "Update",
-                ExamChangeAt = DateTime.Now
-            };
-
-            var filter = Builders<ExamsModel>.Filter.Eq(e => e.Id, updateExamData.Id);
+            // var logUpdateData = new ExamLogsModel
+            // {
+            //    ExamLogUserId = userLogId,
+            //    ExamLogType = "Update",
+            //    ExamChangeAt = DateTime.Now,
+            // };
+            var filter = Builders<ExamsModel>.Filter.Eq(e => e.Id, examId);
             var update = Builders<ExamsModel>.Update
                 .Set(e => e.ExamName, updateExamData.ExamName)
                 .Set(e => e.ExamCode, updateExamData.ExamCode)
                 .Set(e => e.SubjectId, updateExamData.SubjectId)
                 .Set(e => e.ExamStatus, updateExamData.ExamStatus)
-                .Push(e => e.ExamLogs, logUpdateData);
-            //.PushEach(e => e.QuestionSet, updateExamData.QuestionSets);
+                .Set(e => e.QuestionBankId, updateExamData.QuestionBankId);
 
-            var result = await _examsCollection.UpdateOneAsync(filter, update);
+            // .Push(e => e.ExamLogs, logUpdateData);
+            var result = await this._examsCollection.UpdateOneAsync(filter, update);
             return result.ModifiedCount > 0;
         }
 
-        //Add question one/list
-        public async Task<string> AddExamQuestion([FromBody] ExamQuestionDTO questionData)
+        // Add question one/list
+        public async Task<string> AddExamQuestion([FromBody] ExamQuestionDTO questionData, string examId, string userLogId)
         {
-            if (questionData == null || string.IsNullOrEmpty(questionData.Id) || questionData.QuestionSets == null || questionData.QuestionSets.Count == 0)
-                return "Invalid data";
-
-            var filter = Builders<ExamsModel>.Filter.Eq(e => e.Id, questionData.Id);
-
-            var updateQuestions = Builders<ExamsModel>.Update.PushEach(e => e.QuestionSet, questionData.QuestionSets);
-
-            var result = await _examsCollection.UpdateOneAsync(filter, updateQuestions);
-
-            if (result.ModifiedCount > 0)
+            if (questionData == null)
             {
-                var createQuestionLog = new ExamLogsModel
-                {
-                    ExamLogUserId = questionData.ExamLogUserId,
-                    ExamLogType = "Create Question",
-                    ExamChangeAt = DateTime.Now
-                };
-
-                var addLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, createQuestionLog);
-                var logResult = await _examsCollection.UpdateOneAsync(filter, addLog);
-
-                return logResult.ModifiedCount > 0 ? "Question added successfully" : "Failure update log";
+                return "Invalid data";
             }
 
-            return "Failure create question";
+            var filter = Builders<ExamsModel>.Filter.Eq(e => e.Id, examId);
+            var exam = await this._examsCollection.Find(filter).FirstOrDefaultAsync();
+
+            if (exam == null)
+            {
+                return "Exam not found";
+            }
+
+            var existingQuestions = exam.QuestionSet.Select(q => q.QuestionId).ToHashSet();
+            var newQuestions = questionData.QuestionSets.Where(q => !existingQuestions.Contains(q.QuestionId)).ToList();
+
+            if (!newQuestions.Any())
+            {
+                return "Question already exists";
+            }
+
+            var updateQuestions = Builders<ExamsModel>.Update.PushEach(e => e.QuestionSet, newQuestions);
+            var result = await this._examsCollection.UpdateOneAsync(filter, updateQuestions);
+
+            return result.ModifiedCount > 0 ? "Question added successfully" : "Failure create question";
         }
 
-        //Update Question
-        public async Task<string> UpdateExamQuestion([FromBody] ExamQuestionDTO questionData)
+        // Update Question
+        public async Task<string> UpdateExamQuestion(string examId, string questionId, string userLogId, double questionScore)
         {
-            if (questionData == null || questionData.Id == null || questionData.QuestionSets == null || questionData.QuestionSets.Count == 0)
-                return "Invalid data";
+            // if (questionData == null || examId == null || questionData.QuestionSets == null || questionData.QuestionSets.Count == 0)
+            // {
+            //    return "Invalid data";
+            // }
 
-            var questionSet = questionData.QuestionSets.First();
-            var questionId = questionSet.QuestionId;
-            var questionScore = questionSet.QuestionScore;
-
+            // var questionSet = questionData.QuestionSets.First();
+            // var questionScore = questionSet.QuestionScore;
             var filter = Builders<ExamsModel>.Filter.And(
-                Builders<ExamsModel>.Filter.Eq(e => e.Id, questionData.Id),
-                Builders<ExamsModel>.Filter.ElemMatch(e => e.QuestionSet, qs => qs.QuestionId == questionId)
-            );
+                Builders<ExamsModel>.Filter.Eq(e => e.Id, examId),
+                Builders<ExamsModel>.Filter.ElemMatch(e => e.QuestionSet, qs => qs.QuestionId == questionId));
 
             var update = Builders<ExamsModel>.Update.Set("QuestionSet.$.QuestionScore", questionScore);
 
-            var result = await _examsCollection.UpdateOneAsync(filter, update);
+            var result = await this._examsCollection.UpdateOneAsync(filter, update);
 
-            var updateQuestionLog = new ExamLogsModel
-            {
-                ExamLogUserId = questionData.ExamLogUserId,
-                ExamLogType = "Update Question",
-                ExamChangeAt = DateTime.Now
-            };
-
+            // var updateQuestionLog = new ExamLogsModel
+            // {
+            //    ExamLogUserId = userLogId,
+            //    ExamLogType = "Update Question",
+            //    ExamChangeAt = DateTime.Now,
+            // };
             if (result.ModifiedCount > 0)
             {
-                var addLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, updateQuestionLog);
-
-                var logResult = await _examsCollection.UpdateOneAsync(filter, addLog);
-
-                return logResult.ModifiedCount > 0 ? "Question updated successfully" : "Failure update log";
+                // var addLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, updateQuestionLog);
+                // var logResult = await this._examsCollection.UpdateOneAsync(filter, addLog);
+                return "Question updated successfully";
             }
+
             return "Question not found";
         }
 
-        //Delete Question in Exam
-        public async Task<string> DeleteExamQuestion([FromBody] ExamQuestionDTO questionData)
+        // Delete Question in Exam
+        public async Task<string> DeleteExamQuestion(string examId, string questionId, string userLogId)
         {
-            if (questionData == null || questionData.Id == null || questionData.QuestionSets == null || questionData.QuestionSets.Count == 0)
-                return "Invalid data";
-            var question = questionData.QuestionSets.First();
-            var questionId = question.QuestionId;
-
+            // if (questionData == null || examId == null || questionData.QuestionSets == null || questionData.QuestionSets.Count == 0)
+            // {
+            //    return "Invalid data";
+            // }
+            // var question = questionData.QuestionSets.First();
             var filter = Builders<ExamsModel>.Filter.And(
-                Builders<ExamsModel>.Filter.Eq(e => e.Id, questionData.Id),
-                Builders<ExamsModel>.Filter.ElemMatch(e => e.QuestionSet, qs => qs.QuestionId == questionId)
-            );
+                Builders<ExamsModel>.Filter.Eq(e => e.Id, examId),
+                Builders<ExamsModel>.Filter.ElemMatch(e => e.QuestionSet, qs => qs.QuestionId == questionId));
 
             var delete = Builders<ExamsModel>.Update.PullFilter(e => e.QuestionSet, qs => qs.QuestionId == questionId);
 
-            var result = await _examsCollection.UpdateOneAsync(filter, delete);
+            var result = await this._examsCollection.UpdateOneAsync(filter, delete);
 
-            var deleteQuestionLog = new ExamLogsModel
-            {
-                ExamLogUserId = questionData.ExamLogUserId,
-                ExamLogType = "Delete Question",
-                ExamChangeAt = DateTime.Now
-            };
-
+            // var deleteQuestionLog = new ExamLogsModel
+            // {
+            //    ExamLogUserId = userLogId,
+            //    ExamLogType = "Delete Question",
+            //    ExamChangeAt = DateTime.Now,
+            // };
             if (result.ModifiedCount > 0)
             {
-                var filterExam = Builders<ExamsModel>.Filter.Eq(e => e.Id, questionData.Id);
+                // var filterExam = Builders<ExamsModel>.Filter.Eq(e => e.Id, examId);
 
-                var updateLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, deleteQuestionLog);
-
-                var logResult = await _examsCollection.UpdateOneAsync(filterExam, updateLog);
-
-                return logResult.ModifiedCount > 0 ? "Question deleted successfully" : "Failure update log";
+                // var updateLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, deleteQuestionLog);
+                // var logResult = await this._examsCollection.UpdateOneAsync(filterExam, updateLog);
+                return "Question deleted successfully";
             }
+
             return "Question not found or already deleted";
         }
 
-        //Insert example data
+        // Insert example data
         public async Task SeedData()
         {
             var exampleExams = new List<ExamsModel>
@@ -209,52 +257,43 @@ namespace backend_online_testing.Services
                     ExamCode = "EX123",
                     ExamName = "Math xam 1",
                     SubjectId = "MATH001",
+                    QuestionBankId = "67ce3d5ac07467bf499bfdfe",
                     QuestionSet = new List<QuestionSetsModel>
                     {
                         new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 5.0 },
-                        new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 3.0 }
+                        new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 3.0 },
                     },
                     ExamStatus = "Active",
-                    ExamLogs = new List<ExamLogsModel>
-                    {
-                        new ExamLogsModel { ExamLogUserId = ObjectId.GenerateNewId().ToString(), ExamLogType = "Created", ExamChangeAt = DateTime.UtcNow }
-                    }
                 },
                 new ExamsModel
                 {
                     ExamCode = "EX124",
                     ExamName = "History exam 2",
                     SubjectId = "HIS002",
+                    QuestionBankId = "67ce3d5ac07467bf499bfdfe",
                     QuestionSet = new List<QuestionSetsModel>
                     {
                         new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 4.0 },
-                        new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 2.5 }
+                        new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 2.5 },
                     },
                     ExamStatus = "Pending",
-                    ExamLogs = new List<ExamLogsModel>
-                    {
-                        new ExamLogsModel { ExamLogUserId = ObjectId.GenerateNewId().ToString(), ExamLogType = "Updated", ExamChangeAt = DateTime.UtcNow }
-                    }
                 },
                 new ExamsModel
                 {
                     ExamCode = "EX125",
                     ExamName = "Sample Exam 3",
                     SubjectId = "GEO003",
+                    QuestionBankId = "67ce3d5ac07467bf499bfdfe",
                     QuestionSet = new List<QuestionSetsModel>
                     {
                         new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 6.0 },
-                        new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 4.5 }
+                        new QuestionSetsModel { QuestionId = ObjectId.GenerateNewId().ToString(), QuestionScore = 4.5 },
                     },
                     ExamStatus = "Completed",
-                    ExamLogs = new List<ExamLogsModel>
-                    {
-                        new ExamLogsModel { ExamLogUserId = ObjectId.GenerateNewId().ToString(), ExamLogType = "Finalized", ExamChangeAt = DateTime.UtcNow }
-                    }
-                }
+                },
             };
 
-            await _examsCollection.InsertManyAsync(exampleExams);
+            await this._examsCollection.InsertManyAsync(exampleExams);
         }
     }
 }

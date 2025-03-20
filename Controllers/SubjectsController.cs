@@ -1,13 +1,14 @@
-﻿using backend_online_testing.Dtos;
-using backend_online_testing.Models;
-using backend_online_testing.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Runtime.CompilerServices;
-
-namespace backend_online_testing.Controllers
+﻿#pragma warning disable SA1309
+namespace Backend_online_testing.Controllers
 {
-    [Route("api/[controller]")]
+    using System.Runtime.CompilerServices;
+    using Backend_online_testing.Dtos;
+    using Backend_online_testing.Models;
+    using Backend_online_testing.Services;
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Mvc;
+
+    [Route("api/subjects")]
     [ApiController]
     public class SubjectsController : ControllerBase
     {
@@ -15,177 +16,183 @@ namespace backend_online_testing.Controllers
 
         public SubjectsController(SubjectsService subjectsService)
         {
-            _subjectsService = subjectsService;
+            this._subjectsService = subjectsService;
         }
 
-        [HttpGet("GetAllSubjects/")]
-        public async Task<ActionResult<List<SubjectsModel>>> GetAllSubjects()
+        // Get all subject
+        [HttpGet]
+        public async Task<IActionResult> GetSubjects([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var subjects = await _subjectsService.GetAllSubjects();
-            return Ok(subjects);
+            var (subjects, totalCount) = await this._subjectsService.GetSubjects(keyword ?? string.Empty, page, pageSize);
+
+            return Ok(new { subjects, totalCount });
         }
 
-        [HttpGet("/SearchBySubjectName/{subjectName}")]
-        public async Task<ActionResult<List<SubjectsModel>>> SearchBySubjectName(string subjectName)
+        // Search by question bank name
+        [HttpGet("question-banks")]
+        public async Task<ActionResult<List<SubjectsModel>>> GetQuestionBanks(string subId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _subjectsService.SearchBySubjectName(subjectName);
-            return Ok(result);
+            var (subjectId, subjectName, questionBanks, totalCount)  = await this._subjectsService.GetQuestionBanks(subId, keyword, page, pageSize);
+            return this.Ok(new { subjectId, subjectName, questionBanks, totalCount });
         }
 
-        [HttpGet("/SearchByQuestionBank/{subjectName}/{questionBankName}")]
-        public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionBankName(string subjectName, string questionBankName)
+        // Search by question name
+        [HttpGet("questions")]
+        public async Task<ActionResult<List<SubjectsModel>>> GetQuestions(string subId, string qbId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _subjectsService.SearchByQuestionBankName(subjectName, questionBankName);
-            return Ok(result);
+            var (subjectId, subjectName, questionBankId, questionBankName, questions, totalCount) = await this._subjectsService.GetQuestions(subId, qbId, keyword, page, pageSize);
+            return this.Ok( new { subjectId, subjectName, questionBankId, questionBankName, questions, totalCount });
         }
 
-        [HttpGet("/SearchByQuestionName/{subjectName}/{questionBankName}/{questionName}")]
-        public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionName(string subjectName, string questionBankName, string questionName)
-        {
-            var result = await _subjectsService.SearchByQuestionName(subjectName, questionBankName, questionName);
-            return Ok(result);
-        }
-
-        [HttpPost("/AddSubjectName/")]
+        // Add subject
+        [HttpPost("add-subject")]
         public async Task<ActionResult> AddSubjectName(string subjectName)
         {
-            var result = await _subjectsService.AddSubject(subjectName);
+            var result = await this._subjectsService.AddSubject(subjectName);
 
             if (result == "Add subject successfully")
             {
-                return Ok(new { message = result });
+                return this.Ok(new { message = result });
             }
             else
             {
-                return BadRequest(new { error = result });
+                return this.BadRequest(new { error = result });
             }
         }
 
-        [HttpPost("/{subjectId}/AddQuestionBank/")]
+        // Add question bank
+        [HttpPost("add-question-bank")]
         public async Task<ActionResult> AddQuestionBankName(string subjectId, string questionBankName)
         {
-            var result = await _subjectsService.AddQuestionBank(subjectId, questionBankName);
+            var result = await this._subjectsService.AddQuestionBank(subjectId, questionBankName);
 
             if (result == "Add question bank successfully")
             {
-                return Ok(new { message = result });
+                return this.Ok(new { message = result });
             }
             else
             {
-                return BadRequest(new { error = result });
+                return this.BadRequest(new { error = result });
             }
         }
 
-        [HttpPost("/{subjectId}/{questionBankId}/AddQuestionList")]
-        public async Task<ActionResult> AddQuestionList(string subjectId, string questionBankId, string questionLogUserId, List<SubjectQuestionDto> listQuestion)
+        // Add question list
+        [HttpPost("add-question")]
+        public async Task<ActionResult> AddQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] SubjectQuestionDto question)
         {
-            var result = await _subjectsService.AddQuestionsList(subjectId, questionBankId, questionLogUserId, listQuestion);
+            var result = await this._subjectsService.AddQuestion(subjectId, questionBankId, userId, question);
 
             if (result == "Add question list successfully")
             {
-                return Ok(new { message = result });
+                return this.Ok(new { message = result });
             }
             else
             {
-                return BadRequest(new { error = result });
+                return this.BadRequest(new { error = result });
             }
         }
 
-        [HttpPost("Update/{subjectId}")]
+        // Update subject
+        [HttpPost("update-subject")]
         public async Task<ActionResult> UpdateSubjectName(string subjectId, string subjectName)
         {
-            var result = await _subjectsService.UpdateSubjectName(subjectId, subjectName);
+            var result = await this._subjectsService.UpdateSubjectName(subjectId, subjectName);
 
             if (result == "Update subject name successfully")
             {
-                return Ok(new { message = result });
+                return this.Ok(new { message = result });
             }
             else
             {
-                return BadRequest(new { error = result });
+                return this.BadRequest(new { error = result });
             }
         }
 
-        [HttpPost("Update/{subjectId}/{questionBankId}")]
+        // Update question bank
+        [HttpPost("update-question-bank")]
         public async Task<ActionResult> UpdateQuestionBankName(string subjectId, string questionBankId, string questionBankName)
         {
-            var result = await _subjectsService.UpdateQuestionBankName(subjectId, questionBankId, questionBankName);
+            var result = await this._subjectsService.UpdateQuestionBankName(subjectId, questionBankId, questionBankName);
 
             if (result == "Update subject name successfully")
             {
-                return Ok(new { message = result });
+                return this.Ok(new { message = result });
             }
             else
             {
-                return BadRequest(new { error = result });
+                return this.BadRequest(new { error = result });
             }
         }
 
-        [HttpPost("Update/{subjectId}/{questionBankId}/{questionId}")]
+        // Update question Id
+        [HttpPost("update-question")]
         public async Task<ActionResult> UpdateQuestion(string subjectId, string questionBankId, string questionId, string userLogId, SubjectQuestionDto questionData)
         {
-            var result = await _subjectsService.UpdateQuestion(subjectId, questionBankId, questionId, userLogId, questionData);
+            var result = await this._subjectsService.UpdateQuestion(subjectId, questionBankId, questionId, userLogId, questionData);
 
             if (result == "Update question successfully")
             {
-                return Ok(new { message = result });
+                return this.Ok(new { message = result });
             }
             else
             {
-                return BadRequest(new { error = result });
+                return this.BadRequest(new { error = result });
             }
         }
 
-        [HttpPost("DeleteSubject/{subjectId}")]
+        // Delete Subject
+        [HttpDelete("delete-subject")]
         public async Task<ActionResult> DeleteSubject(string subjectId)
         {
-            var result = await _subjectsService.DeleteSubject(subjectId);
+            var result = await this._subjectsService.DeleteSubject(subjectId);
 
             if (result == "Delete subject successfully")
             {
-                return Ok(new { message = result });
+                return this.Ok(new { message = result });
             }
             else
             {
-                return BadRequest(new { message = result });
+                return this.BadRequest(new { message = result });
             }
         }
 
-        [HttpPost("DeleteQuestionBank/{questionBankId}")]
+        // Delete question bank
+        [HttpDelete("delete-question-bank")]
         public async Task<ActionResult> DeleteQuestionBank(string subjectId, string questionBankId)
         {
-            var result = await _subjectsService.DeleteQuestionBank(subjectId, questionBankId);
+            var result = await this._subjectsService.DeleteQuestionBank(subjectId, questionBankId);
 
             if (result == "Delete question bank successfully")
             {
-                return Ok(new { message = result });
+                return this.Ok(new { message = result });
             }
             else
             {
-                return BadRequest(new { message = result });
+                return this.BadRequest(new { message = result });
             }
         }
 
-        [HttpPost("DeleteQuestion/{questionId}")]
+        // Delete question
+        [HttpDelete("delete/question")]
         public async Task<ActionResult> DeleteQuestion(string subjectId, string questionBankId, string questionId, string userLogId)
         {
-            var result = await _subjectsService.DeleteQuestion(subjectId, questionBankId, questionId, userLogId);
+            var result = await this._subjectsService.DeleteQuestion(subjectId, questionBankId, questionId, userLogId);
 
             if (result == "Question deleted successfully")
             {
-                return Ok(new { message = result });
+                return this.Ok(new { message = result });
             }
             else
             {
-                return BadRequest(new { message = result });
+                return this.BadRequest(new { message = result });
             }
         }
 
-        [HttpPost("SeedData/")]
+        [HttpPost("seed")]
         public async Task<IActionResult> InsertSampleData()
         {
-            await _subjectsService.InsertSampleDataAsync();
-            return Ok("Seed data is inserted successfully");
+            await this._subjectsService.InsertSampleDataAsync();
+            return this.Ok("Seed data is inserted successfully");
         }
     }
 }

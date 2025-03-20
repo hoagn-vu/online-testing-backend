@@ -1,8 +1,8 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
-namespace backend_online_testing.Models
+﻿namespace Backend_online_testing.Models
 {
+    using MongoDB.Bson;
+    using MongoDB.Bson.Serialization.Attributes;
+
     public class QuestionBanksModel
     {
         [BsonId]
@@ -10,12 +10,12 @@ namespace backend_online_testing.Models
         public string QuestionBankId { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("questionBankName")]
-        public string QuestionBankName { get; set; }
+        public string QuestionBankName { get; set; } = string.Empty;
 
         [BsonElement("questionBankStatus")]
-        public string QuestionBankStatus { get; set; }
+        public string QuestionBankStatus { get; set; } = string.Empty;
 
         [BsonElement("questionList")]
-        public List<QuestionListModel> List { get; set; }
+        public List<QuestionModel> QuestionList { get; set; } = [];
     }
 }

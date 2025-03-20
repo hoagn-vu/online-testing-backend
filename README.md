@@ -10,8 +10,8 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
 - Fontend: [https://github.com/hoagn-vu/fontend_online_testing](https://github.com/hoagn-vu/frontend_online_testing)
 - Backend: [https://github.com/hoagn-vu/backend_online_testing](https://github.com/hoagn-vu/backend_online_testing)
 - Jira: [https://hoangvu.atlassian.net/jira/software/projects/OT/boards/2](https://hoangvu.atlassian.net/jira/software/projects/OT/boards/2)
-- Tài liệu SRS: 
-- Tài liệu SDD: 
+- SRS: [https://drive.google.com/file/d/18MgZO05q5spFkm1nl5XTzG44cIXQuw5z/view?usp=sharing](https://drive.google.com/file/d/18MgZO05q5spFkm1nl5XTzG44cIXQuw5z/view?usp=sharing)
+- SDD: [https://drive.google.com/file/d/1b6FI4Wu5JBZITMxKBzFLI8gMC1p7lrrw/view?usp=sharing](https://drive.google.com/file/d/1b6FI4Wu5JBZITMxKBzFLI8gMC1p7lrrw/view?usp=sharing)
 ## Công nghệ sử dụng
 - Backend:
   - Ngôn ngữ: C#
@@ -20,7 +20,7 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
   - API giao tiếp: RESTful API với JSON
   - Authentication: JWT
 - Frontend:
-  - Ngôn ngữ: JavaScript, TypeScript
+  - Ngôn ngữ: JavaScript
   - Thư viện/UI Framework: React.js
 ## Hướng dẫn cài đặt
 ### 1. Yêu cầu hệ thống
@@ -30,11 +30,12 @@ Hệ thống thi trắc nghiệm trực tuyến là một nền tảng giúp t�
 ### 2. Cài đặt Backend
 - Clone repo:
 ```sh
-git clone https://github.com/your-repo/online-exam-system.git
-cd online-exam-system/backend
+git clone https://github.com/hoagn-vu/online-testing-backend
+cd online-testing-backend
 ```
 - Cài đặt các thư viện cần thiết:
 ```sh
+dotnet nuget locals all --clear
 dotnet restore
 ```
 - Chạy dự án:
