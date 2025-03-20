@@ -3,31 +3,28 @@
     using MongoDB.Bson;
     using MongoDB.Bson.Serialization.Attributes;
 
-    public class QuestionListModel
+    public class QuestionModel
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string QuestionId { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("options")]
-        public List<OptionsModel> Options { get; set; } = new List<OptionsModel>();
+        public List<OptionsModel> Options { get; set; } = [];
 
         [BsonElement("questionType")]
         public string QuestionType { get; set; } = string.Empty;
 
-        [BsonElement("questionStatus")]
-        public string QuestionStatus { get; set; } = string.Empty;
+        [BsonElement("questionStatus")] 
+        public string QuestionStatus { get; set; } = "available";
 
         [BsonElement("questionText")]
         public string QuestionText { get; set; } = string.Empty;
 
         [BsonElement("isRandomOrder")]
-        public bool? IsRandomOrder { get; set; }
-
-        [BsonElement("questionLogs")]
-        public List<QuestionLogsModel> QuestionLogs { get; set; } = new List<QuestionLogsModel>();
+        public bool? IsRandomOrder { get; set; } = false;
 
         [BsonElement("tags")]
-        public List<string>? Tags { get; set; }
+        public List<string>? Tags { get; set; } = [];
     }
 }

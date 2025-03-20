@@ -14,31 +14,32 @@ namespace Backend_online_testing.Services
 
         public RoomsService(IMongoDatabase database)
         {
-            this._rooms = database.GetCollection<RoomsModel>("Rooms");
+            _rooms = database.GetCollection<RoomsModel>("rooms");
         }
 
         // Get all room
-        public async Task<(List<RoomsModel>, long)> GetAllRooms(string? keyword, int page, int pageSize)
+        public async Task<(List<RoomsModel>, long)> GetRooms(string? keyword, int page, int pageSize)
         {
-            var filter = Builders<RoomsModel>.Filter.Empty;
+            var filter = Builders<RoomsModel>.Filter.Ne(r => r.RoomStatus, "deleted");
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                filter = Builders<RoomsModel>.Filter.Or(
-                    Builders<RoomsModel>.Filter.Regex(u => u.RoomName, new BsonRegularExpression(keyword, "i")),
-                    Builders<RoomsModel>.Filter.Regex(u => u.RoomLocation, new BsonRegularExpression(keyword, "i")),
-                    Builders<RoomsModel>.Filter.Regex(u => u.RoomStatus, new BsonRegularExpression(keyword, "i")));
+                filter = Builders<RoomsModel>.Filter.Regex(r => r.RoomName, new BsonRegularExpression(keyword, "i"));
+                // filter = Builders<RoomsModel>.Filter.Or(
+                //     Builders<RoomsModel>.Filter.Regex(u => u.RoomName, new BsonRegularExpression(keyword, "i")),
+                //     Builders<RoomsModel>.Filter.Regex(u => u.RoomLocation, new BsonRegularExpression(keyword, "i")),
+                //     Builders<RoomsModel>.Filter.Regex(u => u.RoomStatus, new BsonRegularExpression(keyword, "i")));
             }
 
-            var totalRecords = await this._rooms.CountDocumentsAsync(filter);
+            var totalCount = await _rooms.CountDocumentsAsync(filter);
 
-            var rooms = await this._rooms
+            var rooms = await _rooms
             .Find(filter)
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)
             .ToListAsync();
 
-            return (rooms, totalRecords);
+            return (rooms, totalCount);
         }
 
         // Find room using RoomName
@@ -50,7 +51,7 @@ namespace Backend_online_testing.Services
         }
 
         // Create Room
-        public async Task<string> CreateRoom(RoomDTO roomData)
+        public async Task<string> CreateRoom(RoomDto roomData)
         {
             if (string.IsNullOrWhiteSpace(roomData.RoomName))
             {
@@ -75,7 +76,7 @@ namespace Backend_online_testing.Services
         }
 
         // Update Room
-        public async Task<string> UpdateRoom(RoomDTO roomData, string roomId)
+        public async Task<string> UpdateRoom(RoomDto roomData, string roomId)
         {
             // Find room following RoomName
             var filter = Builders<RoomsModel>.Filter.Eq(r => r.Id, roomId);
@@ -152,17 +153,17 @@ namespace Backend_online_testing.Services
             {
                 new RoomsModel
                 {
-                    Id = "1",
+                    Id = ObjectId.GenerateNewId().ToString(),
                     RoomName = "Room A",
-                    RoomStatus = "Available",
+                    RoomStatus = "available",
                     RoomCapacity = 10,
                     RoomLocation = "Cơ sở 1",
                 },
                 new RoomsModel
                 {
-                    Id = "2",
+                    Id = ObjectId.GenerateNewId().ToString(),
                     RoomName = "Room B",
-                    RoomStatus = "Available",
+                    RoomStatus = "available",
                     RoomCapacity = 15,
                     RoomLocation = "Cơ sở 2",
                 },

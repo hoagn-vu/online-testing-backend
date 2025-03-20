@@ -16,6 +16,6 @@
         public string QuestionBankStatus { get; set; } = string.Empty;
 
         [BsonElement("questionList")]
-        public List<QuestionListModel> List { get; set; } = new List<QuestionListModel>();
+        public List<QuestionModel> QuestionList { get; set; } = [];
     }
 }

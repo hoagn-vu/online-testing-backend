@@ -4,16 +4,11 @@
 
     public class SubjectQuestionDto
     {
-        public List<OptionsModel> Options { get; set; } = new List<OptionsModel>();
-
-        public string QuestionType { get; set; } = string.Empty;
-
-        public string QuestionStatus { get; set; } = string.Empty;
-
+        public string QuestionType { get; set; } = "single-choice";
         public string QuestionText { get; set; } = string.Empty;
-
-        public bool IsRandomOrder { get; set; }
-
-        public List<string> Tags { get; set; } = new List<string>();
+        public string QuestionStatus { get; set; } = "available";
+        public List<OptionsModel> Options { get; set; } = [];
+        public bool IsRandomOrder { get; set; } = false;
+        public List<string> Tags { get; set; } = [];
     }
 }

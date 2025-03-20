@@ -1,4 +1,6 @@
 ﻿#pragma warning disable
+using System.Runtime.InteropServices.JavaScript;
+using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
 using DocumentFormat.OpenXml.Spreadsheet;
 using MongoDB.Bson;
@@ -13,14 +15,14 @@ namespace Backend_online_testing.Services
 
         public UsersService(IMongoDatabase database, AddLogService logService)
         {
-            _users = database.GetCollection<UsersModel>("Users");
+            _users = database.GetCollection<UsersModel>("users");
             _logService = logService;
         }
 
         //Get all User
-        public async Task<(List<UsersModel>, long)> GetAllUsers(string? keyword, int page, int pageSize)
+        public async Task<(List<UserDto>, long)> GetAllUsers(string? keyword, int page, int pageSize)
         {
-            var filter = Builders<UsersModel>.Filter.Empty;
+            var filter = Builders<UsersModel>.Filter.Ne(us => us.AccountStatus, "deleted");
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -29,11 +31,27 @@ namespace Backend_online_testing.Services
                     Builders<UsersModel>.Filter.Regex(u => u.UserCode, new BsonRegularExpression(keyword, "i"))
                 );
             }
+            
+            var projection = Builders<UsersModel>.Projection
+                .Expression(u => new UserDto
+                {
+                    Id = u.Id.ToString(), // Chuyển đổi ObjectId thành string
+                    Username = u.UserName,
+                    FullName = u.FullName,
+                    Role = u.Role ?? string.Empty,
+                    UserCode = u.UserCode,
+                    Gender = u.Gender ?? string.Empty,
+                    DateOfBirth = u.DateOfBirth ?? string.Empty,
+                    GroupName = u.GroupName ?? new List<string>(),
+                    Authenticate = u.Authenticate ?? new List<string>(),
+                    AccountStatus = u.AccountStatus
+                });
 
             var users = await _users
                 .Find(filter)
                 .Skip((page - 1) * pageSize)
                 .Limit(pageSize)
+                .Project(projection)
                 .ToListAsync();
 
             var totalRecords = await _users.CountDocumentsAsync(filter);
@@ -49,10 +67,10 @@ namespace Backend_online_testing.Services
         }
 
         //Add new user
-        public async Task<string> AddUser(UsersModel userData, string userLogId)
+        public async Task<string> AddUser(UsersModel userData, string idMadeBy)
         {
             //Check enter data
-            if (string.IsNullOrWhiteSpace(userData.UserName) || string.IsNullOrWhiteSpace(userData.Password) || string.IsNullOrWhiteSpace(userData.UserCode) || string.IsNullOrWhiteSpace(userLogId))
+            if (string.IsNullOrWhiteSpace(userData.UserName) || string.IsNullOrWhiteSpace(userData.Password) || string.IsNullOrWhiteSpace(userData.UserCode) || string.IsNullOrWhiteSpace(idMadeBy))
             {
                 return "Invalid user data";
             }
@@ -68,21 +86,41 @@ namespace Backend_online_testing.Services
                 userData.Id = ObjectId.GenerateNewId().ToString();
             }
 
-            if (userData.UserLog != null)
+            var userType = userData.Role switch
             {
-                userData.UserLog[0].LogId = ObjectId.GenerateNewId().ToString();
-            }
+                "admin" => "quản trị viên: ",
+                "staff" => "cán bộ phụ trách kỳ thi: ",
+                "supervisor" => "giám thị: ",
+                "candidate" => "thí sinh: ",
+                _ => "tùy chỉnh: "
+            };
 
+            var adminUser = await _users.Find(u => u.Id == idMadeBy).FirstOrDefaultAsync();
+            if (adminUser != null)
+            {
+                adminUser.UserLog ??= [];
+
+                adminUser.UserLog.Add(new UserLogsModel
+                {
+                    LogAction = "create",
+                    LogDetails = "Tạo tài khoản " + userType + userData.UserName
+                });
+            }
+            
             try
             {
+                userData.Password = BCrypt.Net.BCrypt.HashPassword(userData.Password);
                 await _users.InsertOneAsync(userData);
+                
+                var update = Builders<UsersModel>.Update.Set(u => u.UserLog, adminUser.UserLog);
+                await _users.UpdateOneAsync(u => u.Id == idMadeBy, update);
+                
                 return "User is added successfully";
             }
             catch (Exception ex)
             {
                 return ex.Message;
             }
-
         }
 
         //Update user by Id

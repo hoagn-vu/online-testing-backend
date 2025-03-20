@@ -8,31 +8,31 @@ namespace Backend_online_testing.Controllers
     using Microsoft.AspNetCore.Http.HttpResults;
     using Microsoft.AspNetCore.Mvc;
 
-    [Route("api/exam-matrix")]
+    [Route("api/exam-matrices")]
     [ApiController]
-    public class ExamMatrixsController : ControllerBase
+    public class ExamMatricesController : ControllerBase
     {
-        private readonly ExamMatrixsService _examMatrixsService;
+        private readonly ExamMatricesService _examMatricesService;
 
-        public ExamMatrixsController(ExamMatrixsService examMatrixsService)
+        public ExamMatricesController(ExamMatricesService examMatricesService)
         {
-            this._examMatrixsService = examMatrixsService;
+            this._examMatricesService = examMatricesService;
         }
 
         // Get all exam matrix
         [HttpGet]
-        public async Task<IActionResult> GetAllExamsMatrix(string? keyword, int page, int pageSize)
+        public async Task<IActionResult> GetExamMatrices([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var (examMatrixs, total) = await this._examMatrixsService.GetAllExamMatrix(keyword, page, pageSize);
+            var (examMatrices, totalCount) = await _examMatricesService.GetExamMatrices(keyword, page, pageSize);
 
-            return this.Ok(new { examMatrixs, total });
+            return Ok(new { examMatrices, totalCount });
         }
 
         // Get by Id
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdExamMatrix(string id)
         {
-            var result = await this._examMatrixsService.GetByIdExamMatrix(id);
+            var result = await this._examMatricesService.GetByIdExamMatrix(id);
 
             if (result == null)
             {
@@ -46,7 +46,7 @@ namespace Backend_online_testing.Controllers
         [HttpGet("search-name")]
         public async Task<IActionResult> SearchByName(string name)
         {
-            var results = await this._examMatrixsService.SearchByName(name);
+            var results = await this._examMatricesService.SearchByName(name);
 
             if (results == null || !results.Any())
             {
@@ -65,7 +65,7 @@ namespace Backend_online_testing.Controllers
                 return this.BadRequest(new { message = "Invalid exam matrix data" });
             }
 
-            var result = await this._examMatrixsService.AddExamMatrix(examMatrixData);
+            var result = await this._examMatricesService.AddExamMatrix(examMatrixData);
 
             if (result == "Exam matrix created successfully")
             {
@@ -79,7 +79,7 @@ namespace Backend_online_testing.Controllers
         [HttpPost("tags/")]
         public async Task<IActionResult> AddTag([FromBody] ExamMatrixAddDto tagsData)
         {
-            var result = await this._examMatrixsService.AddTag(tagsData);
+            var result = await this._examMatricesService.AddTag(tagsData);
             if (result == "Tags added successfully")
             {
                 return this.Ok(new { status = "Success", message = result });
@@ -92,7 +92,7 @@ namespace Backend_online_testing.Controllers
         [HttpPost("{examMatrixId}")]
         public async Task<IActionResult> UpdateMatrixExam(string examMatrixId, [FromBody] ExamMatrixUpdateDto examMatrixData)
         {
-            var result = await this._examMatrixsService.UpdateExamMatrix(examMatrixId, examMatrixData);
+            var result = await this._examMatricesService.UpdateExamMatrix(examMatrixId, examMatrixData);
             if (result == "Exam matrix updated successfully")
             {
                 return this.Ok(new { status = "Success", message = result });
@@ -105,7 +105,7 @@ namespace Backend_online_testing.Controllers
         [HttpPost("{examMatrixId}/tags/{tagName}")]
         public async Task<IActionResult> UpdateTags(string examMatrixId, string tagName, int questionCount, double tagScore)
         {
-            var result = await this._examMatrixsService.UpdateTag(examMatrixId, tagName, questionCount, tagScore);
+            var result = await this._examMatricesService.UpdateTag(examMatrixId, tagName, questionCount, tagScore);
             if (result == "Tags updated successfully")
             {
                 return this.Ok(new { status = "Success", message = result });
@@ -117,7 +117,7 @@ namespace Backend_online_testing.Controllers
         [HttpDelete("delete-exam-matrix/{examMatrixId}")]
         public async Task<IActionResult> DeleteMatrixExam(string examMatrixId, string matrixLogUserId)
         {
-            var result = await this._examMatrixsService.DeleteExamMatrix(examMatrixId, matrixLogUserId);
+            var result = await this._examMatricesService.DeleteExamMatrix(examMatrixId, matrixLogUserId);
             if (result == "Exam matrix marked as unavailable")
             {
                 return this.Ok(new { status = "Success", message = result });
@@ -129,7 +129,7 @@ namespace Backend_online_testing.Controllers
         [HttpDelete("delete-tag/{examMatrixId}/{tagName}")]
         public async Task<IActionResult> DeleteTagExam(string examMatrixId, string tagName, string matrixLogUserId)
         {
-            var result = await this._examMatrixsService.DeleteTag(examMatrixId, tagName, matrixLogUserId);
+            var result = await this._examMatricesService.DeleteTag(examMatrixId, tagName, matrixLogUserId);
             if (result == "Tag deleted successfully")
             {
                 return this.Ok(new { status = "Success", message = result });
@@ -142,7 +142,7 @@ namespace Backend_online_testing.Controllers
         [HttpGet("seed")]
         public async Task<IActionResult> SeedData()
         {
-            await this._examMatrixsService.SeedData();
+            await this._examMatricesService.SeedData();
             return new OkObjectResult(new { status = "Success", message = "Example exam matrix data seeded successfully." });
         }
     }

@@ -1,13 +1,11 @@
 ﻿#pragma warning disable SA1309
 namespace Backend_online_testing.Services
 {
-    using System.ComponentModel;
     using System.IO;
     using System.Text;
     using System.Text.RegularExpressions;
-    using Backend_online_testing.Models;
+    using Models;
     using DocumentFormat.OpenXml.Packaging;
-    using DocumentFormat.OpenXml.Spreadsheet;
     using MongoDB.Bson;
     using MongoDB.Driver;
     using OfficeOpenXml;
@@ -21,40 +19,43 @@ namespace Backend_online_testing.Services
 
         public FileManagementService(IMongoDatabase database, AddLogService logService)
         {
-            this._users = database.GetCollection<UsersModel>("Users");
-            this._subjects = database.GetCollection<SubjectsModel>("Subjects");
+            this._users = database.GetCollection<UsersModel>("users");
+            this._subjects = database.GetCollection<SubjectsModel>("subjects");
             this._logService = logService;
         }
 
-        public async Task<string> ProcessFileTxt(StreamReader reader, string subjectId, string userLogId)
+        public async Task<string> ProcessFileTxt(StreamReader reader, string subjectId, string questionBankId)
         {
-            string questionBankName = string.Empty;
-            string questionType = string.Empty;
-            List<QuestionBanksModel> questionBankList = new List<QuestionBanksModel>();
-            QuestionBanksModel currentQuestionBank = new QuestionBanksModel();
-            List<QuestionListModel> questionList = new List<QuestionListModel>();
-            QuestionListModel currentQuestion = new QuestionListModel();
+            var subjectFilter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
+            var subject = await this._subjects.Find(subjectFilter).FirstOrDefaultAsync();
+            if (subject == null)
+            {
+                return "Not found subject";
+            }
 
+            var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
+            if (questionBank == null)
+            {
+                return "Not found question bank";
+            }
+
+            var questionList = new List<QuestionModel>();
+            QuestionModel? currentQuestion = null;
+            var isFirstOption = true;
             string? line;
+            var lastTag1 = string.Empty;
+            var lastTag2 = string.Empty;
+            var optionOrder = new Dictionary<string, int> { {"A", 0}, {"B", 1}, {"C", 2}, {"D", 3}, {"E", 4}, {"F", 5}, {"G", 6}, {"H", 7}, {"I", 8} };
 
             while ((line = await reader.ReadLineAsync()) != null)
             {
-                if (line.StartsWith("@"))
+                if (line.StartsWith("{@") && line.EndsWith("-}"))
                 {
-                    questionBankName = line.Trim('@', '{', '}', '-');
-                    if (currentQuestionBank != null)
-                    {
-                        currentQuestionBank.List = questionList;
-                        questionBankList.Add(currentQuestionBank);
-                    }
-
-                    currentQuestionBank = new QuestionBanksModel();
-                    currentQuestionBank.QuestionBankName = questionBankName;
-                    currentQuestionBank.QuestionBankStatus = "Active";
+                    lastTag1 = line.Trim('{', '}', '@', '-');
                 }
-                else if (line.StartsWith("$"))
+                else if (line.StartsWith("{$") && line.EndsWith("-}"))
                 {
-                    questionType = line.Trim('$', '{', '}', '-');
+                    lastTag2 = line.Trim('{', '}', '$', '-');
                 }
                 else if (line.StartsWith("#"))
                 {
@@ -62,15 +63,27 @@ namespace Backend_online_testing.Services
                     {
                         questionList.Add(currentQuestion);
                     }
-
-                    var questionName = line.Trim('#');
-
-                    currentQuestion = new QuestionListModel();
-                    currentQuestion.QuestionText = questionName;
-                    currentQuestion.QuestionId = ObjectId.GenerateNewId().ToString();
-                    currentQuestion.QuestionStatus = "Active";
-                    currentQuestion.QuestionType = questionType;
-                    currentQuestion.Options = new List<OptionsModel>();
+                    
+                    currentQuestion = new QuestionModel
+                    {
+                        QuestionText = line.Trim('#'),
+                        QuestionId = ObjectId.GenerateNewId().ToString(),
+                        QuestionStatus = "available",
+                        QuestionType = "single-choice",
+                        Options = [],
+                        Tags = []
+                    };
+                    
+                    if (lastTag1 != null)
+                    {
+                        currentQuestion.Tags.Add(lastTag1);
+                    }
+                    if (lastTag2 != null)
+                    {
+                        currentQuestion.Tags.Add(lastTag2);
+                    }
+                    
+                    isFirstOption = true;
                 }
                 else
                 {
@@ -80,27 +93,39 @@ namespace Backend_online_testing.Services
                     }
 
                     var match = Regex.Match(line, @"^(A|B|C|D|E|F|G|H|I)[\.\)]\s*(.+)");
-                    bool isCorrect = false;
-                    string optionText = line.Trim();
-
                     if (match.Success)
                     {
-                        string optionLabel = match.Groups[1].Value; // Get A, B, C, D
-                        optionText = match.Groups[2].Value.Trim(); // Lấy phần nội dung còn lại
+                        // string optionText = match.Groups[2].Value.Trim();
+                        // bool isCorrect = isFirstOption;
+                        // isFirstOption = false;
+                        //
+                        // var optionChoice = new OptionsModel
+                        // {
+                        //     OptionText = optionText,
+                        //     IsCorrect = isCorrect,
+                        // };
+                        // currentQuestion.Options.Add(optionChoice);
+                        var optionLabel = match.Groups[1].Value;
+                        var optionText = match.Groups[2].Value.Trim();
+                        var isCorrect = isFirstOption;
+                        isFirstOption = false;
 
-                        if (optionLabel == "A") // If a answer is true
+                        var optionChoice = new OptionsModel
                         {
-                            isCorrect = true;
+                            OptionText = optionText,
+                            IsCorrect = isCorrect,
+                        };
+                
+                        var insertIndex = optionOrder.ContainsKey(optionLabel) ? optionOrder[optionLabel] : currentQuestion.Options.Count;
+                        if (insertIndex >= currentQuestion.Options.Count)
+                        {
+                            currentQuestion.Options.Add(optionChoice);
+                        }
+                        else
+                        {
+                            currentQuestion.Options.Insert(insertIndex, optionChoice);
                         }
                     }
-
-                    var optionChoice = new OptionsModel
-                    {
-                        OptionText = optionText,
-                        IsCorrect = isCorrect,
-                    };
-
-                    currentQuestion.Options.Add(optionChoice);
                 }
             }
 
@@ -109,47 +134,142 @@ namespace Backend_online_testing.Services
                 questionList.Add(currentQuestion);
             }
 
-            if (currentQuestionBank != null && questionList != null)
-            {
-                currentQuestionBank.List = questionList;
-                questionBankList.Add(currentQuestionBank);
-            }
+            var updateFilter = Builders<SubjectsModel>.Filter.And(
+                Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
+                Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankId == questionBankId)
+            );
 
-            // Return questionList;
-            // Return questionBankList;
-            // Find subject by id
-            var subjectFilter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
-            var subject = await this._subjects.Find(subjectFilter).FirstOrDefaultAsync();
+            var update = Builders<SubjectsModel>.Update.Set("QuestionBanks.$.QuestionList", questionList);
+            await this._subjects.UpdateOneAsync(updateFilter, update);
 
-            if (subject == null)
-            {
-                return "Not found subject";
-            }
-
-            // Insert to database
-            var update = Builders<SubjectsModel>.Update.PushEach(s => s.QuestionBanks, questionBankList);
-            await this._subjects.UpdateOneAsync(subjectFilter, update);
-
-            // Update user logg
-            var logData = new UserLogsModel
-            {
-                LogAction = "Created",
-                LogDetails = "Add list question using file docx",
-                LogAt = DateTime.Now,
-            };
-
-            await this._logService.AddActionLog(userLogId, logData);
 
             return "Insert question bank successfully";
         }
+        
+        // public async Task<string> ProcessFileTxt(StreamReader reader, string subjectId, string userLogId)
+        // {
+        //     var questionBankName = string.Empty;
+        //     var questionType = string.Empty;
+        //     var questionBankList = new List<QuestionBanksModel>();
+        //     var currentQuestionBank = new QuestionBanksModel();
+        //     var questionList = new List<QuestionModel>();
+        //     var currentQuestion = new QuestionModel();
+        //
+        //     string? line;
+        //
+        //     while ((line = await reader.ReadLineAsync()) != null)
+        //     {
+        //         if (line.StartsWith("@"))
+        //         {
+        //             questionBankName = line.Trim('@', '{', '}', '-');
+        //             if (currentQuestionBank != null)
+        //             {
+        //                 currentQuestionBank.QuestionList = questionList;
+        //                 questionBankList.Add(currentQuestionBank);
+        //             }
+        //
+        //             currentQuestionBank = new QuestionBanksModel();
+        //             currentQuestionBank.QuestionBankName = questionBankName;
+        //             currentQuestionBank.QuestionBankStatus = "Active";
+        //         }
+        //         else if (line.StartsWith("$"))
+        //         {
+        //             questionType = line.Trim('$', '{', '}', '-');
+        //         }
+        //         else if (line.StartsWith("#"))
+        //         {
+        //             if (currentQuestion != null)
+        //             {
+        //                 questionList.Add(currentQuestion);
+        //             }
+        //
+        //             var questionName = line.Trim('#');
+        //
+        //             currentQuestion = new QuestionModel();
+        //             currentQuestion.QuestionText = questionName;
+        //             currentQuestion.QuestionId = ObjectId.GenerateNewId().ToString();
+        //             currentQuestion.QuestionStatus = "Active";
+        //             currentQuestion.QuestionType = questionType;
+        //             currentQuestion.Options = new List<OptionsModel>();
+        //         }
+        //         else
+        //         {
+        //             if (currentQuestion == null || string.IsNullOrWhiteSpace(line))
+        //             {
+        //                 continue;
+        //             }
+        //
+        //             var match = Regex.Match(line, @"^(A|B|C|D|E|F|G|H|I)[\.\)]\s*(.+)");
+        //             bool isCorrect = false;
+        //             string optionText = line.Trim();
+        //
+        //             if (match.Success)
+        //             {
+        //                 string optionLabel = match.Groups[1].Value; // Get A, B, C, D
+        //                 optionText = match.Groups[2].Value.Trim(); // Lấy phần nội dung còn lại
+        //
+        //                 if (optionLabel == "A") // If an answer is true
+        //                 {
+        //                     isCorrect = true;
+        //                 }
+        //             }
+        //
+        //             var optionChoice = new OptionsModel
+        //             {
+        //                 OptionText = optionText,
+        //                 IsCorrect = isCorrect,
+        //             };
+        //
+        //             currentQuestion.Options.Add(optionChoice);
+        //         }
+        //     }
+        //
+        //     if (currentQuestion != null)
+        //     {
+        //         questionList.Add(currentQuestion);
+        //     }
+        //
+        //     if (currentQuestionBank != null && questionList != null)
+        //     {
+        //         currentQuestionBank.QuestionList = questionList;
+        //         questionBankList.Add(currentQuestionBank);
+        //     }
+        //
+        //     // Return questionList;
+        //     // Return questionBankList;
+        //     // Find subject by id
+        //     var subjectFilter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
+        //     var subject = await this._subjects.Find(subjectFilter).FirstOrDefaultAsync();
+        //
+        //     if (subject == null)
+        //     {
+        //         return "Not found subject";
+        //     }
+        //
+        //     // Insert to database
+        //     var update = Builders<SubjectsModel>.Update.PushEach(s => s.QuestionBanks, questionBankList);
+        //     await this._subjects.UpdateOneAsync(subjectFilter, update);
+        //
+        //     // Update user logg
+        //     var logData = new UserLogsModel
+        //     {
+        //         LogAction = "Created",
+        //         LogDetails = "Add list question using file docx",
+        //         LogAt = DateTime.Now,
+        //     };
+        //
+        //     await this._logService.AddActionLog(userLogId, logData);
+        //
+        //     return "Insert question bank successfully";
+        // }
 
-        public async Task<string> ProcessFileDocx(Stream fileStream, string subjectId, string userLogId)
+        public async Task<string> ProcessFileDocx(Stream fileStream, string subjectId, string questionBankId)
         {
             var text = new StringBuilder();
 
             using (var wordDoc = WordprocessingDocument.Open(fileStream, false))
             {
-                if (wordDoc.MainDocumentPart?.Document?.Body != null)
+                if (wordDoc.MainDocumentPart?.Document.Body != null)
                 {
                     foreach (var paragraph in wordDoc.MainDocumentPart.Document.Body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
                     {
@@ -161,7 +281,7 @@ namespace Backend_online_testing.Services
             // Tạo StreamReader từ nội dung docx
             using (var reader = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(text.ToString()))))
             {
-                return await this.ProcessFileTxt(reader, subjectId, userLogId);
+                return await this.ProcessFileTxt(reader, subjectId, questionBankId);
             }
         }
 
@@ -196,9 +316,8 @@ namespace Backend_online_testing.Services
 
                     var user = new UsersModel
                     {
-                        Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString(),
                         UserName = userName,
-                        AccountStatus = "Active",
+                        AccountStatus = "active",
                         UserCode = worksheet.Cells[row, 2].Text.Trim(),
                         FullName = worksheet.Cells[row, 3].Text.Trim(),
                         Gender = worksheet.Cells[row, 4].Text.Trim(),
@@ -232,7 +351,7 @@ namespace Backend_online_testing.Services
                 }
             }
 
-            if (usersList == null || !usersList.Any())
+            if (usersList.Count == 0)
             {
                 return usersResponse;
             }
@@ -256,7 +375,7 @@ namespace Backend_online_testing.Services
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-            var usersList = new List<UsersModel>();
+            // var usersList = new List<UsersModel>();
             var usersResponse = new List<object>();
 
             using (var package = new ExcelPackage(fileStream))
@@ -273,8 +392,6 @@ namespace Backend_online_testing.Services
                     // If user is not existing in group
                     if (existingUser != null)
                     {
-                        existingUser.GroupName ??= new List<string>();
-
                         if (!existingUser.GroupName.Contains(groupName))
                         {
                             existingUser.GroupName.Add(groupName);

@@ -20,9 +20,9 @@ namespace Backend_online_testing.Controllers
 
         // Get all room
         [HttpGet]
-        public async Task<ActionResult<RoomsModel>> GetAllRoom(string? keyword, int page, int pageSize)
+        public async Task<ActionResult<RoomsModel>> GetAllRoom([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var (rooms, total) = await this._roomsService.GetAllRooms(keyword, page, pageSize);
+            var (rooms, total) = await this._roomsService.GetRooms(keyword, page, pageSize);
             return this.Ok(new { rooms, total });
         }
 
@@ -36,7 +36,7 @@ namespace Backend_online_testing.Controllers
 
         // Create Room
         [HttpPost]
-        public async Task<IActionResult> CreateRoom([FromBody] RoomDTO roomDTO)
+        public async Task<IActionResult> CreateRoom([FromBody] RoomDto roomDTO)
         {
             string result = await this._roomsService.CreateRoom(roomDTO);
 
@@ -52,7 +52,7 @@ namespace Backend_online_testing.Controllers
 
         // Update Room
         [HttpPost("{roomId}")]
-        public async Task<IActionResult> UpdateRoom([FromBody] RoomDTO roomDTO, string roomId)
+        public async Task<IActionResult> UpdateRoom([FromBody] RoomDto roomDTO, string roomId)
         {
             string result = await this._roomsService.UpdateRoom(roomDTO, roomId);
 
