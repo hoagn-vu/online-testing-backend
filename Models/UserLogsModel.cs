@@ -10,11 +10,11 @@
         public string LogId { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("logAction")]
-        required public string LogAction { get; set; }
+        public required string LogAction { get; set; }
 
         [BsonElement("logAt")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
-        public DateTime LogAt { get; set; }
+        public DateTime LogAt { get; set; } = DateTime.UtcNow;
 
         [BsonElement("logDetails")]
         public string? LogDetails { get; set; }

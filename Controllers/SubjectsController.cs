@@ -21,27 +21,27 @@ namespace Backend_online_testing.Controllers
 
         // Get all subject
         [HttpGet]
-        public async Task<ActionResult<List<SubjectsModel>>> GetAllSubjects(string? keyword, int page, int pageSize)
+        public async Task<IActionResult> GetSubjects([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var subjects = await this._subjectsService.GetAllSubjects(keyword ?? string.Empty, page, pageSize);
+            var (subjects, totalCount) = await this._subjectsService.GetSubjects(keyword ?? string.Empty, page, pageSize);
 
-            return this.Ok(subjects);
+            return Ok(new { subjects, totalCount });
         }
 
         // Search by question bank name
-        [HttpGet("question-bank")]
-        public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionBankName(string subjectId, string? questionBankName, int page, int pageSize)
+        [HttpGet("question-banks")]
+        public async Task<ActionResult<List<SubjectsModel>>> GetQuestionBanks(string subId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await this._subjectsService.SearchByQuestionBankName(subjectId, questionBankName, page, pageSize);
-            return this.Ok(result);
+            var (subjectId, subjectName, questionBanks, totalCount)  = await this._subjectsService.GetQuestionBanks(subId, keyword, page, pageSize);
+            return this.Ok(new { subjectId, subjectName, questionBanks, totalCount });
         }
 
         // Search by question name
-        [HttpGet("question-name")]
-        public async Task<ActionResult<List<SubjectsModel>>> SearchByQuestionName(string subjectId, string questionBankId, string? questionName, int page, int pageSize)
+        [HttpGet("questions")]
+        public async Task<ActionResult<List<SubjectsModel>>> GetQuestions(string subId, string qbId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await this._subjectsService.SearchByQuestionName(subjectId, questionBankId, questionName, page, pageSize);
-            return this.Ok(result);
+            var (subjectId, subjectName, questionBankId, questionBankName, questions, totalCount) = await this._subjectsService.GetQuestions(subId, qbId, keyword, page, pageSize);
+            return this.Ok( new { subjectId, subjectName, questionBankId, questionBankName, questions, totalCount });
         }
 
         // Add subject
@@ -77,10 +77,10 @@ namespace Backend_online_testing.Controllers
         }
 
         // Add question list
-        [HttpPost("add-question-list")]
-        public async Task<ActionResult> AddQuestionList(string subjectId, string questionBankId, string questionLogUserId, List<SubjectQuestionDto> listQuestion)
+        [HttpPost("add-question")]
+        public async Task<ActionResult> AddQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] SubjectQuestionDto question)
         {
-            var result = await this._subjectsService.AddQuestionsList(subjectId, questionBankId, questionLogUserId, listQuestion);
+            var result = await this._subjectsService.AddQuestion(subjectId, questionBankId, userId, question);
 
             if (result == "Add question list successfully")
             {

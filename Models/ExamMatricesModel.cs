@@ -3,23 +3,23 @@
     using MongoDB.Bson;
     using MongoDB.Bson.Serialization.Attributes;
 
-    public class ExamMatrixsModel
+    public class ExamMatricesModel
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("matrixName")]
-        required public string MatrixName { get; set; }
+        public required string MatrixName { get; set; }
 
         [BsonElement("MatrixStatus")]
-        required public string MatrixStatus { get; set; }
+        public required string MatrixStatus { get; set; }
 
         [BsonElement("totalGeneratedExams")]
         public int TotalGeneratedExams { get; set; }
 
         [BsonElement("subjectId")]
-        required public string SubjectId { get; set; }
+        public required string SubjectId { get; set; }
 
         [BsonElement("questionBankId")]
         public string? QuestionBankId { get; set; }

@@ -6,7 +6,7 @@
     public class QuestionSetsModel
     {
         [BsonId]
-        [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+        [BsonRepresentation(BsonType.ObjectId)]
         public string QuestionId { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("questionScore")]

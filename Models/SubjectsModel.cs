@@ -10,12 +10,12 @@
         public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("subjects")]
-        public string SubjectName { get; set; } = string.Empty.ToString();
+        public string SubjectName { get; set; } = string.Empty;
 
         [BsonElement("subjectStatus")]
-        public string SubjectStatus { get; set; } = string.Empty.ToString();
+        public string SubjectStatus { get; set; } = string.Empty;
 
         [BsonElement("questionBanks")]
-        public List<QuestionBanksModel> QuestionBanks { get; set; } = new List<QuestionBanksModel>();
+        public List<QuestionBanksModel> QuestionBanks { get; set; } = [];
     }
 }

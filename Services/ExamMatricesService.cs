@@ -8,47 +8,47 @@ namespace Backend_online_testing.Services
     using MongoDB.Bson;
     using MongoDB.Driver;
 
-    public class ExamMatrixsService
+    public class ExamMatricesService
     {
-        private readonly IMongoCollection<ExamMatrixsModel> _examMatrixsCollection;
+        private readonly IMongoCollection<ExamMatricesModel> _examMatrixsCollection;
 
-        public ExamMatrixsService(IMongoDatabase database)
+        public ExamMatricesService(IMongoDatabase database)
         {
-            this._examMatrixsCollection = database.GetCollection<ExamMatrixsModel>("ExamMatrixs");
+            this._examMatrixsCollection = database.GetCollection<ExamMatricesModel>("examMatrices");
         }
 
-        public async Task<(List<ExamMatrixsModel>, long)> GetAllExamMatrix(string? keyword, int page, int pageSize)
+        public async Task<(List<ExamMatricesModel>, long)> GetExamMatrices(string? keyword, int page, int pageSize)
         {
-            var filter = Builders<ExamMatrixsModel>.Filter.Empty;
+            var filter = Builders<ExamMatricesModel>.Filter.Ne(em => em.MatrixStatus, "deleted");
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                filter = Builders<ExamMatrixsModel>.Filter.Or(
-                    Builders<ExamMatrixsModel>.Filter.Regex(ex => ex.MatrixName, new BsonRegularExpression(keyword, "i")),
-                    Builders<ExamMatrixsModel>.Filter.Regex(ex => ex.MatrixStatus, new BsonRegularExpression(keyword, "i")));
+                filter = Builders<ExamMatricesModel>.Filter.Or(
+                    Builders<ExamMatricesModel>.Filter.Regex(ex => ex.MatrixName, new BsonRegularExpression(keyword, "i")),
+                    Builders<ExamMatricesModel>.Filter.Regex(ex => ex.MatrixStatus, new BsonRegularExpression(keyword, "i")));
             }
 
-            var examMatrixs = await this._examMatrixsCollection
+            var examMatrices = await _examMatrixsCollection
                 .Find(filter)
                 .Skip((page - 1) * pageSize)
                 .Limit(pageSize)
                 .ToListAsync();
 
-            var totalRecords = await this._examMatrixsCollection.CountDocumentsAsync(filter);
+            var totalCount = await _examMatrixsCollection.CountDocumentsAsync(filter);
 
-            return (examMatrixs, totalRecords);
+            return (examMatrices, totalCount);
         }
 
-        public async Task<ExamMatrixsModel> GetByIdExamMatrix(string id)
+        public async Task<ExamMatricesModel> GetByIdExamMatrix(string id)
         {
-            var filter = Builders<ExamMatrixsModel>.Filter.Eq(m => m.Id, id);
+            var filter = Builders<ExamMatricesModel>.Filter.Eq(m => m.Id, id);
 
             return await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
         }
 
-        public async Task<List<ExamMatrixsModel>> SearchByName(string matrixName)
+        public async Task<List<ExamMatricesModel>> SearchByName(string matrixName)
         {
-            var filter = Builders<ExamMatrixsModel>.Filter.Regex("MatrixName", new BsonRegularExpression(matrixName, "i"));
+            var filter = Builders<ExamMatricesModel>.Filter.Regex("MatrixName", new BsonRegularExpression(matrixName, "i"));
             return await this._examMatrixsCollection.Find(filter).ToListAsync();
         }
 
@@ -71,7 +71,7 @@ namespace Backend_online_testing.Services
             // examMatrixData.MatrixLogs.Add(addLog);
 
             // Create Id
-            var newExamMatrix = new ExamMatrixsModel
+            var newExamMatrix = new ExamMatricesModel
             {
                 Id = ObjectId.GenerateNewId().ToString(),
                 MatrixName = examMatrixData.MatrixName,
@@ -101,7 +101,7 @@ namespace Backend_online_testing.Services
                 return "Invalid data";
             }
 
-            var filter = Builders<ExamMatrixsModel>.Filter.Eq(e => e.Id, tagsData.ExamMatrixId);
+            var filter = Builders<ExamMatricesModel>.Filter.Eq(e => e.Id, tagsData.ExamMatrixId);
             var examMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (examMatrix == null)
@@ -126,7 +126,7 @@ namespace Backend_online_testing.Services
                 return "All tags already exist!";
             }
 
-            var update = Builders<ExamMatrixsModel>.Update.PushEach(e => e.MatrixTags, newTags);
+            var update = Builders<ExamMatricesModel>.Update.PushEach(e => e.MatrixTags, newTags);
             var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
 
             return result.ModifiedCount > 0 ? "Tags added successfully" : "Failed to add tags";
@@ -145,7 +145,7 @@ namespace Backend_online_testing.Services
             //    MatrixLogType = "Update exam matrix",
             //    MatrixChangeAt = DateTime.UtcNow,
             // };
-            var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, examMatrixId);
+            var filter = Builders<ExamMatricesModel>.Filter.Eq(x => x.Id, examMatrixId);
 
             var existingExamMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
@@ -155,7 +155,7 @@ namespace Backend_online_testing.Services
             }
 
             // Update data
-            var update = Builders<ExamMatrixsModel>.Update
+            var update = Builders<ExamMatricesModel>.Update
                 .Set(x => x.MatrixName, examMatrixData.MatrixName)
                 .Set(x => x.QuestionBankId, examMatrixData.QuestionBankId)
                 .Set(x => x.MatrixTags, examMatrixData.MatrixTags)
@@ -176,7 +176,7 @@ namespace Backend_online_testing.Services
                 return "Invalid data";
             }
 
-            var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, examMatrixId);
+            var filter = Builders<ExamMatricesModel>.Filter.Eq(x => x.Id, examMatrixId);
             var existingExamMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (existingExamMatrix == null)
@@ -184,12 +184,12 @@ namespace Backend_online_testing.Services
                 return "Exam matrix not found";
             }
 
-            var tagFilter = Builders<ExamMatrixsModel>.Filter.And(
-                Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, examMatrixId),
-                Builders<ExamMatrixsModel>.Filter.ElemMatch(x => x.MatrixTags, tag => tag.TagName == tagName)
+            var tagFilter = Builders<ExamMatricesModel>.Filter.And(
+                Builders<ExamMatricesModel>.Filter.Eq(x => x.Id, examMatrixId),
+                Builders<ExamMatricesModel>.Filter.ElemMatch(x => x.MatrixTags, tag => tag.TagName == tagName)
             );
 
-            var update = Builders<ExamMatrixsModel>.Update
+            var update = Builders<ExamMatricesModel>.Update
                 .Set("MatrixTags.$.QuestionCount", questionCount)
                 .Set("MatrixTags.$.TagScore", tagScore);
 
@@ -205,7 +205,7 @@ namespace Backend_online_testing.Services
                 return "Invalid ExamMatrixId";
             }
 
-            var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, examMatrixId);
+            var filter = Builders<ExamMatricesModel>.Filter.Eq(x => x.Id, examMatrixId);
             var existingExamMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (existingExamMatrix == null)
@@ -213,7 +213,7 @@ namespace Backend_online_testing.Services
                 return "Exam matrix not found";
             }
 
-            var update = Builders<ExamMatrixsModel>.Update
+            var update = Builders<ExamMatricesModel>.Update
                 .Set(x => x.MatrixStatus, "Disable");
 
             var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
@@ -229,7 +229,7 @@ namespace Backend_online_testing.Services
                 return "Invalid input data";
             }
 
-            var filter = Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, examMatrixId);
+            var filter = Builders<ExamMatricesModel>.Filter.Eq(x => x.Id, examMatrixId);
             var existingExamMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (existingExamMatrix == null)
@@ -244,7 +244,7 @@ namespace Backend_online_testing.Services
             }
 
             // Delete record having tagname = TagName
-            var update = Builders<ExamMatrixsModel>.Update
+            var update = Builders<ExamMatricesModel>.Update
                 .PullFilter(x => x.MatrixTags, Builders<MatrixTagsModel>.Filter.Eq(t => t.TagName, tagName));
 
             var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
@@ -259,9 +259,9 @@ namespace Backend_online_testing.Services
 
         public async Task SeedData()
         {
-            var sampleData = new List<ExamMatrixsModel>
+            var sampleData = new List<ExamMatricesModel>
             {
-                new ExamMatrixsModel
+                new ExamMatricesModel
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
                     MatrixName = "Matrix math exam",
@@ -276,7 +276,7 @@ namespace Backend_online_testing.Services
                         new MatrixTagsModel { TagName = "Khó", QuestionCount = 5, TagScore = 3 },
                     },
                 },
-                new ExamMatrixsModel
+                new ExamMatricesModel
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
                     MatrixName = "Matrix history exam",
@@ -291,7 +291,7 @@ namespace Backend_online_testing.Services
                         new MatrixTagsModel { TagName = "Rất khó", QuestionCount = 2, TagScore = 5 },
                     },
                 },
-                new ExamMatrixsModel
+                new ExamMatricesModel
                 {
                     Id = ObjectId.GenerateNewId().ToString(),
                     MatrixName = "Matrix chemistry exam",

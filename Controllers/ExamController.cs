@@ -9,6 +9,7 @@ namespace Backend_online_testing.Controllers
     using Microsoft.AspNetCore.Mvc;
 
     [Route("api/exams")]
+    [ApiController]
     public class ExamController : ControllerBase
     {
         private readonly ExamsService _examsService;
@@ -20,29 +21,16 @@ namespace Backend_online_testing.Controllers
 
         // Get all Exam
         [HttpGet]
-        public async Task<IActionResult> GetAllExam(string? keyword, int page, int pageSize)
+        public async Task<IActionResult> GetExams([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var (exams, total) = await this._examsService.GetAllExam(keyword, page, pageSize);
+            var (exams, totalCount) = await _examsService.GetExams(keyword, page, pageSize);
 
-            return this.Ok(new { exams, total });
-        }
-
-        // Search by name
-        [HttpPost("search")]
-        public async Task<IActionResult> SearchByName(string name, [FromBody] string examName)
-        {
-            var exams_list = await this._examsService.FindExamByName(examName);
-            if (exams_list == null || !exams_list.Any())
-            {
-                return this.NotFound(new { message = "No exam founds" });
-            }
-
-            return this.Ok(new { message = "Success", exams_list });
+            return Ok(new { exams, totalCount });
         }
 
         // Create Exam
         [HttpPost]
-        public async Task<IActionResult> CreateExam([FromBody] ExamDTO createExamData)
+        public async Task<IActionResult> CreateExam([FromBody] ExamDto createExamData)
         {
             if (createExamData == null)
             {
@@ -67,7 +55,7 @@ namespace Backend_online_testing.Controllers
 
         // Update exam
         [HttpPost("update/{examId}")]
-        public async Task<IActionResult> UpdateExam(string examId, [FromBody] ExamDTO updateExamData, string userLogId)
+        public async Task<IActionResult> UpdateExam(string examId, [FromBody] ExamDto updateExamData, string userLogId)
         {
             if (updateExamData == null || string.IsNullOrEmpty(examId))
             {

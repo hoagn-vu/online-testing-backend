@@ -1,8 +1,8 @@
-﻿#pragma warning disable SA1309
-namespace Backend_online_testing.Services
+﻿namespace Backend_online_testing.Services
 {
     using Backend_online_testing.DTO;
     using Backend_online_testing.Models;
+    using Backend_online_testing.Services;
     using DocumentFormat.OpenXml.Spreadsheet;
     using Microsoft.AspNetCore.Http.HttpResults;
     using Microsoft.AspNetCore.Mvc;
@@ -12,34 +12,66 @@ namespace Backend_online_testing.Services
     public class ExamsService
     {
         private readonly IMongoCollection<ExamsModel> _examsCollection;
+        private readonly IMongoCollection<SubjectsModel> _subjectsCollection;
 
         public ExamsService(IMongoDatabase database)
         {
-            this._examsCollection = database.GetCollection<ExamsModel>("Exams");
+            this._examsCollection = database.GetCollection<ExamsModel>("exams");
+            this._subjectsCollection = database.GetCollection<SubjectsModel>("subjects");
         }
-
+        
         // Find all document
-        public async Task<(List<ExamsModel>, long)> GetAllExam(string? keyword, int page, int pageSize)
+        public async Task<(List<ExamResponseDto>, long)> GetExams(string? keyword, int page, int pageSize)
         {
-            var filter = Builders<ExamsModel>.Filter.Empty;
-
+            var filter = Builders<ExamsModel>.Filter.Ne(ex => ex.ExamStatus, "deleted");
             if (!string.IsNullOrEmpty(keyword))
             {
+                // filter = Builders<ExamsModel>.Filter.Regex(ex => ex.ExamName, new BsonRegularExpression(keyword, "i"));
                 filter = Builders<ExamsModel>.Filter.Or(
-                    Builders<ExamsModel>.Filter.Regex(e => e.ExamName, new BsonRegularExpression(keyword, "i")),
-                    Builders<ExamsModel>.Filter.Regex(e => e.ExamStatus, new BsonRegularExpression(keyword, "i")));
+                    Builders<ExamsModel>.Filter.Regex(ex => ex.ExamName, new BsonRegularExpression(keyword, "i")),
+                    Builders<ExamsModel>.Filter.Regex(ex => ex.ExamCode, new BsonRegularExpression(keyword, "i")));
             }
-
-            var users = await this._examsCollection
+            
+            var exams = await _examsCollection
                 .Find(filter)
                 .Skip((page - 1) * pageSize)
                 .Limit(pageSize)
-            .ToListAsync();
+                .ToListAsync();
+            
+            var totalCount = await _examsCollection.CountDocumentsAsync(filter);
 
-            var totalRecords = await this._examsCollection.CountDocumentsAsync(filter);
+            var examResponseList = new List<ExamResponseDto>();
 
-            return (users, totalRecords);
+            foreach (var exam in exams)
+            {
+                // Lấy thông tin môn học
+                var subject = await _subjectsCollection.Find(s => s.Id == exam.SubjectId).FirstOrDefaultAsync();
+                var subjectName = subject?.SubjectName ?? string.Empty;
+
+                // Lấy thông tin ngân hàng câu hỏi từ danh sách QuestionBanks trong Subject
+                var questionBankName = string.Empty;
+                if (subject != null)
+                {
+                    var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
+                    questionBankName = questionBank?.QuestionBankName ?? string.Empty;
+                }
+
+                examResponseList.Add(new ExamResponseDto
+                {
+                    Id = exam.Id,
+                    ExamCode = exam.ExamCode,
+                    ExamName = exam.ExamName,
+                    SubjectId = exam.SubjectId,
+                    SubjectName = subjectName,
+                    ExamStatus = exam.ExamStatus,
+                    QuestionBankId = exam.QuestionBankId,
+                    QuestionBankName = questionBankName
+                });
+            }
+
+            return (examResponseList, totalCount);
         }
+
 
         // Find Exam using Name
         public async Task<List<ExamsModel>> FindExamByName(string examName)
@@ -55,7 +87,7 @@ namespace Backend_online_testing.Services
         }
 
         // Create Exam
-        public async Task<string> CreateExam(ExamDTO createExamData)
+        public async Task<string> CreateExam(ExamDto createExamData)
         {
             // Check name exam is existed
             var existingExam = await this._examsCollection.Find(e => e.ExamName == createExamData.ExamName).FirstOrDefaultAsync();
@@ -96,7 +128,7 @@ namespace Backend_online_testing.Services
         }
 
         // Update Exam(Not include question)
-        public async Task<bool> UpdateExam(ExamDTO updateExamData, string examId, string userLogId)
+        public async Task<bool> UpdateExam(ExamDto updateExamData, string examId, string userLogId)
         {
             // var logUpdateData = new ExamLogsModel
             // {

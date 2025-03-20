@@ -11,7 +11,7 @@ namespace Backend_online_testing.Services
 
         public AddLogService(IMongoDatabase database)
         {
-            this._users = database.GetCollection<UsersModel>("Users");
+            this._users = database.GetCollection<UsersModel>("users");
         }
 
         public async Task AddActionLog(string userId, UserLogsModel logData)

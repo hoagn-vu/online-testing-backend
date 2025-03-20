@@ -1,11 +1,10 @@
 ﻿#pragma warning disable SA1309
 namespace Backend_online_testing.Controllers
 {
-    using System.Security.Cryptography.X509Certificates;
-    using Backend_online_testing.Models;
-    using Backend_online_testing.Services;
+    using Services;
     using Microsoft.AspNetCore.Mvc;
-
+    [Route("api/file")]
+    [ApiController]
     public class FileManagementController : ControllerBase
     {
         private readonly FileManagementService _fileService;
@@ -16,29 +15,26 @@ namespace Backend_online_testing.Controllers
         }
 
         [HttpPost("upload-file-question")]
-        public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] string subjectId, [FromQuery] string userLogId)
+        public async Task<IActionResult> UploadFile(IFormFile? file, [FromQuery] string subjectId, [FromQuery] string questionBankId)
         {
             if (file == null || file.Length == 0)
             {
                 return this.BadRequest("Vui lòng chọn file hợp lệ.");
             }
 
-            string result;
-
             try
             {
-                using (var stream = file.OpenReadStream())
+                string result;
+                await using (var stream = file.OpenReadStream())
                 {
                     if (file.FileName.EndsWith(".txt"))
                     {
-                        using (var reader = new StreamReader(stream))
-                        {
-                            result = await this._fileService.ProcessFileTxt(reader, subjectId, userLogId);
-                        }
+                        using var reader = new StreamReader(stream);
+                        result = await this._fileService.ProcessFileTxt(reader, subjectId, questionBankId);
                     }
                     else if (file.FileName.EndsWith(".docx"))
                     {
-                        result = await this._fileService.ProcessFileDocx(stream, subjectId, userLogId);
+                        result = await this._fileService.ProcessFileDocx(stream, subjectId, questionBankId);
                     }
                     else
                     {
@@ -70,20 +66,13 @@ namespace Backend_online_testing.Controllers
                 throw new ArgumentException("File is empty or null");
             }
 
-            using (var stream = new MemoryStream())
-            {
-                await file.CopyToAsync(stream);
-                stream.Position = 0;
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            stream.Position = 0;
 
-                var users = await this._fileService.UsersFileExcel(stream, userLogId);
+            var users = await this._fileService.UsersFileExcel(stream, userLogId);
 
-                if (users == null)
-                {
-                    return this.BadRequest("File is uploaded");
-                }
-
-                return this.Ok(users);
-            }
+            return this.Ok(users);
         }
 
         [HttpPost("upload-file-user-group")]
@@ -94,14 +83,12 @@ namespace Backend_online_testing.Controllers
                 throw new ArgumentException("File is empty or null");
             }
 
-            using (var stream = new MemoryStream())
-            {
-                await file.CopyToAsync(stream);
-                stream.Position = 0;
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            stream.Position = 0;
 
-                var result = await this._fileService.GroupUser(stream, userLogId);
-                return this.Ok(result);
-            }
+            var result = await this._fileService.GroupUser(stream, userLogId);
+            return this.Ok(result);
         }
     }
 }
