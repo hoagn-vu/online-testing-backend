@@ -186,8 +186,7 @@ namespace Backend_online_testing.Services
 
             var tagFilter = Builders<ExamMatrixsModel>.Filter.And(
                 Builders<ExamMatrixsModel>.Filter.Eq(x => x.Id, examMatrixId),
-                Builders<ExamMatrixsModel>.Filter.ElemMatch(x => x.MatrixTags, tag => tag.TagName == tagName)
-            );
+                Builders<ExamMatrixsModel>.Filter.ElemMatch(x => x.MatrixTags, tag => tag.TagName == tagName));
 
             var update = Builders<ExamMatrixsModel>.Update
                 .Set("MatrixTags.$.QuestionCount", questionCount)
