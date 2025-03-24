@@ -5,9 +5,8 @@ namespace Backend_online_testing.Models;
 
 public class SessionRoomsModel
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string SessionRoomId { get; set; } = ObjectId.GenerateNewId().ToString();
+    [BsonElement("roomId")]
+    public required string RoomInSessionId { get; set; }
 
     [BsonElement("supervisorId")] 
     public List<string> SupervisorIds { get; set; } = [];

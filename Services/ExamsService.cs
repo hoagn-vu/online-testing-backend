@@ -72,20 +72,6 @@
             return (examResponseList, totalCount);
         }
 
-
-        // Find Exam using Name
-        public async Task<List<ExamsModel>> FindExamByName(string examName)
-        {
-            if (string.IsNullOrEmpty(examName))
-            {
-                return new List<ExamsModel>();
-            }
-
-            var filter = Builders<ExamsModel>.Filter.Regex(e => e.ExamName, new BsonRegularExpression(examName, "i"));
-
-            return await this._examsCollection.Find(filter).ToListAsync();
-        }
-
         // Create Exam
         public async Task<string> CreateExam(ExamDto createExamData)
         {

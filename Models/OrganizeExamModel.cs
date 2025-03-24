@@ -17,18 +17,21 @@ public class OrganizeExamModel
     
     [BsonElement("totalQuestions")]
     public int? TotalQuestions { get; set; }
-    
-    [BsonElement("maxScore")]
-    public int MaxScore { get; set; }
+
+    [BsonElement("maxScore")] 
+    public int? MaxScore { get; set; } = 10;
     
     [BsonElement("subjectId")]
-    public string SubjectId { get; set; } = string.Empty;
+    public string SubjectId { get; set; } = string.Empty;    
+    
+    [BsonElement("questionBankId")]
+    public string? QuestionBankId { get; set; } = string.Empty;
     
     [BsonElement("examType")]
     public string ExamType { get; set; } = string.Empty;
     
     [BsonElement("examSet")]
-    public List<ExamsModel>? Exams { get; set; }
+    public List<string>? Exams { get; set; }
     
     [BsonElement("matrixId")]
     public string? MatrixId { get; set; }
@@ -37,5 +40,5 @@ public class OrganizeExamModel
     public List<SessionsModel> Sessions { get; set; } = [];
     
     [BsonElement("organizeExamStatus")]
-    public string OrganizeExamStatus { get; set; } = "available";
+    public string OrganizeExamStatus { get; set; } = "hide";
 }
