@@ -36,7 +36,7 @@ public class AuthService
 
         await _usersCollection.UpdateOneAsync(u => u.Id == user.Id, update);
 
-        return new AuthResponseDto { Role = user.Role , AccessToken = accessToken, RefreshToken = refreshToken };
+        return new AuthResponseDto { AccessToken = accessToken, RefreshToken = refreshToken };
     }
     
     public async Task<AuthResponseDto?> RefreshToken(string refreshToken)

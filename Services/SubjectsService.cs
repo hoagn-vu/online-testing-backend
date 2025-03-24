@@ -37,7 +37,8 @@ namespace Backend_online_testing.Services
                 {
                     Id = sub.Id,
                     SubjectName = sub.SubjectName,
-                    SubjectStatus = sub.SubjectStatus
+                    SubjectStatus = sub.SubjectStatus,
+                    TotalQuestionBanks = sub.QuestionBanks.Count
                 });
 
             var subjects = await this._subjectsCollection
@@ -74,8 +75,7 @@ namespace Backend_online_testing.Services
             
             var questionBanks = subjects
             .SelectMany(s => s.QuestionBanks
-                .Where(qb => string.IsNullOrEmpty(keyword) ||
-                                qb.QuestionBankName.ToLower().Contains(keyword.ToLower()))
+                .Where(qb => string.IsNullOrEmpty(keyword) || qb.QuestionBankName.ToLower().Contains(keyword.ToLower()))
                 .Select(qb => new QuestionBankDto
                 {
                     QuestionBankId = qb.QuestionBankId,
@@ -90,7 +90,7 @@ namespace Backend_online_testing.Services
             return (subjectId, subjectName, questionBanks, totalQuestionBanks);
         }
 
-        // Get by question
+        // Get questions
         public async Task<(string, string, string, string, List<QuestionModel>, long)> GetQuestions(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
         {
             var filter = Builders<SubjectsModel>.Filter.And(

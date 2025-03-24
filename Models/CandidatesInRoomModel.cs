@@ -4,7 +4,7 @@ namespace Backend_online_testing.Models;
 
 public class CandidatesInRoomModel
 {
-    [BsonElement("SessionId")]
+    [BsonElement("candidateId")]
     public string CandidateId { get; set; } = string.Empty;
     
     [BsonElement("examId")]

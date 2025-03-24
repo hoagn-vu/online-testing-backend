@@ -17,8 +17,8 @@ public class SessionsModel
     public DateTime ActiveAt { get; set; }
     
     [BsonElement("rooms")]
-    public List<SessionRoomsModel> SessionRooms { get; set; } = [];
+    public List<SessionRoomsModel> RoomsInSession { get; set; } = [];
     
     [BsonElement("sessionStatus")]
-    public string SessionStatus { get; set; } = string.Empty;
+    public string SessionStatus { get; set; } = "available";
 }
