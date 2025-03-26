@@ -50,6 +50,26 @@ namespace Backend_online_testing.Services
 
             return (subjects, totalCount);
         }
+        
+        public async Task<List<SubjectOptionsDto>> GetAllSubjects()
+        {
+            var filter = Builders<SubjectsModel>.Filter.Ne(sub => sub.SubjectStatus, "deleted");
+            
+            // Get neccessary filed
+            var projection = Builders<SubjectsModel>.Projection
+                .Expression(sub => new SubjectOptionsDto
+                {
+                    Id = sub.Id,
+                    SubjectName = sub.SubjectName,
+                });
+
+            var subjects = await this._subjectsCollection
+                .Find(filter)
+                .Project(projection)
+                .ToListAsync();
+
+            return subjects;
+        }
 
         // Search or Get All Question Bank Name
         public async Task<(string, string?, List<QuestionBankDto>, long)> GetQuestionBanks(string subjectId, string? keyword, int page, int pageSize)
@@ -75,7 +95,7 @@ namespace Backend_online_testing.Services
             
             var questionBanks = subjects
             .SelectMany(s => s.QuestionBanks
-                .Where(qb => string.IsNullOrEmpty(keyword) || qb.QuestionBankName.ToLower().Contains(keyword.ToLower()))
+                .Where(qb => string.IsNullOrEmpty(keyword) || qb.QuestionBankName.Contains(keyword, StringComparison.CurrentCultureIgnoreCase) && !qb.QuestionBankStatus.Equals("deleted", StringComparison.CurrentCultureIgnoreCase))
                 .Select(qb => new QuestionBankDto
                 {
                     QuestionBankId = qb.QuestionBankId,
@@ -138,11 +158,27 @@ namespace Backend_online_testing.Services
                 var subject = new SubjectsModel
                 {
                     SubjectName = subjectName,
-                    QuestionBanks = new List<QuestionBanksModel>(),
+                    QuestionBanks = [],
                 };
 
-                await this._subjectsCollection.InsertOneAsync(subject);
+                await _subjectsCollection.InsertOneAsync(subject);
                 return "Add subject successfully";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+        
+        // Update subject
+        public async Task<string> UpdateSubject(string? subjectId, string subjectName)
+        {
+            try
+            {
+                var subject = await _subjectsCollection.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
+                subject.SubjectName = subjectName;
+                await _subjectsCollection.ReplaceOneAsync(s => s.Id == subjectId, subject);
+                return "Update subject successfully";
             }
             catch (Exception ex)
             {
@@ -165,7 +201,7 @@ namespace Backend_online_testing.Services
                 var newQuestionBank = new QuestionBanksModel
                 {
                     QuestionBankName = questionBankName,
-                    QuestionList = new List<QuestionModel>(),
+                    QuestionList = [],
                 };
 
                 subject.QuestionBanks.Add(newQuestionBank);
@@ -244,12 +280,7 @@ namespace Backend_online_testing.Services
 
                 var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
 
-                if (result.ModifiedCount > 0)
-                {
-                    return "Update subject name successfully";
-                }
-
-                return "Subject not found or no changes made";
+                return result.ModifiedCount > 0 ? "Update subject name successfully" : "Subject not found or no changes made";
             }
             catch (Exception ex)
             {
@@ -284,7 +315,7 @@ namespace Backend_online_testing.Services
         }
 
         // Update Question List
-        public async Task<string> UpdateQuestion(string id, string questionBankId, string questionId, string userLogId, SubjectQuestionDto questionData)
+        public async Task<string> UpdateQuestion(string id, string questionBankId, string questionId, string userId, SubjectQuestionDto questionData)
         {
             try
             {
@@ -319,6 +350,19 @@ namespace Backend_online_testing.Services
                 // Update data
                 var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
                 var result = await this._subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
+                
+                var user = _usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+                if (user == null) return $"Add question list successfully";
+                user.UserLog ??= [];
+
+                user.UserLog.Add(new UserLogsModel
+                {
+                    LogAction = "create",
+                    LogDetails = "Cập nhật câu hỏi có id  " + questionId
+                });
+                
+                var updateLogUser = Builders<UsersModel>.Update.Set(u => u.UserLog, user.UserLog);
+                await _usersCollection.UpdateOneAsync(u => u.Id == userId, updateLogUser);
 
                 return result.ModifiedCount > 0 ? "Update question successfully" : "Update failed";
             }

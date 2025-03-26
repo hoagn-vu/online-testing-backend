@@ -13,7 +13,7 @@
         public string QuestionBankName { get; set; } = string.Empty;
 
         [BsonElement("questionBankStatus")]
-        public string QuestionBankStatus { get; set; } = string.Empty;
+        public string QuestionBankStatus { get; set; } = "available";
 
         [BsonElement("questionList")]
         public List<QuestionModel> QuestionList { get; set; } = [];
