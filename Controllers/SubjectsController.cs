@@ -19,52 +19,79 @@ namespace Backend_online_testing.Controllers
             this._subjectsService = subjectsService;
         }
 
-        // Get all subject
+        // Get subject
         [HttpGet]
         public async Task<IActionResult> GetSubjects([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var (subjects, totalCount) = await this._subjectsService.GetSubjects(keyword ?? string.Empty, page, pageSize);
 
             return Ok(new { subjects, totalCount });
+        } 
+        
+        [HttpGet("options")]
+        public async Task<IActionResult> GetSubjects()
+        {
+            var subjects = await this._subjectsService.GetAllSubjects();
+
+            return Ok(subjects);
+        }
+        
+        // Add subject
+        [HttpPost("add-subject")]
+        public async Task<ActionResult> AddSubject([FromBody] SubjectRequestDto? subjectDto)
+        {
+            if (subjectDto == null || string.IsNullOrEmpty(subjectDto.SubjectName))
+            {
+                return BadRequest(new { error = "Subject name is required" });
+            }
+
+            var result = await this._subjectsService.AddSubject(subjectDto.SubjectName);
+
+            if (result == "Add subject successfully")
+            {
+                return Ok(new { message = result });
+            }
+            else
+            {
+                return BadRequest(new { error = result });
+            }
+        }
+        
+        // Update Subject
+        [HttpPut("update/{subjectId}")]
+        public async Task<ActionResult> UpdateSubject(string subjectId, [FromBody] SubjectRequestDto? subjectDto)
+        {
+            if (subjectDto == null || string.IsNullOrEmpty(subjectDto.SubjectName))
+            {
+                return BadRequest(new { error = "Subject is required" });
+            }
+            
+            var result = await _subjectsService.UpdateSubject(subjectId, subjectDto.SubjectName);
+
+            if (result == "Update subject successfully")
+            {
+                return Ok(new { message = result });
+            }
+            else
+            {
+                return BadRequest(new { error = result });
+            }
         }
 
         // Search by question bank name
         [HttpGet("question-banks")]
-        public async Task<ActionResult<List<SubjectsModel>>> GetQuestionBanks(string subId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<List<SubjectsModel>>> GetQuestionBanks([FromQuery] string subId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var (subjectId, subjectName, questionBanks, totalCount)  = await this._subjectsService.GetQuestionBanks(subId, keyword, page, pageSize);
             return this.Ok(new { subjectId, subjectName, questionBanks, totalCount });
         }
-
-        // Search by question name
-        [HttpGet("questions")]
-        public async Task<ActionResult<List<SubjectsModel>>> GetQuestions(string subId, string qbId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-        {
-            var (subjectId, subjectName, questionBankId, questionBankName, questions, totalCount) = await this._subjectsService.GetQuestions(subId, qbId, keyword, page, pageSize);
-            return this.Ok( new { subjectId, subjectName, questionBankId, questionBankName, questions, totalCount });
-        }
-
-        // Add subject
-        [HttpPost("add-subject")]
-        public async Task<ActionResult> AddSubjectName(string subjectName)
-        {
-            var result = await this._subjectsService.AddSubject(subjectName);
-
-            if (result == "Add subject successfully")
-            {
-                return this.Ok(new { message = result });
-            }
-            else
-            {
-                return this.BadRequest(new { error = result });
-            }
-        }
-
+        
         // Add question bank
         [HttpPost("add-question-bank")]
-        public async Task<ActionResult> AddQuestionBankName(string subjectId, string questionBankName)
+        public async Task<ActionResult> AddQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
         {
-            var result = await this._subjectsService.AddQuestionBank(subjectId, questionBankName);
+            if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
+            var result = await this._subjectsService.AddQuestionBank(questionBankDto.SubjectId, questionBankDto.QuestionBankName);
 
             if (result == "Add question bank successfully")
             {
@@ -74,6 +101,30 @@ namespace Backend_online_testing.Controllers
             {
                 return this.BadRequest(new { error = result });
             }
+        }
+
+        [HttpPut("update-question-bank")]
+        public async Task<ActionResult> UpdateQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
+        {
+            if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
+            var result = await _subjectsService.UpdateQuestionBankName(questionBankDto.SubjectId, questionBankDto.QuestionBankId ?? string.Empty ,questionBankDto.QuestionBankName);
+            
+            if (result == "Update question bank name successfully")
+            {
+                return Ok(new { message = result });
+            }
+            else
+            {
+                return this.BadRequest(new { error = result });
+            }
+        }
+
+        // Search by question name
+        [HttpGet("questions")]
+        public async Task<ActionResult<List<SubjectsModel>>> GetQuestions(string subId, string qbId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var (subjectId, subjectName, questionBankId, questionBankName, questions, totalCount) = await this._subjectsService.GetQuestions(subId, qbId, keyword, page, pageSize);
+            return Ok( new { subjectId, subjectName, questionBankId, questionBankName, questions, totalCount });
         }
 
         // Add question list
@@ -92,51 +143,19 @@ namespace Backend_online_testing.Controllers
             }
         }
 
-        // Update subject
-        [HttpPost("update-subject")]
-        public async Task<ActionResult> UpdateSubjectName(string subjectId, string subjectName)
-        {
-            var result = await this._subjectsService.UpdateSubjectName(subjectId, subjectName);
-
-            if (result == "Update subject name successfully")
-            {
-                return this.Ok(new { message = result });
-            }
-            else
-            {
-                return this.BadRequest(new { error = result });
-            }
-        }
-
-        // Update question bank
-        [HttpPost("update-question-bank")]
-        public async Task<ActionResult> UpdateQuestionBankName(string subjectId, string questionBankId, string questionBankName)
-        {
-            var result = await this._subjectsService.UpdateQuestionBankName(subjectId, questionBankId, questionBankName);
-
-            if (result == "Update subject name successfully")
-            {
-                return this.Ok(new { message = result });
-            }
-            else
-            {
-                return this.BadRequest(new { error = result });
-            }
-        }
-
         // Update question Id
-        [HttpPost("update-question")]
-        public async Task<ActionResult> UpdateQuestion(string subjectId, string questionBankId, string questionId, string userLogId, SubjectQuestionDto questionData)
+        [HttpPut("update-question/{questionId}")]
+        public async Task<ActionResult> UpdateQuestion(string questionId, [FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] SubjectQuestionDto questionData)
         {
-            var result = await this._subjectsService.UpdateQuestion(subjectId, questionBankId, questionId, userLogId, questionData);
+            var result = await _subjectsService.UpdateQuestion(subjectId, questionBankId, questionId, userId, questionData);
 
             if (result == "Update question successfully")
             {
-                return this.Ok(new { message = result });
+                return Ok(new { message = result });
             }
             else
             {
-                return this.BadRequest(new { error = result });
+                return BadRequest(new { error = result });
             }
         }
 
