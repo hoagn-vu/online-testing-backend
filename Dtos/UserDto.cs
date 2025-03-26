@@ -13,3 +13,10 @@ public class UserDto
     public string AccountStatus { get; set; } = string.Empty;
     public List<string> Authenticate { get; set; } = [];
 }
+
+public class UserOptionsDto
+{
+    public string UserId { get; set; } = string.Empty;
+    public string UserCode { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+}

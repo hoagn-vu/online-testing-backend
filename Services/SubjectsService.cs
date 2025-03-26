@@ -203,7 +203,7 @@ namespace Backend_online_testing.Services
                 var subject = await _subjectsCollection.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
                 subject.SubjectName = subjectName;
                 await _subjectsCollection.ReplaceOneAsync(s => s.Id == subjectId, subject);
-                return "Update subject successfully";
+                return "Cập nhật phân môn thành công!";
             }
             catch (Exception ex)
             {

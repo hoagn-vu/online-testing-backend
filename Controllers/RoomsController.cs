@@ -22,15 +22,14 @@ namespace Backend_online_testing.Controllers
         [HttpGet]
         public async Task<ActionResult<RoomsModel>> GetAllRoom([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var (rooms, total) = await this._roomsService.GetRooms(keyword, page, pageSize);
+            var (rooms, total) = await _roomsService.GetRooms(keyword, page, pageSize);
             return this.Ok(new { rooms, total });
-        }
-
-        // Search by name
-        [HttpPost("search-name")]
-        public async Task<ActionResult<RoomsModel>> SearchByRoomName([FromQuery] string name)
+        }    
+        
+        [HttpGet("get-options")]
+        public async Task<ActionResult<RoomsModel>> GetRoomOptions()
         {
-            var rooms = await this._roomsService.SearchByNameRoom(name);
+            var rooms = await _roomsService.GetRoomOptions();
             return this.Ok(rooms);
         }
 

@@ -55,17 +55,18 @@ public class OrganizeExamController : ControllerBase
     }
     
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] OrganizeExamRequestDto dto)
+    public async Task<IActionResult> CreateOrganizeExam([FromBody] OrganizeExamRequestDto dto)
     {
         var result = await _organizeExamService.CreateOrganizeExam(dto);
-        return CreatedAtAction(nameof(Create), new { id = result.Id }, result);
+        return CreatedAtAction(nameof(CreateOrganizeExam), new { id = result.Id }, result);
     }
 
-    // [HttpPut]
-    // public async Task<IActionResult> Update([FromBody] OrganizeExamRequestDto dto)
-    // {
-    //     
-    // }
+    [HttpPut("{organizeExamId}")]
+    public async Task<ActionResult> UpdateOrganizeExam(string organizeExamId, [FromBody] OrganizeExamRequestDto dto)
+    {
+        var result = await _organizeExamService.UpdateOrganizeExam(organizeExamId, dto);
+        return Ok(result);
+    }
     
     [HttpPost("{examId}/sessions")]
     public async Task<IActionResult> AddSession(string examId, [FromBody] SessionRequestDto dto)
@@ -73,6 +74,13 @@ public class OrganizeExamController : ControllerBase
         var result = await _organizeExamService.AddSession(examId, dto);
         if (result == null) return NotFound();
         return Ok(result);
+    }
+    
+    [HttpPut("{examId}/sessions/{sessionId}")]
+    public async Task<IActionResult> UpdateSession(string examId, string sessionId, [FromBody] SessionRequestDto dto)
+    {
+        var result = await _organizeExamService.UpdateSession(examId, sessionId, dto);
+        return result == "Cập nhật ca thi thành công" ? Ok(result) : NotFound(result);
     }
 
     [HttpPost("{examId}/sessions/{sessionId}/rooms")]

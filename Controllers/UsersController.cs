@@ -26,6 +26,13 @@ namespace Backend_online_testing.Controllers
         {
             var (users, total) = await this._userService.GetAllUsers(keyword, page, pageSize);
             return this.Ok(new { users, total });
+        }   
+        
+        [HttpGet("get-by-role")]
+        public async Task<IActionResult> GetUsersByRole(string role)
+        {
+            var users = await _userService.GetUsersByRole(role);
+            return this.Ok(users);
         }
 
         // Get method with ID
@@ -34,6 +41,8 @@ namespace Backend_online_testing.Controllers
         {
             return await this._userService.GetUserById(id);
         }
+        
+        
 
         // Add on User
         [HttpPost]

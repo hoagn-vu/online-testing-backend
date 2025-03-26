@@ -367,22 +367,32 @@ public class OrganizeExamService
         return newExam;
     }
 
-    public async Task<OrganizeExamModel?> UpdateOrganizeExam(string id, OrganizeExamRequestDto dto)
+    public async Task<string> UpdateOrganizeExam(string organizeExamId, OrganizeExamRequestDto dto)
+    // public async Task<OrganizeExamModel?> UpdateOrganizeExam(string organizeExamId, OrganizeExamRequestDto dto)
     {
-        var update = Builders<OrganizeExamModel>.Update
-            .Set(e => e.OrganizeExamName, dto.OrganizeExamName)
-            .Set(e => e.Duration, dto.Duration)
-            .Set(e => e.TotalQuestions, dto.TotalQuestions)
-            .Set(e => e.MaxScore, dto.MaxScore)
-            .Set(e => e.SubjectId, dto.SubjectId)
-            .Set(e => e.QuestionBankId, dto.QuestionBankId)
-            .Set(e => e.ExamType, dto.ExamType)
-            .Set(e => e.MatrixId, dto.MatrixId)
-            .Set(e => e.Exams, dto.Exams)
-            .Set(e => e.OrganizeExamStatus, dto.OrganizeExamStatus);
+        try
+        {
+            var update = Builders<OrganizeExamModel>.Update
+                .Set(e => e.OrganizeExamName, dto.OrganizeExamName)
+                .Set(e => e.Duration, dto.Duration)
+                .Set(e => e.TotalQuestions, dto.TotalQuestions)
+                .Set(e => e.MaxScore, dto.MaxScore)
+                .Set(e => e.SubjectId, dto.SubjectId)
+                .Set(e => e.QuestionBankId, dto.QuestionBankId)
+                .Set(e => e.ExamType, dto.ExamType)
+                .Set(e => e.MatrixId, dto.MatrixId)
+                .Set(e => e.Exams, dto.Exams)
+                .Set(e => e.OrganizeExamStatus, dto.OrganizeExamStatus);
 
-        return await _organizeExamCollection.FindOneAndUpdateAsync(
-            e => e.Id == id, update, new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
+            // return await _organizeExamCollection.FindOneAndUpdateAsync(
+            //     e => e.Id == organizeExamId, update, new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
+            await _organizeExamCollection.FindOneAndUpdateAsync(e => e.Id == organizeExamId, update);
+            return "Cập nhật kỳ thi thành công";
+        }
+        catch (Exception e)
+        {
+            return $"Error: {e.Message}";
+        }
     }
         
     public async Task<OrganizeExamModel?> AddSession(string examId, SessionRequestDto dto)
@@ -397,6 +407,21 @@ public class OrganizeExamService
         var update = Builders<OrganizeExamModel>.Update.Push(e => e.Sessions, newSession);
         return await _organizeExamCollection.FindOneAndUpdateAsync(
             e => e.Id == examId, update, new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
+    }
+
+    public async Task<string> UpdateSession(string examId, string sessionId, SessionRequestDto dto)
+    {
+        var filter = Builders<OrganizeExamModel>.Filter.Eq(e => e.Id, examId) &
+                     Builders<OrganizeExamModel>.Filter.ElemMatch(e => e.Sessions, s => s.SessionId == sessionId);
+        
+        var update = Builders<OrganizeExamModel>.Update
+            .Set("sessions.$.sessionName", dto.SessionName)
+            .Set("sessions.$.activeAt", dto.ActiveAt)
+            .Set("sessions.$.sessionStatus", dto.SessionStatus);
+        
+        var result = await _organizeExamCollection.UpdateOneAsync(filter, update);
+        
+        return result.ModifiedCount > 0 ? "Cập nhật ca thi thành công" : "Không tìm thấy ca thi";
     }
     
     public async Task<OrganizeExamModel?> AddRoomToSession(string examId, string sessionId, RoomsInSessionRequestDto dto)

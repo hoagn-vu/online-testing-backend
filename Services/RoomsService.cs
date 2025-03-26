@@ -42,12 +42,22 @@ namespace Backend_online_testing.Services
             return (rooms, totalCount);
         }
 
-        // Find room using RoomName
-        public async Task<List<RoomsModel>> SearchByNameRoom(string name)
+        public async Task<List<RoomOptionsDto>> GetRoomOptions()
         {
-            var filter = Builders<RoomsModel>.Filter.Regex(x => x.RoomName, new MongoDB.Bson.BsonRegularExpression(name, "i"));
+            var filter = Builders<RoomsModel>.Filter.Ne(r => r.RoomStatus, "deleted");
+            
+            var projection = Builders<RoomsModel>.Projection
+                .Expression(rm => new RoomOptionsDto
+                {
+                    RoomId = rm.Id,
+                    RoomName = rm.RoomName,
+                    RoomLocation = rm.RoomLocation,
+                    RoomCapacity = rm.RoomCapacity,
+                });
 
-            return await this._rooms.Find(filter).ToListAsync();
+            var rooms = await _rooms.Find(filter).Project(projection).ToListAsync();
+
+            return rooms;
         }
 
         // Create Room
