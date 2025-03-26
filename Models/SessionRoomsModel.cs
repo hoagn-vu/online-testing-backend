@@ -13,4 +13,7 @@ public class SessionRoomsModel
     
     [BsonElement("candidates")]
     public List<CandidatesInRoomModel> Candidates { get; set; } = [];
+    
+    [BsonElement("roomStatus")]
+    public string RoomStatus { get; set; } = "inactive";
 }

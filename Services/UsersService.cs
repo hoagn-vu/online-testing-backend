@@ -66,6 +66,24 @@ namespace Backend_online_testing.Services
             return await _users.Find(filter).FirstOrDefaultAsync();
         }
 
+        public async Task<List<UserOptionsDto>> GetUsersByRole(string role)
+        {
+            var filter = Builders<UsersModel>.Filter.And(
+                Builders<UsersModel>.Filter.Eq(s => s.Role, role),
+                Builders<UsersModel>.Filter.Eq(s => s.AccountStatus, "active")
+            );
+            
+            var projection = Builders<UsersModel>.Projection
+                .Expression(sub => new UserOptionsDto
+                {
+                    UserId = sub.Id.ToString(),
+                    UserCode = sub.UserCode,
+                    FullName = sub.FullName,
+                });
+            
+            return await _users.Find(filter).Project(projection).ToListAsync();
+        }
+
         //Add new user
         public async Task<string> AddUser(UsersModel userData, string idMadeBy)
         {

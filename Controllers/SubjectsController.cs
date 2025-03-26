@@ -29,7 +29,7 @@ namespace Backend_online_testing.Controllers
         } 
         
         [HttpGet("options")]
-        public async Task<IActionResult> GetSubjects()
+        public async Task<IActionResult> GetSubjectOptions()
         {
             var subjects = await this._subjectsService.GetAllSubjects();
 
@@ -84,6 +84,13 @@ namespace Backend_online_testing.Controllers
         {
             var (subjectId, subjectName, questionBanks, totalCount)  = await this._subjectsService.GetQuestionBanks(subId, keyword, page, pageSize);
             return this.Ok(new { subjectId, subjectName, questionBanks, totalCount });
+        }
+        
+        [HttpGet("question-bank-options")]
+        public async Task<ActionResult<List<SubjectsModel>>> GetQuestionBankOptions([FromQuery] string subjectId)
+        {
+            var questionBanks  = await _subjectsService.GetQuestionBanksPerSubject(subjectId);
+            return Ok(questionBanks);
         }
         
         // Add question bank

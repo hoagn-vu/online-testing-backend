@@ -14,4 +14,10 @@
         public string QuestionBankName { get; set; } = string.Empty;
         public string? QuestionBankStatus { get; set; }
     }
+    
+    public class QuestionBankOptionsDto
+    {
+        public string QuestionBankId { get; set; }
+        public string QuestionBankName { get; set; } = string.Empty;
+    }
 }

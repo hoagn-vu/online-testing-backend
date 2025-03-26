@@ -24,6 +24,75 @@ public class OrganizeExamService
         _examMatricesCollection = database.GetCollection<ExamMatricesModel>("examMatrices");
     }
     
+    public async Task<OrganizeExamDto?> GetOrganizeExamById(string organizeExamId)
+    {
+        var filter = Builders<OrganizeExamModel>.Filter.And(
+            Builders<OrganizeExamModel>.Filter.Eq(oe => oe.Id, organizeExamId),
+            Builders<OrganizeExamModel>.Filter.Ne(s => s.OrganizeExamStatus, "deleted")
+        );
+
+        var exam = await _organizeExamCollection.Find(filter).FirstOrDefaultAsync();
+        if (exam == null) return null;
+
+        // Lấy thông tin môn học
+        var subject = await _subjectsCollection.Find(s => s.Id == exam.SubjectId).FirstOrDefaultAsync();
+        var subjectName = subject?.SubjectName ?? string.Empty;
+
+        // Lấy thông tin ma trận đề
+        string? matrixName = null;
+        if (!string.IsNullOrEmpty(exam.MatrixId))
+        {
+            var matrix = await _examMatricesCollection.Find(s => s.Id == exam.MatrixId).FirstOrDefaultAsync();
+            matrixName = matrix?.MatrixName ?? string.Empty;
+        }
+
+        // Lấy danh sách bài thi
+        var examSet = new List<ExamInOrganizeExamDto>();
+        if (exam.Exams == null || exam.Exams.Count == 0)
+            return new OrganizeExamDto
+            {
+                Id = exam.Id,
+                OrganizeExamName = exam.OrganizeExamName,
+                SubjectId = exam.SubjectId,
+                SubjectName = subjectName,
+                Duration = exam.Duration,
+                TotalQuestions = exam.TotalQuestions,
+                MaxScore = exam.MaxScore,
+                ExamType = exam.ExamType,
+                Exams = examSet,
+                MatrixId = exam.MatrixId,
+                MatrixName = matrixName,
+                OrganizeExamStatus = exam.OrganizeExamStatus,
+                TotalSessions = exam.Sessions.Count,
+            };
+        var examFilter = Builders<ExamsModel>.Filter.In(e => e.Id, exam.Exams);
+        var examList = await _examsCollection.Find(examFilter).ToListAsync();
+
+        examSet = examList.Select(ex => new ExamInOrganizeExamDto
+        {
+            Id = ex.Id,
+            ExamCode = ex.ExamCode,
+            ExamName = ex.ExamName,
+        }).ToList();
+
+        return new OrganizeExamDto
+        {
+            Id = exam.Id,
+            OrganizeExamName = exam.OrganizeExamName,
+            SubjectId = exam.SubjectId,
+            SubjectName = subjectName,
+            Duration = exam.Duration,
+            TotalQuestions = exam.TotalQuestions,
+            MaxScore = exam.MaxScore,
+            ExamType = exam.ExamType,
+            Exams = examSet,
+            MatrixId = exam.MatrixId,
+            MatrixName = matrixName,
+            OrganizeExamStatus = exam.OrganizeExamStatus,
+            TotalSessions = exam.Sessions.Count,
+        };
+    }
+    
     public async Task<(List<OrganizeExamDto>, long)> GetOrganizeExams(string? keyword, int page, int pageSize)
     {
         var filter = Builders<OrganizeExamModel>.Filter.Ne(ex => ex.OrganizeExamStatus, "deleted");
@@ -95,7 +164,7 @@ public class OrganizeExamService
             Builders<OrganizeExamModel>.Filter.Eq(oe => oe.Id, organizeExamId),
             Builders<OrganizeExamModel>.Filter.Ne(s => s.OrganizeExamStatus, "deleted")
         );
-        
+
         if (!string.IsNullOrEmpty(keyword))
         {
             filter = Builders<OrganizeExamModel>.Filter.And(
@@ -105,102 +174,178 @@ public class OrganizeExamService
                     Builders<SessionsModel>.Filter.Regex(q => q.SessionName, new BsonRegularExpression(keyword, "i"))));
         }
 
-        var organizeExam = await _organizeExamCollection.Find(filter).ToListAsync();
-        
-        var sessions = organizeExam
-            .SelectMany(oe => oe.Sessions
-                .Where(ss => string.IsNullOrEmpty(keyword) || ss.SessionName.ToLower().Contains(keyword.ToLower()))
-                .Select(ss => new SessionsDto
-                {
-                    SessionId = ss.SessionId,
-                    SessionName = ss.SessionName,
-                    ActiveAt = ss.ActiveAt,
-                    TotalRooms = ss.RoomsInSession.Count,
-                    SessionStatus = ss.SessionStatus,
-                }))
+        var organizeExam = await _organizeExamCollection.Find(filter).FirstOrDefaultAsync();
+
+        if (organizeExam == null)
+        {
+            return (organizeExamId, null, new List<SessionsDto>(), 0);
+        }
+
+        var allSessions = organizeExam.Sessions
+            .Where(ss => string.IsNullOrEmpty(keyword) || ss.SessionName.Contains(keyword, StringComparison.CurrentCultureIgnoreCase))
             .ToList();
 
-        var totalSessions = sessions.Count;
-        var organizeExamName = organizeExam.FirstOrDefault()?.OrganizeExamName;
+        var paginatedSessions = allSessions
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(ss => new SessionsDto
+            {
+                SessionId = ss.SessionId,
+                SessionName = ss.SessionName,
+                ActiveAt = ss.ActiveAt,
+                TotalRooms = ss.RoomsInSession.Count,
+                SessionStatus = ss.SessionStatus,
+            })
+            .ToList();
 
-        return (organizeExamId, organizeExamName, sessions, totalSessions);
+        return (organizeExamId, organizeExam.OrganizeExamName, paginatedSessions, allSessions.Count);
     }
+
     
-    public async Task<(string, string, string, string?, List<RoomsInSessionDto>, long)> GetRoomsInSession(string organizeExamId, string sessionId, string? keyWord, int page, int pageSize)
+    public async Task<(string, string, string, string?, List<RoomsInSessionDto>, long)> GetRoomsInSession(
+        string organizeExamId, string sessionId, string? keyword, int page, int pageSize)
     {
         var filter = Builders<OrganizeExamModel>.Filter.And(
             Builders<OrganizeExamModel>.Filter.Eq(oe => oe.Id, organizeExamId),
             Builders<OrganizeExamModel>.Filter.Ne(s => s.OrganizeExamStatus, "deleted")
         );
-            
-        var organizeExam = await _organizeExamCollection
-            .Find(filter)
-            .FirstOrDefaultAsync();
-    
+
+        var organizeExam = await _organizeExamCollection.Find(filter).FirstOrDefaultAsync();
+
+        if (organizeExam == null)
+            return (organizeExamId, "", sessionId, null, new List<RoomsInSessionDto>(), 0);
+
         var session = organizeExam.Sessions.FirstOrDefault(ss => ss.SessionId == sessionId);
-    
-        var rooms = session?.RoomsInSession;
-        
-        var totalCount = rooms?.Count ?? 0;
-        
+        if (session == null)
+            return (organizeExamId, organizeExam.OrganizeExamName, sessionId, null, new List<RoomsInSessionDto>(), 0);
+
+        var allRooms = session.RoomsInSession.ToList();
+
+        // Lọc theo keyword nếu có
+        if (!string.IsNullOrEmpty(keyword))
+        {
+            var roomIds = allRooms.Select(r => r.RoomInSessionId).ToList();
+
+            var matchingRooms = await _roomsCollection
+                .Find(r => roomIds.Contains(r.Id) && r.RoomName.ToLower().Contains(keyword.ToLower()))
+                .ToListAsync();
+
+            var matchingRoomIds = matchingRooms.Select(r => r.Id).ToHashSet();
+            allRooms = allRooms.Where(r => matchingRoomIds.Contains(r.RoomInSessionId)).ToList();
+        }
+
+        var totalCount = allRooms.Count;
+
+        // Áp dụng phân trang
+        var paginatedRooms = allRooms
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
         var roomsResponse = new List<RoomsInSessionDto>();
-    
-        foreach (var rm in rooms)
+
+        foreach (var rm in paginatedRooms)
         {
             var room = await _roomsCollection.Find(r => r.Id == rm.RoomInSessionId).FirstOrDefaultAsync();
-            var roomName = room.RoomName ?? string.Empty;
+            var roomName = room?.RoomName ?? string.Empty;
+            var roomLocation = room?.RoomLocation ?? string.Empty;
 
-            var supervisorsInRoom = rm.SupervisorIds.Select(supId => _usersCollection.Find(us => us.Id == supId).FirstOrDefault()).Select(user => new SupervisorsInRoomModel { SupervisorId = user.Id, SupervisorName = user.UserName, UserCode = user.UserCode }).ToList();
+            var supervisorsInRoom = rm.SupervisorIds
+                .Select(supId => _usersCollection.Find(us => us.Id == supId).FirstOrDefault())
+                .Where(user => user != null)
+                .Select(user => new SupervisorsInRoomModel
+                {
+                    SupervisorId = user.Id,
+                    SupervisorName = user.UserName,
+                    UserCode = user.UserCode
+                })
+                .ToList();
 
-            var totalCandidates = rm.Candidates?.Count ?? 0;
-    
+            var totalCandidates = rm.Candidates.Count;
+
             roomsResponse.Add(new RoomsInSessionDto
             {
                 RoomInSessionId = rm.RoomInSessionId,
                 RoomName = roomName,
+                RoomLocation = roomLocation,
                 Supervisors = supervisorsInRoom,
-                TotalCandidates = totalCandidates
+                TotalCandidates = totalCandidates,
+                RoomStatus = rm.RoomStatus,
             });
         }
-        
-        return (organizeExamId, organizeExam.OrganizeExamName ,sessionId, session?.SessionName ,roomsResponse, totalCount);
+
+        return (organizeExamId, organizeExam.OrganizeExamName, sessionId, session.SessionName, roomsResponse, totalCount);
     }
 
+
     public async Task<(string, string, string, string?, string, string, List<CandidatesInSessionRoomDto>, long)>
-        GetCandidatesInSessionRoom(string organizeExamId, string sessionId, string roomId, string? keyWord, int page,
-            int pageSize)
+        GetCandidatesInSessionRoom(string organizeExamId, string sessionId, string roomId, string? keyword, int page, int pageSize)
     {
         var filter = Builders<OrganizeExamModel>.Filter.And(
             Builders<OrganizeExamModel>.Filter.Eq(oe => oe.Id, organizeExamId),
             Builders<OrganizeExamModel>.Filter.Ne(s => s.OrganizeExamStatus, "deleted")
         );
-            
-        var organizeExam = await _organizeExamCollection
-            .Find(filter)
-            .FirstOrDefaultAsync();
-    
-        var session = organizeExam.Sessions.FirstOrDefault(ss => ss.SessionId == sessionId);
-    
-        var room = session?.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
-        var roomName = _roomsCollection.Find(r => room != null && r.Id == room.RoomInSessionId).FirstOrDefault()?.RoomName ?? string.Empty;
 
-        var candidatesInRoom = room?.Candidates;
-        
-        var totalCount = candidatesInRoom?.Count ?? 0;
-        
-        var candidatesResponse = (from cand in candidatesInRoom
-        let candidate = _usersCollection.Find(us => us.Id == cand.CandidateId).FirstOrDefault()
-        select new CandidatesInSessionRoomDto
+        var organizeExam = await _organizeExamCollection.Find(filter).FirstOrDefaultAsync();
+        if (organizeExam == null)
+            return (organizeExamId, "", sessionId, null, roomId, "", new List<CandidatesInSessionRoomDto>(), 0);
+
+        var session = organizeExam.Sessions.FirstOrDefault(ss => ss.SessionId == sessionId);
+        if (session == null)
+            return (organizeExamId, organizeExam.OrganizeExamName, sessionId, null, roomId, "", new List<CandidatesInSessionRoomDto>(), 0);
+
+        var room = session.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
+        if (room == null)
+            return (organizeExamId, organizeExam.OrganizeExamName, sessionId, session.SessionName, roomId, "", new List<CandidatesInSessionRoomDto>(), 0);
+
+        var roomData = await _roomsCollection.Find(r => r.Id == room.RoomInSessionId).FirstOrDefaultAsync();
+        var roomName = roomData?.RoomName ?? string.Empty;
+
+        var allCandidates = room.Candidates.ToList();
+
+        // Lọc theo keyword nếu có
+        if (!string.IsNullOrEmpty(keyword))
         {
-            CandidateId = cand.CandidateId,
-            CandidateName = candidate.FullName,
-            UserCode = candidate.UserCode,
-            ProgressStatus = cand.ProgressStatus,
-            RecognizedResult = cand.RecognizedResult,
-            Score = cand.TotalScore
-        }).ToList();
-        
-        return (organizeExamId, organizeExam.OrganizeExamName ,sessionId, session?.SessionName, roomId, roomName, candidatesResponse, totalCount);
+            var candidateIds = allCandidates.Select(c => c.CandidateId).ToList();
+
+            var matchingCandidates = await _usersCollection
+                .Find(u => candidateIds.Contains(u.Id) &&
+                           (u.FullName.Contains(keyword, StringComparison.CurrentCultureIgnoreCase) ||
+                            u.UserCode.Contains(keyword, StringComparison.CurrentCultureIgnoreCase)))
+                .ToListAsync();
+
+            var matchingCandidateIds = matchingCandidates.Select(c => c.Id).ToHashSet();
+            allCandidates = allCandidates.Where(c => matchingCandidateIds.Contains(c.CandidateId)).ToList();
+        }
+
+        var totalCount = allCandidates.Count;
+
+        var paginatedCandidates = allCandidates
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        var candidatesResponse = new List<CandidatesInSessionRoomDto>();
+
+        foreach (var cand in paginatedCandidates)
+        {
+            var candidate = await _usersCollection.Find(u => u.Id == cand.CandidateId).FirstOrDefaultAsync();
+            if (candidate == null) continue;
+
+            candidatesResponse.Add(new CandidatesInSessionRoomDto
+            {
+                CandidateId = cand.CandidateId,
+                CandidateName = candidate.FullName,
+                UserCode = candidate.UserCode,
+                Dob = candidate.DateOfBirth,
+                Gender = candidate.Gender,
+                ProgressStatus = cand.ProgressStatus,
+                RecognizedResult = cand.RecognizedResult,
+                Score = cand.TotalScore
+            });
+        }
+
+        return (organizeExamId, organizeExam.OrganizeExamName, sessionId, session.SessionName, roomId, roomName, candidatesResponse, totalCount);
     }
     
     public async Task<OrganizeExamModel> CreateOrganizeExam(OrganizeExamRequestDto dto)
@@ -222,22 +367,32 @@ public class OrganizeExamService
         return newExam;
     }
 
-    public async Task<OrganizeExamModel?> UpdateOrganizeExam(string id, OrganizeExamRequestDto dto)
+    public async Task<string> UpdateOrganizeExam(string organizeExamId, OrganizeExamRequestDto dto)
+    // public async Task<OrganizeExamModel?> UpdateOrganizeExam(string organizeExamId, OrganizeExamRequestDto dto)
     {
-        var update = Builders<OrganizeExamModel>.Update
-            .Set(e => e.OrganizeExamName, dto.OrganizeExamName)
-            .Set(e => e.Duration, dto.Duration)
-            .Set(e => e.TotalQuestions, dto.TotalQuestions)
-            .Set(e => e.MaxScore, dto.MaxScore)
-            .Set(e => e.SubjectId, dto.SubjectId)
-            .Set(e => e.QuestionBankId, dto.QuestionBankId)
-            .Set(e => e.ExamType, dto.ExamType)
-            .Set(e => e.MatrixId, dto.MatrixId)
-            .Set(e => e.Exams, dto.Exams)
-            .Set(e => e.OrganizeExamStatus, dto.OrganizeExamStatus);
+        try
+        {
+            var update = Builders<OrganizeExamModel>.Update
+                .Set(e => e.OrganizeExamName, dto.OrganizeExamName)
+                .Set(e => e.Duration, dto.Duration)
+                .Set(e => e.TotalQuestions, dto.TotalQuestions)
+                .Set(e => e.MaxScore, dto.MaxScore)
+                .Set(e => e.SubjectId, dto.SubjectId)
+                .Set(e => e.QuestionBankId, dto.QuestionBankId)
+                .Set(e => e.ExamType, dto.ExamType)
+                .Set(e => e.MatrixId, dto.MatrixId)
+                .Set(e => e.Exams, dto.Exams)
+                .Set(e => e.OrganizeExamStatus, dto.OrganizeExamStatus);
 
-        return await _organizeExamCollection.FindOneAndUpdateAsync(
-            e => e.Id == id, update, new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
+            // return await _organizeExamCollection.FindOneAndUpdateAsync(
+            //     e => e.Id == organizeExamId, update, new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
+            await _organizeExamCollection.FindOneAndUpdateAsync(e => e.Id == organizeExamId, update);
+            return "Cập nhật kỳ thi thành công";
+        }
+        catch (Exception e)
+        {
+            return $"Error: {e.Message}";
+        }
     }
         
     public async Task<OrganizeExamModel?> AddSession(string examId, SessionRequestDto dto)
@@ -252,6 +407,21 @@ public class OrganizeExamService
         var update = Builders<OrganizeExamModel>.Update.Push(e => e.Sessions, newSession);
         return await _organizeExamCollection.FindOneAndUpdateAsync(
             e => e.Id == examId, update, new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
+    }
+
+    public async Task<string> UpdateSession(string examId, string sessionId, SessionRequestDto dto)
+    {
+        var filter = Builders<OrganizeExamModel>.Filter.Eq(e => e.Id, examId) &
+                     Builders<OrganizeExamModel>.Filter.ElemMatch(e => e.Sessions, s => s.SessionId == sessionId);
+        
+        var update = Builders<OrganizeExamModel>.Update
+            .Set("sessions.$.sessionName", dto.SessionName)
+            .Set("sessions.$.activeAt", dto.ActiveAt)
+            .Set("sessions.$.sessionStatus", dto.SessionStatus);
+        
+        var result = await _organizeExamCollection.UpdateOneAsync(filter, update);
+        
+        return result.ModifiedCount > 0 ? "Cập nhật ca thi thành công" : "Không tìm thấy ca thi";
     }
     
     public async Task<OrganizeExamModel?> AddRoomToSession(string examId, string sessionId, RoomsInSessionRequestDto dto)
@@ -276,27 +446,6 @@ public class OrganizeExamService
             }
         );
     }
-    
-    // public async Task<OrganizeExamModel?> AddCandidateToRoom(string examId, string sessionId, string roomId, CandidatesInSessionRoomRequestDto dto)
-    // {
-    //     var filter = Builders<OrganizeExamModel>.Filter.And(
-    //         Builders<OrganizeExamModel>.Filter.Eq(o => o.Id, examId),
-    //         Builders<OrganizeExamModel>.Filter.ElemMatch(o => o.Sessions, s => s.SessionId == sessionId && s.RoomsInSession.Any(r => r.RoomInSessionId == roomId))
-    //     );
-    //
-    //     var candidates = dto.CandidateIds.Select(cid => new CandidatesInRoomModel { CandidateId = cid }).ToList();
-    //
-    //     var update = Builders<OrganizeExamModel>.Update.PushEach("sessions.$.roomsInSession.$[].candidates", candidates);
-    //
-    //     return await _organizeExamCollection.FindOneAndUpdateAsync(
-    //         filter,
-    //         update,
-    //         new FindOneAndUpdateOptions<OrganizeExamModel>
-    //         {
-    //             ReturnDocument = ReturnDocument.After
-    //         }
-    //     );
-    // }
     
     public async Task<OrganizeExamModel?> AddCandidateToRoom(string examId, string sessionId, string roomId, CandidatesInSessionRoomRequestDto dto)
     {
