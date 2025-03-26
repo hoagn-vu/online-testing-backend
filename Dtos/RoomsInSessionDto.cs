@@ -4,8 +4,10 @@ public class RoomsInSessionDto
 {
     public string RoomInSessionId { get; set; } = string.Empty;
     public string RoomName { get; set; } = string.Empty;
+    public string RoomLocation { get; set; } = string.Empty;
     public List<SupervisorsInRoomModel> Supervisors { get; set; } = [];
     public long TotalCandidates { get; set; }
+    public string RoomStatus { get; set; } = "inactive";
 }
 
 public class SupervisorsInRoomModel

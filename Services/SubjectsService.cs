@@ -108,6 +108,31 @@ namespace Backend_online_testing.Services
             var subjectName = subjects.FirstOrDefault()?.SubjectName;
 
             return (subjectId, subjectName, questionBanks, totalQuestionBanks);
+        }     
+        
+        public async Task<List<QuestionBankOptionsDto>> GetQuestionBanksPerSubject(string subjectId)
+        {
+            // var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
+            var filter = Builders<SubjectsModel>.Filter.And(
+                Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
+                Builders<SubjectsModel>.Filter.Ne(s => s.SubjectStatus, "deleted")
+            );
+
+            var subjects = await this._subjectsCollection
+                .Find(filter)
+                .ToListAsync();
+            
+            var questionBanks = subjects
+            .SelectMany(s => s.QuestionBanks
+                .Where(qb => !qb.QuestionBankStatus.Equals("deleted", StringComparison.CurrentCultureIgnoreCase))
+                .Select(qb => new QuestionBankOptionsDto
+                {
+                    QuestionBankId = qb.QuestionBankId,
+                    QuestionBankName = qb.QuestionBankName,
+                }))
+            .ToList();
+
+            return questionBanks;
         }
 
         // Get questions

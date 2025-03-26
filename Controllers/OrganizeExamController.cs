@@ -17,6 +17,14 @@ public class OrganizeExamController : ControllerBase
     }
 
     // Get all Exam
+    [HttpGet("get-by-id")]
+    public async Task<IActionResult> GetOrganizeExam([FromQuery] string organizeExamId)
+    {
+        var organizeExams = await _organizeExamService.GetOrganizeExamById(organizeExamId);
+
+        return Ok(organizeExams);
+    }    
+    
     [HttpGet]
     public async Task<IActionResult> GetOrganizeExams([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
