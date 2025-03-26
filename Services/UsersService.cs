@@ -112,8 +112,8 @@ namespace Backend_online_testing.Services
                 userData.Password = BCrypt.Net.BCrypt.HashPassword(userData.Password);
                 await _users.InsertOneAsync(userData);
                 
-                var update = Builders<UsersModel>.Update.Set(u => u.UserLog, adminUser.UserLog);
-                await _users.UpdateOneAsync(u => u.Id == idMadeBy, update);
+                //var update = Builders<UsersModel>.Update.Set(u => u.UserLog, adminUser.UserLog);
+                //await _users.UpdateOneAsync(u => u.Id == idMadeBy, update);
                 
                 return "User is added successfully";
             }
