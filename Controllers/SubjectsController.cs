@@ -130,17 +130,17 @@ namespace Backend_online_testing.Controllers
         [HttpGet("questions")]
         public async Task<ActionResult<List<SubjectsModel>>> GetQuestions(string subId, string qbId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var (subjectId, subjectName, questionBankId, questionBankName, questions, totalCount) = await this._subjectsService.GetQuestions(subId, qbId, keyword, page, pageSize);
-            return Ok( new { subjectId, subjectName, questionBankId, questionBankName, questions, totalCount });
+            var (subjectId, subjectName, questionBankId, questionBankName, allChapter, allLevel, questions, totalCount) = await _subjectsService.GetQuestions(subId, qbId, keyword, page, pageSize);
+            return Ok( new { subjectId, subjectName, questionBankId, questionBankName, allChapter, allLevel, questions, totalCount });
         }
 
         // Add question list
         [HttpPost("add-question")]
         public async Task<ActionResult> AddQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] SubjectQuestionDto question)
         {
-            var result = await this._subjectsService.AddQuestion(subjectId, questionBankId, userId, question);
+            var result = await _subjectsService.AddQuestion(subjectId, questionBankId, userId, question);
 
-            if (result == "Add question list successfully")
+            if (result == "Thêm câu hỏi thành công")
             {
                 return this.Ok(new { message = result });
             }
@@ -212,6 +212,13 @@ namespace Backend_online_testing.Controllers
             {
                 return this.BadRequest(new { message = result });
             }
+        }
+        
+        [HttpGet("questions/tags-classification")]
+        public async Task<ActionResult<List<TagsClassification>>> GetTagsClassification([FromQuery] string subjectId, [FromQuery] string questionBankId)
+        {
+            var result = await _subjectsService.GetTagsClassificationAsync(subjectId, questionBankId);
+            return Ok(result);
         }
 
         [HttpPost("seed")]

@@ -10,24 +10,21 @@
         public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("matrixName")]
-        public required string MatrixName { get; set; }
+        public string MatrixName { get; set; } = string.Empty;
 
         [BsonElement("MatrixStatus")]
-        public required string MatrixStatus { get; set; }
-
-        [BsonElement("totalGeneratedExams")]
-        public int TotalGeneratedExams { get; set; }
+        public string MatrixStatus { get; set; } = "available";
 
         [BsonElement("subjectId")]
-        public required string SubjectId { get; set; }
+        public string SubjectId { get; set; } = string.Empty;
 
         [BsonElement("questionBankId")]
-        public string? QuestionBankId { get; set; }
+        public string QuestionBankId { get; set; } = string.Empty;
 
         [BsonElement("matrixTags")]
-        public List<MatrixTagsModel> MatrixTags { get; set; } = new List<MatrixTagsModel>();
+        public List<MatrixTagsModel> MatrixTags { get; set; } = [];
 
-        [BsonElement("examId")]
-        public List<string> ExamId { get; set; } = new List<string>();
+        [BsonElement("examIds")]
+        public List<string> ExamIds { get; set; } = [];
     }
 }

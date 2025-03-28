@@ -5,13 +5,16 @@
 
     public class MatrixTagsModel
     {
-        [BsonElement("tagName")]
-        public string TagName { get; set; } = string.Empty;
+        [BsonElement("chapter")]
+        public string Chapter { get; set; } = string.Empty;        
+        
+        [BsonElement("level")]
+        public string Level { get; set; } = string.Empty;
 
         [BsonElement("questionCount")]
         public int QuestionCount { get; set; }
 
-        [BsonElement("tagScore")]
-        public int TagScore { get; set; }
+        [BsonElement("scorePerQuestion")]
+        public double ScorePerQuestion { get; set; }
     }
 }

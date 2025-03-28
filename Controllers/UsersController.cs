@@ -33,7 +33,7 @@ namespace Backend_online_testing.Controllers
         {
             var users = await _userService.GetUsersByRole(role);
             return this.Ok(users);
-        }
+        } 
 
         // Get method with ID
         [HttpGet("{id}")]
@@ -42,8 +42,6 @@ namespace Backend_online_testing.Controllers
             return await this._userService.GetUserById(id);
         }
         
-        
-
         // Add on User
         [HttpPost]
         public async Task<ActionResult<UsersModel>> AddUser(UsersModel userData, string userLogId)

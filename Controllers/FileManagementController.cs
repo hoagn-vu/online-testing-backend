@@ -45,8 +45,8 @@ namespace Backend_online_testing.Controllers
                 if
                 (result == "Insert question bank successfully")
                 {
-                    // return this.Ok(new { message = "Insert question bank successfully" });
-                    return Ok();
+                    return Ok(new { message = "Insert question bank successfully" });
+                    // return Ok();
                 }
                 else
                 {

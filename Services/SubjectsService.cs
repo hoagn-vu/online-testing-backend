@@ -12,11 +12,13 @@ namespace Backend_online_testing.Services
     {
         private readonly IMongoCollection<SubjectsModel> _subjectsCollection;
         private readonly IMongoCollection<UsersModel> _usersCollection;
+        private readonly IMongoCollection<LogsModel> _logsCollection;
 
         public SubjectsService(IMongoDatabase database)
         {
             _subjectsCollection = database.GetCollection<SubjectsModel>("subjects");
             _usersCollection = database.GetCollection<UsersModel>("users");
+            _logsCollection = database.GetCollection<LogsModel>("logs");
         }
 
         // Find all
@@ -136,7 +138,7 @@ namespace Backend_online_testing.Services
         }
 
         // Get questions
-        public async Task<(string, string, string, string, List<QuestionModel>, long)> GetQuestions(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
+        public async Task<(string, string, string, string, List<string>, List<string>, List<QuestionModel>, long)> GetQuestions(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
         {
             var filter = Builders<SubjectsModel>.Filter.And(
                 Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
@@ -172,7 +174,7 @@ namespace Backend_online_testing.Services
             // };
             //
             // return new List<QuestionDto> { result };
-            return (subject.Id, subject.SubjectName, questionBank.QuestionBankId, questionBank.QuestionBankName, paginatedQuestions, totalCount);
+            return (subject.Id, subject.SubjectName, questionBank.QuestionBankId, questionBank.QuestionBankName, questionBank.AllChapter, questionBank.AllLevel,paginatedQuestions, totalCount);
         }
 
         // Add subject
@@ -245,8 +247,8 @@ namespace Backend_online_testing.Services
         // Add Question
         public async Task<string> AddQuestion(string id, string questionBankId, string userId, SubjectQuestionDto question)
         {
-            try
-            {
+            // try
+            // {
                 var subject = await this._subjectsCollection.Find(s => s.Id == id & s.SubjectStatus != "deleted").FirstOrDefaultAsync();
                 if (subject == null)
                 {
@@ -270,29 +272,45 @@ namespace Backend_online_testing.Services
                 };
 
                 questionBank.QuestionList.Add(newQuestion);
+                if (!questionBank.AllChapter.Contains(newQuestion.Tags[0]))
+                {
+                    questionBank.AllChapter.Add(newQuestion.Tags[0]);
+                } 
+                if (!questionBank.AllLevel.Contains(newQuestion.Tags[1]))
+                {
+                    questionBank.AllLevel.Add(newQuestion.Tags[1]);
+                }
 
                 var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
                 await _subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
-                
-                var user = _usersCollection.Find(u => u.Id == userId).FirstOrDefault();
-                if (user == null) return $"Add question list successfully";
-                user.UserLog ??= [];
 
-                user.UserLog.Add(new UserLogsModel
+                var logInsert = new LogsModel
                 {
+                    MadeBy = userId,
                     LogAction = "create",
                     LogDetails = "Tạo câu hỏi: " + question.QuestionText
-                });
+                };
+                await _logsCollection.InsertOneAsync(logInsert);
                 
-                var updateLogUser = Builders<UsersModel>.Update.Set(u => u.UserLog, user.UserLog);
-                await _usersCollection.UpdateOneAsync(u => u.Id == userId, updateLogUser);
+                // var user = _usersCollection.Find(u => u.Id == userId).FirstOrDefault();
+                // if (user == null) return $"Add question list successfully";
+                // user.UserLog ??= [];
+                //
+                // user.UserLog.Add(new UserLogsModel
+                // {
+                //     LogAction = "create",
+                //     LogDetails = "Tạo câu hỏi: " + question.QuestionText
+                // });
+                //
+                // var updateLogUser = Builders<UsersModel>.Update.Set(u => u.UserLog, user.UserLog);
+                // await _usersCollection.UpdateOneAsync(u => u.Id == userId, updateLogUser);
 
-                return $"Add question list successfully";
-            }
-            catch (Exception ex)
-            {
-                return $"Error: Add question failure {ex.Message}";
-            }
+                return $"Thêm câu hỏi thành công";
+            // }
+            // catch (Exception ex)
+            // {
+            //     return $"Error: Thêm câu hỏi thất bại {ex.Message}";
+            // }
         }
 
         // Update Subject Name
@@ -486,6 +504,37 @@ namespace Backend_online_testing.Services
             {
                 return "Update failed or no changes were made";
             }
+        }
+        
+        // Classification tag for create matrix
+        public async Task<List<TagsClassification>> GetTagsClassificationAsync(string subjectId, string questionBankId)
+        {
+            var subject = await _subjectsCollection.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
+            if (subject == null) return [];
+
+            var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
+            if (questionBank == null) return [];
+            
+            var tagsDictionary = new Dictionary<(string Chapter, string Level), int>();
+
+            foreach (var question in questionBank.QuestionList)
+            {
+                if (question.Tags is { Count: >= 2 })
+                {
+                    var key = (question.Tags[0], question.Tags[1]);
+                    if (!tagsDictionary.TryAdd(key, 1))
+                    {
+                        tagsDictionary[key]++;
+                    }
+                }
+            }
+
+            return tagsDictionary.Select(kvp => new TagsClassification
+            {
+                Chapter = kvp.Key.Chapter,
+                Level = kvp.Key.Level,
+                Total = kvp.Value
+            }).ToList();
         }
 
         // Insert sample data
@@ -693,5 +742,7 @@ namespace Backend_online_testing.Services
 
             await this._subjectsCollection.InsertManyAsync(sampleData);
         }
+        
+        
     }
 }

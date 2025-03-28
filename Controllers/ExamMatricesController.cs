@@ -36,57 +36,38 @@ namespace Backend_online_testing.Controllers
 
             if (result == null)
             {
-                return this.NotFound(new { message = "Exam matrix not found" });
+                return NotFound(new { message = "Exam matrix not found" });
             }
 
             return this.Ok(new { status = "Success", data = result });
         }
 
-        // Searchby name
-        [HttpGet("search-name")]
-        public async Task<IActionResult> SearchByName(string name)
-        {
-            var results = await this._examMatricesService.SearchByName(name);
-
-            if (results == null || !results.Any())
-            {
-                return this.NotFound(new { message = "No exam matrix found" });
-            }
-
-            return this.Ok(new { status = "Success", data = results });
-        }
-
         // Add exam matrix
         [HttpPost]
-        public async Task<IActionResult> AddExamMatrix([FromBody] ExamMatrixDto examMatrixData)
+        public async Task<IActionResult> AddExamMatrix([FromBody] ExamMatrixRequestDto examMatrixData)
         {
-            if (examMatrixData == null)
+            var result = await _examMatricesService.AddExamMatrix(examMatrixData);
+
+            if (result == "Tạo ma trận thành công")
             {
-                return this.BadRequest(new { message = "Invalid exam matrix data" });
+                return Ok(new { status = "Success", message = result });
             }
 
-            var result = await this._examMatricesService.AddExamMatrix(examMatrixData);
-
-            if (result == "Exam matrix created successfully")
-            {
-                return this.Ok(new { status = "Success", message = result });
-            }
-
-            return this.BadRequest(new { status = "Failure", message = result });
+            return BadRequest(new { status = "Failure", message = result });
         }
 
-        // Add tag
-        [HttpPost("tags/")]
-        public async Task<IActionResult> AddTag([FromBody] ExamMatrixAddDto tagsData)
-        {
-            var result = await this._examMatricesService.AddTag(tagsData);
-            if (result == "Tags added successfully")
-            {
-                return this.Ok(new { status = "Success", message = result });
-            }
-
-            return this.BadRequest(new { status = "Failure", message = result });
-        }
+        // // Add tag
+        // [HttpPost("tags/")]
+        // public async Task<IActionResult> AddTag([FromBody] ExamMatrixAddDto tagsData)
+        // {
+        //     var result = await this._examMatricesService.AddTag(tagsData);
+        //     if (result == "Tags added successfully")
+        //     {
+        //         return this.Ok(new { status = "Success", message = result });
+        //     }
+        //
+        //     return this.BadRequest(new { status = "Failure", message = result });
+        // }
 
         // Update exam matrix
         [HttpPost("{examMatrixId}")]
@@ -101,49 +82,49 @@ namespace Backend_online_testing.Controllers
             return this.BadRequest(new { status = "Failure", message = result });
         }
 
-        // Update tag
-        [HttpPost("{examMatrixId}/tags/{tagName}")]
-        public async Task<IActionResult> UpdateTags(string examMatrixId, string tagName, int questionCount, double tagScore)
-        {
-            var result = await this._examMatricesService.UpdateTag(examMatrixId, tagName, questionCount, tagScore);
-            if (result == "Tags updated successfully")
-            {
-                return this.Ok(new { status = "Success", message = result });
-            }
-
-            return this.BadRequest(new { status = "Failure", message = result });
-        }
-
-        [HttpDelete("delete-exam-matrix/{examMatrixId}")]
-        public async Task<IActionResult> DeleteMatrixExam(string examMatrixId, string matrixLogUserId)
-        {
-            var result = await this._examMatricesService.DeleteExamMatrix(examMatrixId, matrixLogUserId);
-            if (result == "Exam matrix marked as unavailable")
-            {
-                return this.Ok(new { status = "Success", message = result });
-            }
-
-            return this.BadRequest(new { status = "Failure", message = result });
-        }
-
-        [HttpDelete("delete-tag/{examMatrixId}/{tagName}")]
-        public async Task<IActionResult> DeleteTagExam(string examMatrixId, string tagName, string matrixLogUserId)
-        {
-            var result = await this._examMatricesService.DeleteTag(examMatrixId, tagName, matrixLogUserId);
-            if (result == "Tag deleted successfully")
-            {
-                return this.Ok(new { status = "Success", message = result });
-            }
-
-            return this.BadRequest(new { status = "Failure", message = result });
-        }
-
-        // Insert form data
-        [HttpGet("seed")]
-        public async Task<IActionResult> SeedData()
-        {
-            await this._examMatricesService.SeedData();
-            return new OkObjectResult(new { status = "Success", message = "Example exam matrix data seeded successfully." });
-        }
+        // // Update tag
+        // [HttpPost("{examMatrixId}/tags/{tagName}")]
+        // public async Task<IActionResult> UpdateTags(string examMatrixId, string tagName, int questionCount, double tagScore)
+        // {
+        //     var result = await this._examMatricesService.UpdateTag(examMatrixId, tagName, questionCount, tagScore);
+        //     if (result == "Tags updated successfully")
+        //     {
+        //         return this.Ok(new { status = "Success", message = result });
+        //     }
+        //
+        //     return this.BadRequest(new { status = "Failure", message = result });
+        // }
+        //
+        // [HttpDelete("delete-exam-matrix/{examMatrixId}")]
+        // public async Task<IActionResult> DeleteMatrixExam(string examMatrixId, string matrixLogUserId)
+        // {
+        //     var result = await this._examMatricesService.DeleteExamMatrix(examMatrixId, matrixLogUserId);
+        //     if (result == "Exam matrix marked as unavailable")
+        //     {
+        //         return this.Ok(new { status = "Success", message = result });
+        //     }
+        //
+        //     return this.BadRequest(new { status = "Failure", message = result });
+        // }
+        //
+        // [HttpDelete("delete-tag/{examMatrixId}/{tagName}")]
+        // public async Task<IActionResult> DeleteTagExam(string examMatrixId, string tagName, string matrixLogUserId)
+        // {
+        //     var result = await this._examMatricesService.DeleteTag(examMatrixId, tagName, matrixLogUserId);
+        //     if (result == "Tag deleted successfully")
+        //     {
+        //         return this.Ok(new { status = "Success", message = result });
+        //     }
+        //
+        //     return this.BadRequest(new { status = "Failure", message = result });
+        // }
+        //
+        // // Insert form data
+        // [HttpGet("seed")]
+        // public async Task<IActionResult> SeedData()
+        // {
+        //     await this._examMatricesService.SeedData();
+        //     return new OkObjectResult(new { status = "Success", message = "Example exam matrix data seeded successfully." });
+        // }
     }
 }
