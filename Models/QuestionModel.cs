@@ -25,6 +25,6 @@
         public bool? IsRandomOrder { get; set; } = false;
 
         [BsonElement("tags")]
-        public List<string>? Tags { get; set; } = [];
+        public List<string>? Tags { get; set; } = [string.Empty, string.Empty];
     }
 }

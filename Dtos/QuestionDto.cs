@@ -27,4 +27,11 @@
         public string OptionId { get; set; } = string.Empty;
         public string OptionText { get; set; } = string.Empty;
     }
+
+    public class TagsClassification
+    {
+        public string Chapter { get; set; } = string.Empty;
+        public string Level { get; set; } = string.Empty;
+        public int Total { get; set; }
+    }
 }
