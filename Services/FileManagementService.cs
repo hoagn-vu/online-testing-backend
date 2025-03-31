@@ -10,8 +10,9 @@ namespace Backend_online_testing.Services
     using MongoDB.Driver;
     using OfficeOpenXml;
     using LicenseContext = OfficeOpenXml.LicenseContext;
+    using DocumentFormat.OpenXml.Wordprocessing;
 
-    public class FileManagementService 
+    public class FileManagementService : IFileManagementService 
     {
         private readonly IMongoCollection<UsersModel> _users;
         private readonly IMongoCollection<SubjectsModel> _subjects;
@@ -156,6 +157,7 @@ namespace Backend_online_testing.Services
             await this._subjects.UpdateOneAsync(updateFilter, update);
 
             return "Tải tệp câu hỏi thành công";
+            throw new NotImplementedException();
         }
         
         // public async Task<string> ProcessFileTxt(StreamReader reader, string subjectId, string userLogId)
@@ -277,30 +279,39 @@ namespace Backend_online_testing.Services
 
         public async Task<string> ProcessFileDocx(Stream fileStream, string subjectId, string questionBankId)
         {
+            // Kiểm tra stream ngay từ đầu
+            if (fileStream == null)
+            {
+                throw new ArgumentNullException(nameof(fileStream), "File stream cannot be null");
+            }
+
+            if (fileStream.Length == 0)
+            {
+                throw new ArgumentException("File stream cannot be empty", nameof(fileStream));
+            }
+
             var text = new StringBuilder();
 
             using (var wordDoc = WordprocessingDocument.Open(fileStream, false))
             {
-                if (wordDoc.MainDocumentPart?.Document.Body != null)
+                if (wordDoc.MainDocumentPart?.Document.Body == null)
                 {
-                    foreach (var paragraph in wordDoc.MainDocumentPart.Document.Body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
-                    {
-                        text.AppendLine(paragraph.InnerText);
-                    }
+                    return "File DOCX không có nội dung"; // hoặc throw exception
+                }
+
+                foreach (var paragraph in wordDoc.MainDocumentPart.Document.Body.Elements<Paragraph>())
+                {
+                    text.AppendLine(paragraph.InnerText);
                 }
             }
 
             // Tạo StreamReader từ nội dung docx
             using (var reader = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(text.ToString()))))
             {
-                if (fileStream == null || fileStream.Length == 0)
-                {
-                    throw new ArgumentException("File stream is empty or null", nameof(fileStream));
-                }
-                fileStream.Position = 0; // Reset stream về đầu
 
                 return await this.ProcessFileTxt(reader, subjectId, questionBankId);
             }
+            throw new NotImplementedException();
         }
 
         //public async Task<List<object>> UsersFileExcel(Stream fileStream, string userLogId)
