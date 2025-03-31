@@ -28,6 +28,7 @@ builder.Services.AddSingleton<ExamsService>();
 builder.Services.AddSingleton<ExamMatricesService>();
 builder.Services.AddSingleton<AddLogService>();
 builder.Services.AddSingleton<FileManagementService>();
+builder.Services.AddScoped<IFileManagementService, FileManagementService>();
 builder.Services.AddSingleton<SubjectsService>();
 builder.Services.AddSingleton<OrganizeExamService>();
 

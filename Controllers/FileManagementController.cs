@@ -1,5 +1,4 @@
-﻿#pragma warning disable SA1309
-namespace Backend_online_testing.Controllers
+﻿namespace Backend_online_testing.Controllers
 {
     using Services;
     using Microsoft.AspNetCore.Mvc;
@@ -7,11 +6,11 @@ namespace Backend_online_testing.Controllers
     [ApiController]
     public class FileManagementController : ControllerBase
     {
-        private readonly FileManagementService _fileService;
+        private readonly IFileManagementService _fileService;
 
-        public FileManagementController(FileManagementService fileService)
+        public FileManagementController(IFileManagementService fileService)
         {
-            this._fileService = fileService;
+            _fileService = fileService;
         }
 
         [HttpPost("upload-file-question")]
@@ -20,6 +19,13 @@ namespace Backend_online_testing.Controllers
             if (file == null || file.Length == 0)
             {
                 return this.BadRequest("Vui lòng chọn file hợp lệ.");
+            }
+
+            // Kiểm tra kích thước file (3MB = 3 * 1024 * 1024 bytes)
+            const int maxFileSize = 2 * 1024 * 1024;
+            if (file.Length > maxFileSize)
+            {
+                return BadRequest("Kích thước file không được vượt quá 2MB.");
             }
 
             try
@@ -42,20 +48,23 @@ namespace Backend_online_testing.Controllers
                     }
                 }
 
-                if
-                (result == "Insert question bank successfully")
+                if (result == "Tải tệp câu hỏi thành công")
                 {
-                    return Ok(new { message = "Insert question bank successfully" });
-                    // return Ok();
+                    return this.Ok(new { message = "Tải tệp câu hỏi thành công" });
                 }
                 else
                 {
-                    return this.BadRequest(new { message = result });
+                    return this.BadRequest(new {result });
                 }
             }
             catch (Exception ex)
             {
-                return this.StatusCode(500, $"Error: {ex.Message}");
+                return StatusCode(500, new
+                {
+                    status = 500,
+                    message = $"Error: {ex.Message}",
+                    error = "FileProcessingError"
+                });
             }
         }
 
@@ -64,16 +73,16 @@ namespace Backend_online_testing.Controllers
         {
             if (file == null || file.Length == 0)
             {
-                throw new ArgumentException("File is empty or null");
+                throw new ArgumentException("File rỗng không hợp lệ");
             }
 
             using var stream = new MemoryStream();
             await file.CopyToAsync(stream);
             stream.Position = 0;
 
-            var users = await this._fileService.UsersFileExcel(stream, userLogId);
+            var users = await _fileService.UsersFileExcel(stream, userLogId);
 
-            return this.Ok(users);
+            return Ok(users);
         }
 
         [HttpPost("upload-file-user-group")]
@@ -81,15 +90,15 @@ namespace Backend_online_testing.Controllers
         {
             if (file == null || file.Length == 0)
             {
-                throw new ArgumentException("File is empty or null");
+                throw new ArgumentException("File rỗng không hợp lệ");
             }
 
             using var stream = new MemoryStream();
             await file.CopyToAsync(stream);
             stream.Position = 0;
 
-            var result = await this._fileService.GroupUser(stream, userLogId);
-            return this.Ok(result);
+            var result = await _fileService.GroupUser(stream, userLogId);
+            return Ok(result);
         }
     }
 }

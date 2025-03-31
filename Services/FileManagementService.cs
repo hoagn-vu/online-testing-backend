@@ -1,4 +1,5 @@
-﻿#pragma warning disable SA1309
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+
 namespace Backend_online_testing.Services
 {
     using System.IO;
@@ -11,11 +12,12 @@ namespace Backend_online_testing.Services
     using OfficeOpenXml;
     using LicenseContext = OfficeOpenXml.LicenseContext;
 
-    public class FileManagementService
+    public class FileManagementService : IFileManagementService
     {
         private readonly IMongoCollection<UsersModel> _users;
         private readonly IMongoCollection<SubjectsModel> _subjects;
         private readonly AddLogService _logService;
+        // private IFileManagementService _fileManagementServiceImplementation;
 
         public FileManagementService(IMongoDatabase database, AddLogService logService)
         {
@@ -30,13 +32,13 @@ namespace Backend_online_testing.Services
             var subject = await this._subjects.Find(subjectFilter).FirstOrDefaultAsync();
             if (subject == null)
             {
-                return "Not found subject";
+                return "Không tìm thấy phân môn";
             }
 
             var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
             if (questionBank == null)
             {
-                return "Not found question bank";
+                return "Không tìm thấy bộ câu hỏi";
             }
 
             var questionList = new List<QuestionModel>();
@@ -46,6 +48,7 @@ namespace Backend_online_testing.Services
             var lastTag1 = string.Empty;
             var lastTag2 = string.Empty;
             var optionOrder = new Dictionary<string, int> { {"A", 0}, {"B", 1}, {"C", 2}, {"D", 3}, {"E", 4}, {"F", 5}, {"G", 6}, {"H", 7}, {"I", 8} };
+            var hasAnyQuestion = false;
 
             while ((line = await reader.ReadLineAsync()) != null)
             {
@@ -59,11 +62,17 @@ namespace Backend_online_testing.Services
                 }
                 else if (line.StartsWith("#"))
                 {
+                    hasAnyQuestion = true;
                     if (currentQuestion != null)
                     {
+                        //Kiểm tra số lượng options
+                        if (currentQuestion.Options.Count < 2 || currentQuestion.Options.Count > 10)
+                        {
+                            return "Số lượng lựa chọn phải từ 2 đến 10.";
+                        }
                         questionList.Add(currentQuestion);
                     }
-                    
+
                     currentQuestion = new QuestionModel
                     {
                         QuestionText = line.Trim('#'),
@@ -71,6 +80,7 @@ namespace Backend_online_testing.Services
                         QuestionStatus = "available",
                         QuestionType = "single-choice",
                         Options = [],
+                        //Options = [],
                         Tags = []
                     };
                     
@@ -128,10 +138,15 @@ namespace Backend_online_testing.Services
                     }
                 }
             }
-
+            // Kiểm tra nếu không có câu hỏi nào
+            if (!hasAnyQuestion)
+            {
+                return "File không chứa câu hỏi nào hợp lệ";
+            }
             if (currentQuestion != null)
             {
                 questionList.Add(currentQuestion);
+                //questionList.Add(currentQuestion);
             }
 
             var updateFilter = Builders<SubjectsModel>.Filter.And(
@@ -140,10 +155,10 @@ namespace Backend_online_testing.Services
             );
 
             var update = Builders<SubjectsModel>.Update.Set("QuestionBanks.$.QuestionList", questionList);
-            await _subjects.UpdateOneAsync(updateFilter, update);
+            await this._subjects.UpdateOneAsync(updateFilter, update);
 
-
-            return "Insert question bank successfully";
+            return "Tải tệp câu hỏi thành công";
+            throw new NotImplementedException();
         }
         
         // public async Task<string> ProcessFileTxt(StreamReader reader, string subjectId, string userLogId)
@@ -265,24 +280,39 @@ namespace Backend_online_testing.Services
 
         public async Task<string> ProcessFileDocx(Stream fileStream, string subjectId, string questionBankId)
         {
+            // Kiểm tra stream ngay từ đầu
+            if (fileStream == null)
+            {
+                throw new ArgumentNullException(nameof(fileStream), "File stream cannot be null");
+            }
+
+            if (fileStream.Length == 0)
+            {
+                throw new ArgumentException("File stream cannot be empty", nameof(fileStream));
+            }
+
             var text = new StringBuilder();
 
             using (var wordDoc = WordprocessingDocument.Open(fileStream, false))
             {
-                if (wordDoc.MainDocumentPart?.Document.Body != null)
+                if (wordDoc.MainDocumentPart?.Document.Body == null)
                 {
-                    foreach (var paragraph in wordDoc.MainDocumentPart.Document.Body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
-                    {
-                        text.AppendLine(paragraph.InnerText);
-                    }
+                    return "File DOCX không có nội dung"; // hoặc throw exception
+                }
+
+                foreach (var paragraph in wordDoc.MainDocumentPart.Document.Body.Elements<Paragraph>())
+                {
+                    text.AppendLine(paragraph.InnerText);
                 }
             }
 
             // Tạo StreamReader từ nội dung docx
             using (var reader = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(text.ToString()))))
             {
+
                 return await this.ProcessFileTxt(reader, subjectId, questionBankId);
             }
+            throw new NotImplementedException();
         }
 
         public async Task<List<object>> UsersFileExcel(Stream fileStream, string userLogId)
@@ -455,7 +485,7 @@ namespace Backend_online_testing.Services
                 LogDetails = "Update group user using excel file",
             };
 
-            await this._logService.AddActionLog(userLogId, logData);
+            await _logService.AddActionLog(userLogId, logData);
 
             return usersResponse;
         }
