@@ -23,10 +23,10 @@ namespace Backend_online_testing.Controllers
             }
 
             // Kiểm tra kích thước file (3MB = 3 * 1024 * 1024 bytes)
-            const int maxFileSize = 3 * 1024 * 1024;
+            const int maxFileSize = 2 * 1024 * 1024;
             if (file.Length > maxFileSize)
             {
-                return BadRequest("Kích thước file không được vượt quá 3MB.");
+                return BadRequest("Kích thước file không được vượt quá 2MB.");
             }
 
             try
