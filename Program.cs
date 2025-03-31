@@ -1,3 +1,4 @@
+﻿using System.Text;
 using System.Text;
 using Backend_online_testing.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,6 +23,7 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 });
 
 builder.Services.AddSingleton<AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddSingleton<UsersService>();
 builder.Services.AddSingleton<RoomsService>();
 builder.Services.AddSingleton<ExamsService>();

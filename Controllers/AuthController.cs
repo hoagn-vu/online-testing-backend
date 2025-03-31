@@ -12,11 +12,15 @@ namespace Backend_online_testing.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
 
-    public AuthController(AuthService authService)
+    public AuthController(IAuthService authService)
     {
         _authService = authService;
+    }
+    public class ErrorResponseDto
+    {
+        public string Message { get; set; }
     }
 
     [HttpPost("login")]
@@ -24,8 +28,8 @@ public class AuthController : ControllerBase
     {
         var authResponse = await _authService.Authenticate(dto.UserName, dto.Password);
         if (authResponse == null)
-            return Unauthorized(new { message = "Tài khoản hoặc mật khẩu không chính xác" });
-    
+            return Unauthorized(new ErrorResponseDto { Message = "Tài khoản hoặc mật khẩu không chính xác" });
+
         return Ok(authResponse);
     }
 

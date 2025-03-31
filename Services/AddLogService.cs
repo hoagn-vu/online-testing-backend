@@ -9,6 +9,8 @@ namespace Backend_online_testing.Services
     {
         private readonly IMongoCollection<UsersModel> _users;
 
+        public AddLogService() { }
+
         public AddLogService(IMongoDatabase database)
         {
             this._users = database.GetCollection<UsersModel>("users");

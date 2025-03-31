@@ -11,7 +11,7 @@ namespace Backend_online_testing.Services
     using OfficeOpenXml;
     using LicenseContext = OfficeOpenXml.LicenseContext;
 
-    public class FileManagementService
+    public class FileManagementService 
     {
         private readonly IMongoCollection<UsersModel> _users;
         private readonly IMongoCollection<SubjectsModel> _subjects;
@@ -46,6 +46,7 @@ namespace Backend_online_testing.Services
             var lastTag1 = string.Empty;
             var lastTag2 = string.Empty;
             var optionOrder = new Dictionary<string, int> { {"A", 0}, {"B", 1}, {"C", 2}, {"D", 3}, {"E", 4}, {"F", 5}, {"G", 6}, {"H", 7}, {"I", 8} };
+            bool hasAnyQuestion = false;
 
             while ((line = await reader.ReadLineAsync()) != null)
             {
@@ -59,18 +60,25 @@ namespace Backend_online_testing.Services
                 }
                 else if (line.StartsWith("#"))
                 {
+                    hasAnyQuestion = true;
                     if (currentQuestion != null)
                     {
+                        //Kiểm tra số lượng options
+                        if (currentQuestion.Options.Count < 2 || currentQuestion.Options.Count > 10)
+                        {
+                            return "Số lượng lựa chọn phải từ 2 đến 10.";
+                        }
                         questionList.Add(currentQuestion);
                     }
-                    
+
                     currentQuestion = new QuestionModel
                     {
                         QuestionText = line.Trim('#'),
                         QuestionId = ObjectId.GenerateNewId().ToString(),
                         QuestionStatus = "available",
                         QuestionType = "single-choice",
-                        Options = [],
+                        Options = new List<OptionsModel>(),
+                        //Options = [],
                         Tags = []
                     };
                     
@@ -128,10 +136,15 @@ namespace Backend_online_testing.Services
                     }
                 }
             }
-
+            // Kiểm tra nếu không có câu hỏi nào
+            if (!hasAnyQuestion)
+            {
+                return "File không chứa câu hỏi nào hợp lệ";
+            }
             if (currentQuestion != null)
             {
                 questionList.Add(currentQuestion);
+                //questionList.Add(currentQuestion);
             }
 
             var updateFilter = Builders<SubjectsModel>.Filter.And(
@@ -142,8 +155,7 @@ namespace Backend_online_testing.Services
             var update = Builders<SubjectsModel>.Update.Set("QuestionBanks.$.QuestionList", questionList);
             await this._subjects.UpdateOneAsync(updateFilter, update);
 
-
-            return "Insert question bank successfully";
+            return "Tải tệp câu hỏi thành công";
         }
         
         // public async Task<string> ProcessFileTxt(StreamReader reader, string subjectId, string userLogId)
@@ -281,183 +293,189 @@ namespace Backend_online_testing.Services
             // Tạo StreamReader từ nội dung docx
             using (var reader = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(text.ToString()))))
             {
+                if (fileStream == null || fileStream.Length == 0)
+                {
+                    throw new ArgumentException("File stream is empty or null", nameof(fileStream));
+                }
+                fileStream.Position = 0; // Reset stream về đầu
+
                 return await this.ProcessFileTxt(reader, subjectId, questionBankId);
             }
         }
 
-        public async Task<List<object>> UsersFileExcel(Stream fileStream, string userLogId)
-        {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        //public async Task<List<object>> UsersFileExcel(Stream fileStream, string userLogId)
+        //{
+        //    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-            var usersList = new List<UsersModel>();
-            var usersResponse = new List<object>();
+        //    var usersList = new List<UsersModel>();
+        //    var usersResponse = new List<object>();
 
-            using (var package = new ExcelPackage(fileStream))
-            {
-                var worksheet = package.Workbook.Worksheets[0];
-                int rowCount = worksheet.Dimension.Rows;
+        //    using (var package = new ExcelPackage(fileStream))
+        //    {
+        //        var worksheet = package.Workbook.Worksheets[0];
+        //        int rowCount = worksheet.Dimension.Rows;
 
-                for (int row = 2; row <= rowCount; row++)
-                {
-                    string userName = worksheet.Cells[row, 1].Text.Trim();
+        //        for (int row = 2; row <= rowCount; row++)
+        //        {
+        //            string userName = worksheet.Cells[row, 1].Text.Trim();
 
-                    var existingUser = this._users.Find(u => u.UserName == userName).FirstOrDefault();
-                    if (existingUser != null)
-                    {
-                        usersResponse.Add(new
-                        {
-                            UserName = userName,
-                            FullName = worksheet.Cells[row, 3].Text.Trim(),
-                            Role = worksheet.Cells[row, 6].Text.Trim(),
-                            Status = "Đã tồn tại",
-                        });
-                        continue;
-                    }
+        //            var existingUser = this._users.Find(u => u.UserName == userName).FirstOrDefault();
+        //            if (existingUser != null)
+        //            {
+        //                usersResponse.Add(new
+        //                {
+        //                    UserName = userName,
+        //                    FullName = worksheet.Cells[row, 3].Text.Trim(),
+        //                    Role = worksheet.Cells[row, 6].Text.Trim(),
+        //                    Status = "Đã tồn tại",
+        //                });
+        //                continue;
+        //            }
 
-                    var user = new UsersModel
-                    {
-                        UserName = userName,
-                        AccountStatus = "active",
-                        UserCode = worksheet.Cells[row, 2].Text.Trim(),
-                        FullName = worksheet.Cells[row, 3].Text.Trim(),
-                        Gender = worksheet.Cells[row, 4].Text.Trim(),
-                        DateOfBirth = worksheet.Cells[row, 5].Text.Trim(),
-                        Role = worksheet.Cells[row, 6].Text.Trim(),
-                        Password = worksheet.Cells[row, 2].Text.Trim(),
-                    };
+        //            var user = new UsersModel
+        //            {
+        //                UserName = userName,
+        //                AccountStatus = "active",
+        //                UserCode = worksheet.Cells[row, 2].Text.Trim(),
+        //                FullName = worksheet.Cells[row, 3].Text.Trim(),
+        //                Gender = worksheet.Cells[row, 4].Text.Trim(),
+        //                DateOfBirth = worksheet.Cells[row, 5].Text.Trim(),
+        //                Role = worksheet.Cells[row, 6].Text.Trim(),
+        //                Password = worksheet.Cells[row, 2].Text.Trim(),
+        //            };
 
-                    // Find user log data
-                    var userLogInfo = await this._users.Find(u => u.Id == userLogId).FirstOrDefaultAsync();
+        //            // Find user log data
+        //            var userLogInfo = await this._users.Find(u => u.Id == userLogId).FirstOrDefaultAsync();
 
-                    user.UserLog = new List<UserLogsModel>();
+        //            user.UserLog = new List<UserLogsModel>();
 
-                    user.UserLog.Add(new UserLogsModel
-                    {
-                        LogId = ObjectId.GenerateNewId().ToString(),
-                        LogAction = "Created",
-                        LogDetails = $"User account is created by account {userLogInfo?.UserName ?? "Unknown"} and name {userLogInfo?.FullName ?? "Unknown"}",
-                        LogAt = DateTime.UtcNow,
-                    });
+        //            user.UserLog.Add(new UserLogsModel
+        //            {
+        //                LogId = ObjectId.GenerateNewId().ToString(),
+        //                LogAction = "Created",
+        //                LogDetails = $"User account is created by account {userLogInfo?.UserName ?? "Unknown"} and name {userLogInfo?.FullName ?? "Unknown"}",
+        //                LogAt = DateTime.UtcNow,
+        //            });
 
-                    // Add user to user list
-                    usersList.Add(user);
-                    usersResponse.Add(new
-                    {
-                        UserName = user.UserName,
-                        FullName = user.FullName,
-                        Role = user.Role,
-                        Status = "Added successfully",
-                    });
-                }
-            }
+        //            // Add user to user list
+        //            usersList.Add(user);
+        //            usersResponse.Add(new
+        //            {
+        //                UserName = user.UserName,
+        //                FullName = user.FullName,
+        //                Role = user.Role,
+        //                Status = "Added successfully",
+        //            });
+        //        }
+        //    }
 
-            if (usersList.Count == 0)
-            {
-                return usersResponse;
-            }
+        //    if (usersList.Count == 0)
+        //    {
+        //        return usersResponse;
+        //    }
 
-            await this._users.InsertManyAsync(usersList);
+        //    await this._users.InsertManyAsync(usersList);
 
-            // Log admin action
-            var logData = new UserLogsModel
-            {
-                 LogAction = "Created",
-                 LogDetails = "Add user using file excel",
-                 LogAt = DateTime.Now,
-            };
+        //    // Log admin action
+        //    var logData = new UserLogsModel
+        //    {
+        //         LogAction = "Created",
+        //         LogDetails = "Add user using file excel",
+        //         LogAt = DateTime.Now,
+        //    };
 
-            await this._logService.AddActionLog(userLogId, logData);
+        //    await this._logService.AddActionLog(userLogId, logData);
 
-            return usersResponse;
-        }
+        //    return usersResponse;
+        //}
 
-        public async Task<List<object>> GroupUser(Stream fileStream, string userLogId)
-        {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        //public async Task<List<object>> GroupUser(Stream fileStream, string userLogId)
+        //{
+        //    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-            // var usersList = new List<UsersModel>();
-            var usersResponse = new List<object>();
+        //    // var usersList = new List<UsersModel>();
+        //    var usersResponse = new List<object>();
 
-            using (var package = new ExcelPackage(fileStream))
-            {
-                var worksheet = package.Workbook.Worksheets[0];
-                int rowCount = worksheet.Dimension.Rows;
+        //    using (var package = new ExcelPackage(fileStream))
+        //    {
+        //        var worksheet = package.Workbook.Worksheets[0];
+        //        int rowCount = worksheet.Dimension.Rows;
 
-                for (int row = 2; row <= rowCount; row++)
-                {
-                    string userName = worksheet.Cells[row, 1].Text.Trim();
-                    string groupName = worksheet.Cells[row, 6].Text.Trim();
-                    var existingUser = this._users.Find(u => u.UserName == userName).FirstOrDefault();
+        //        for (int row = 2; row <= rowCount; row++)
+        //        {
+        //            string userName = worksheet.Cells[row, 1].Text.Trim();
+        //            string groupName = worksheet.Cells[row, 6].Text.Trim();
+        //            var existingUser = this._users.Find(u => u.UserName == userName).FirstOrDefault();
 
-                    // If user is not existing in group
-                    if (existingUser != null)
-                    {
-                        if (!existingUser.GroupName.Contains(groupName))
-                        {
-                            existingUser.GroupName.Add(groupName);
+        //            // If user is not existing in group
+        //            if (existingUser != null)
+        //            {
+        //                if (!existingUser.GroupName.Contains(groupName))
+        //                {
+        //                    existingUser.GroupName.Add(groupName);
 
-                            var filter = Builders<UsersModel>.Filter.Eq(u => u.Id, existingUser.Id);
-                            var update = Builders<UsersModel>.Update.Set(u => u.GroupName, existingUser.GroupName);
-                            await this._users.UpdateOneAsync(filter, update);
+        //                    var filter = Builders<UsersModel>.Filter.Eq(u => u.Id, existingUser.Id);
+        //                    var update = Builders<UsersModel>.Update.Set(u => u.GroupName, existingUser.GroupName);
+        //                    await this._users.UpdateOneAsync(filter, update);
 
-                            usersResponse.Add(new
-                            {
-                                UserName = userName,
-                                FullName = worksheet.Cells[row, 3].Text.Trim(),
-                                Role = worksheet.Cells[row, 6].Text.Trim(),
-                                Status = $"Update {userName} to group {groupName}",
-                            });
+        //                    usersResponse.Add(new
+        //                    {
+        //                        UserName = userName,
+        //                        FullName = worksheet.Cells[row, 3].Text.Trim(),
+        //                        Role = worksheet.Cells[row, 6].Text.Trim(),
+        //                        Status = $"Update {userName} to group {groupName}",
+        //                    });
 
-                            // Find user log data
-                            var userLogInfo = await this._users.Find(u => u.Id == userLogId).FirstOrDefaultAsync();
+        //                    // Find user log data
+        //                    var userLogInfo = await this._users.Find(u => u.Id == userLogId).FirstOrDefaultAsync();
 
-                            var newLog = new UserLogsModel
-                            {
-                                LogId = ObjectId.GenerateNewId().ToString(),
-                                LogAction = "Created",
-                                LogDetails = $"User account is added to group {groupName} by account {userLogInfo?.UserName ?? "Unknown"} and name {userLogInfo?.FullName ?? "Unknown"}",
-                                LogAt = DateTime.UtcNow,
-                            };
+        //                    var newLog = new UserLogsModel
+        //                    {
+        //                        LogId = ObjectId.GenerateNewId().ToString(),
+        //                        LogAction = "Created",
+        //                        LogDetails = $"User account is added to group {groupName} by account {userLogInfo?.UserName ?? "Unknown"} and name {userLogInfo?.FullName ?? "Unknown"}",
+        //                        LogAt = DateTime.UtcNow,
+        //                    };
 
-                            var filterLog = Builders<UsersModel>.Filter.Eq(u => u.Id, existingUser.Id);
-                            var logUpdate = Builders<UsersModel>.Update.Push(u => u.UserLog, newLog);
-                            await this._users.UpdateOneAsync(filter, logUpdate);
-                        }
-                        else
-                        {
-                            usersResponse.Add(new
-                            {
-                                UserName = userName,
-                                FullName = worksheet.Cells[row, 3].Text.Trim(),
-                                Role = worksheet.Cells[row, 6].Text.Trim(),
-                                Status = $"{userName} is already in group {groupName}",
-                            });
-                        }
+        //                    var filterLog = Builders<UsersModel>.Filter.Eq(u => u.Id, existingUser.Id);
+        //                    var logUpdate = Builders<UsersModel>.Update.Push(u => u.UserLog, newLog);
+        //                    await this._users.UpdateOneAsync(filter, logUpdate);
+        //                }
+        //                else
+        //                {
+        //                    usersResponse.Add(new
+        //                    {
+        //                        UserName = userName,
+        //                        FullName = worksheet.Cells[row, 3].Text.Trim(),
+        //                        Role = worksheet.Cells[row, 6].Text.Trim(),
+        //                        Status = $"{userName} is already in group {groupName}",
+        //                    });
+        //                }
 
-                        continue;
-                    }
-                    else
-                    {
-                        usersResponse.Add(new
-                        {
-                            UserName = userName,
-                            FullName = worksheet.Cells[row, 3].Text.Trim(),
-                            Role = worksheet.Cells[row, 6].Text.Trim(),
-                            Status = "Not found user",
-                        });
-                    }
-                }
-            }
+        //                continue;
+        //            }
+        //            else
+        //            {
+        //                usersResponse.Add(new
+        //                {
+        //                    UserName = userName,
+        //                    FullName = worksheet.Cells[row, 3].Text.Trim(),
+        //                    Role = worksheet.Cells[row, 6].Text.Trim(),
+        //                    Status = "Not found user",
+        //                });
+        //            }
+        //        }
+        //    }
 
-            var logData = new UserLogsModel
-            {
-                LogAction = "Update",
-                LogDetails = "Update group user using excel file",
-            };
+        //    var logData = new UserLogsModel
+        //    {
+        //        LogAction = "Update",
+        //        LogDetails = "Update group user using excel file",
+        //    };
 
-            await this._logService.AddActionLog(userLogId, logData);
+        //    await this._logService.AddActionLog(userLogId, logData);
 
-            return usersResponse;
-        }
+        //    return usersResponse;
+        //}
     }
 }

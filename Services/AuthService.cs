@@ -9,7 +9,7 @@ using Backend_online_testing.Models;
 
 namespace Backend_online_testing.Services;
 
-public class AuthService
+public class AuthService : IAuthService
 {
     private readonly IMongoCollection<UsersModel> _usersCollection;
     private readonly IConfiguration _config;
@@ -23,8 +23,14 @@ public class AuthService
     public async Task<AuthResponseDto?> Authenticate(string username, string password)
     {
         var user = await _usersCollection.Find(u => u.UserName == username).FirstOrDefaultAsync();
+        Console.WriteLine(user != null ? $"User found: {user.UserName}" : "User NOT found!"); // DEBUG
+
         if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
+        {
+            Console.WriteLine("Authentication failed!"); // DEBUG
             return null;
+        }
+        Console.WriteLine("Password matched! Generating JWT..."); // DEBUG
 
         var accessToken = GenerateJwtToken(user);
         var refreshToken = GenerateRefreshToken();
@@ -84,8 +90,22 @@ public class AuthService
 
     private string GenerateJwtToken(UsersModel user)
     {
+        if (user == null)
+        {
+            Console.WriteLine("GenerateJwtToken received NULL user!");
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        Console.WriteLine($"Generating token for user: {user.UserName}, Role: {user.Role}"); // DEBUG
+
         var jwtSettings = _config.GetSection("JwtSettings");
         var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"] ?? string.Empty);
+
+        if (secretKey.Length == 0)
+        {
+            Console.WriteLine("ERROR: JwtSettings:Secret is missing in configuration!"); // DEBUG
+            throw new InvalidOperationException("JWT Secret key is missing!");
+        }
 
         var claims = new List<Claim>
         {
@@ -101,6 +121,8 @@ public class AuthService
             expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["AccessTokenExpirationMinutes"])),
             signingCredentials: new SigningCredentials(new SymmetricSecurityKey(secretKey), SecurityAlgorithms.HmacSha256)
         );
+        Console.WriteLine("JWT Token successfully generated!"); // DEBUG
+
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
