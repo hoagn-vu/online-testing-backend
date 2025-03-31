@@ -140,7 +140,7 @@ namespace Backend_online_testing.Services
             );
 
             var update = Builders<SubjectsModel>.Update.Set("QuestionBanks.$.QuestionList", questionList);
-            await this._subjects.UpdateOneAsync(updateFilter, update);
+            await _subjects.UpdateOneAsync(updateFilter, update);
 
 
             return "Insert question bank successfully";
