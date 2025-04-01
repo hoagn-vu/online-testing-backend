@@ -19,32 +19,75 @@ public class AuthService : IAuthService
         _usersCollection = database.GetCollection<UsersModel>("users");
         _config = config;
     }
-    
+
+    //public async Task<AuthResponseDto?> Authenticate(string username, string password)
+    //{
+    //    var user = await _usersCollection.Find(u => u.UserName == username).FirstOrDefaultAsync();
+    //    Console.WriteLine(user != null ? $"User found: {user.UserName}" : "User NOT found!"); // DEBUG
+
+    //    if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
+    //    {
+    //        Console.WriteLine("Authentication failed!"); // DEBUG
+    //        return null;
+    //    }
+    //    Console.WriteLine("Password matched! Generating JWT..."); // DEBUG
+
+    //    var accessToken = GenerateJwtToken(user);
+    //    var refreshToken = GenerateRefreshToken();
+
+    //    // Lưu refresh token vào DB
+    //    var update = Builders<UsersModel>.Update
+    //        .Set(u => u.RefreshToken, refreshToken)
+    //        .Set(u => u.TokenExpiration, DateTime.UtcNow.AddDays(int.Parse(_config["JwtSettings:RefreshTokenExpirationDays"] ?? string.Empty)));
+
+    //    await _usersCollection.UpdateOneAsync(u => u.Id == user.Id, update);
+
+    //    return new AuthResponseDto { Role = user.Role , AccessToken = accessToken, RefreshToken = refreshToken };
+    //}
+
     public async Task<AuthResponseDto?> Authenticate(string username, string password)
     {
         var user = await _usersCollection.Find(u => u.UserName == username).FirstOrDefaultAsync();
-        Console.WriteLine(user != null ? $"User found: {user.UserName}" : "User NOT found!"); // DEBUG
+        Console.WriteLine(user != null ? $"User found: {user.UserName}" : "User NOT found!");
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
         {
-            Console.WriteLine("Authentication failed!"); // DEBUG
+            Console.WriteLine("Authentication failed!");
             return null;
         }
-        Console.WriteLine("Password matched! Generating JWT..."); // DEBUG
+        Console.WriteLine("Password matched! Generating JWT...");
 
         var accessToken = GenerateJwtToken(user);
         var refreshToken = GenerateRefreshToken();
 
+        // Xử lý parse an toàn với giá trị mặc định
+        var refreshTokenExpirationDays = 7; // Giá trị mặc định
+        var expirationDaysStr = _config["JwtSettings:RefreshTokenExpirationDays"];
+
+        if (!string.IsNullOrEmpty(expirationDaysStr) && int.TryParse(expirationDaysStr, out var parsedDays))
+        {
+            refreshTokenExpirationDays = parsedDays;
+        }
+        else
+        {
+            Console.WriteLine($"Warning: Invalid RefreshTokenExpirationDays config, using default: {refreshTokenExpirationDays}");
+        }
+
         // Lưu refresh token vào DB
         var update = Builders<UsersModel>.Update
             .Set(u => u.RefreshToken, refreshToken)
-            .Set(u => u.TokenExpiration, DateTime.UtcNow.AddDays(int.Parse(_config["JwtSettings:RefreshTokenExpirationDays"] ?? string.Empty)));
+            .Set(u => u.TokenExpiration, DateTime.UtcNow.AddDays(refreshTokenExpirationDays));
 
         await _usersCollection.UpdateOneAsync(u => u.Id == user.Id, update);
 
-        return new AuthResponseDto { Role = user.Role , AccessToken = accessToken, RefreshToken = refreshToken };
+        return new AuthResponseDto
+        {
+            Role = user.Role,
+            AccessToken = accessToken,
+            RefreshToken = refreshToken
+        };
     }
-    
+
     public async Task<AuthResponseDto?> RefreshToken(string refreshToken)
     {
         var user = await _usersCollection.Find(u => u.RefreshToken == refreshToken).FirstOrDefaultAsync();
@@ -54,14 +97,48 @@ public class AuthService : IAuthService
         var newAccessToken = GenerateJwtToken(user);
         var newRefreshToken = GenerateRefreshToken();
 
+        // Xử lý parse an toàn với giá trị mặc định
+        var refreshTokenExpirationDays = 7; // Giá trị mặc định
+        var expirationDaysStr = _config["JwtSettings:RefreshTokenExpirationDays"];
+
+        if (!string.IsNullOrEmpty(expirationDaysStr) && int.TryParse(expirationDaysStr, out var parsedDays))
+        {
+            refreshTokenExpirationDays = parsedDays;
+        }
+        else
+        {
+            Console.WriteLine($"Warning: Invalid RefreshTokenExpirationDays config, using default: {refreshTokenExpirationDays}");
+        }
+
         var update = Builders<UsersModel>.Update
             .Set(u => u.RefreshToken, newRefreshToken)
-            .Set(u => u.TokenExpiration, DateTime.UtcNow.AddDays(int.Parse(_config["JwtSettings:RefreshTokenExpirationDays"] ?? string.Empty)));
+            .Set(u => u.TokenExpiration, DateTime.UtcNow.AddDays(refreshTokenExpirationDays));
 
         await _usersCollection.UpdateOneAsync(u => u.Id == user.Id, update);
 
-        return new AuthResponseDto { AccessToken = newAccessToken, RefreshToken = newRefreshToken };
+        return new AuthResponseDto
+        {
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshToken
+        };
     }
+    //public async Task<AuthResponseDto?> RefreshToken(string refreshToken)
+    //{
+    //    var user = await _usersCollection.Find(u => u.RefreshToken == refreshToken).FirstOrDefaultAsync();
+    //    if (user == null || user.TokenExpiration < DateTime.UtcNow)
+    //        return null;
+
+    //    var newAccessToken = GenerateJwtToken(user);
+    //    var newRefreshToken = GenerateRefreshToken();
+
+    //    var update = Builders<UsersModel>.Update
+    //        .Set(u => u.RefreshToken, newRefreshToken)
+    //        .Set(u => u.TokenExpiration, DateTime.UtcNow.AddDays(int.Parse(_config["JwtSettings:RefreshTokenExpirationDays"] ?? string.Empty)));
+
+    //    await _usersCollection.UpdateOneAsync(u => u.Id == user.Id, update);
+
+    //    return new AuthResponseDto { AccessToken = newAccessToken, RefreshToken = newRefreshToken };
+    //}
 
     public async Task<UserDto?> GetUserProfile(string userId)
     {
@@ -88,8 +165,9 @@ public class AuthService : IAuthService
         return user;
     }
 
-    private string GenerateJwtToken(UsersModel user)
+    internal string GenerateJwtToken(UsersModel user)
     {
+
         if (user == null)
         {
             Console.WriteLine("GenerateJwtToken received NULL user!");
