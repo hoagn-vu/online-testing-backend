@@ -11,12 +11,12 @@ namespace Backend_online_testing.Services
     public class UsersService
     {
         private readonly IMongoCollection<UsersModel> _users;
-        private readonly AddLogService _logService;
+        private readonly IMongoCollection<LogsModel> _logsCollection;
 
         public UsersService(IMongoDatabase database, AddLogService logService)
         {
             _users = database.GetCollection<UsersModel>("users");
-            _logService = logService;
+            _logsCollection = database.GetCollection<LogsModel>("logs");
         }
 
         //Get all User
@@ -112,26 +112,20 @@ namespace Backend_online_testing.Services
                 "candidate" => "thí sinh: ",
                 _ => "tùy chỉnh: "
             };
-
-            var adminUser = await _users.Find(u => u.Id == idMadeBy).FirstOrDefaultAsync();
-            if (adminUser != null)
+            
+            var logInsert = new LogsModel
             {
-                adminUser.UserLog ??= [];
-
-                adminUser.UserLog.Add(new UserLogsModel
-                {
-                    LogAction = "create",
-                    LogDetails = "Tạo tài khoản " + userType + userData.UserName
-                });
-            }
+                MadeBy = idMadeBy,
+                LogAction = "create",
+                LogDetails = "Tạo tài khoản " + userType + userData.UserName
+            };
             
             try
             {
                 userData.Password = BCrypt.Net.BCrypt.HashPassword(userData.Password);
                 await _users.InsertOneAsync(userData);
                 
-                var update = Builders<UsersModel>.Update.Set(u => u.UserLog, adminUser.UserLog);
-                await _users.UpdateOneAsync(u => u.Id == idMadeBy, update);
+                await _logsCollection.InsertOneAsync(logInsert);
                 
                 return "User is added successfully";
             }
@@ -153,31 +147,16 @@ namespace Backend_online_testing.Services
                 .Set(x => x.DateOfBirth, updateUser.DateOfBirth)
                 .Set(x => x.AccountStatus, updateUser.AccountStatus)
                 .Set(x => x.GroupName, updateUser.GroupName);
-
-            UserLogsModel lastLog = updateUser.UserLog != null && updateUser.UserLog.Any()
-            ? new UserLogsModel
+            
+            var logInsert = new LogsModel
             {
-                LogId = ObjectId.GenerateNewId().ToString(),
-                LogAction = updateUser.UserLog.Last().LogAction,
-                LogAt = updateUser.UserLog.Last().LogAt,
-                LogDetails = updateUser.UserLog.Last().LogDetails,
-                AffectedObject = updateUser.UserLog.Last().AffectedObject,
-                AffectedObjectId = updateUser.UserLog.Last().AffectedObjectId
-            }
-            : new UserLogsModel
-            {
-                LogId = ObjectId.GenerateNewId().ToString(),
-                LogAction = "Update",
-                LogDetails = $"{updateUser.FullName} updated",
-                AffectedObject = "",
-                AffectedObjectId = ""
+                MadeBy = id,
+                LogAction = "create",
+                LogDetails = "Cập nhật tài khoản " + updateUser.UserName
             };
+            await _logsCollection.InsertOneAsync(logInsert);
 
-            Console.WriteLine(lastLog);
-
-            var updateLog = Builders<UsersModel>.Update.Push(x => x.UserLog, lastLog);
-
-            var result = await _users.UpdateOneAsync(filter, Builders<UsersModel>.Update.Combine(update, updateLog));
+            var result = await _users.UpdateOneAsync(filter, Builders<UsersModel>.Update.Combine(update));
             return result.ModifiedCount > 0;
         }
         //Delete user by Id

@@ -261,7 +261,7 @@ public class OrganizeExamService
                 })
                 .ToList();
 
-            var totalCandidates = rm.Candidates.Count;
+            var totalCandidates = rm.CandidateIds.Count;
 
             roomsResponse.Add(new RoomsInSessionDto
             {
@@ -301,21 +301,20 @@ public class OrganizeExamService
         var roomData = await _roomsCollection.Find(r => r.Id == room.RoomInSessionId).FirstOrDefaultAsync();
         var roomName = roomData?.RoomName ?? string.Empty;
 
-        var allCandidates = room.Candidates.ToList();
+        var allCandidates = room.CandidateIds;
 
         // Lọc theo keyword nếu có
         if (!string.IsNullOrEmpty(keyword))
         {
-            var candidateIds = allCandidates.Select(c => c.CandidateId).ToList();
-
+            var candidates = allCandidates;
             var matchingCandidates = await _usersCollection
-                .Find(u => candidateIds.Contains(u.Id) &&
+                .Find(u => candidates.Contains(u.Id) &&
                            (u.FullName.Contains(keyword, StringComparison.CurrentCultureIgnoreCase) ||
                             u.UserCode.Contains(keyword, StringComparison.CurrentCultureIgnoreCase)))
                 .ToListAsync();
 
             var matchingCandidateIds = matchingCandidates.Select(c => c.Id).ToHashSet();
-            allCandidates = allCandidates.Where(c => matchingCandidateIds.Contains(c.CandidateId)).ToList();
+            allCandidates = allCandidates.Where(c => matchingCandidateIds.Contains(c)).ToList();
         }
 
         var totalCount = allCandidates.Count;
@@ -329,19 +328,19 @@ public class OrganizeExamService
 
         foreach (var cand in paginatedCandidates)
         {
-            var candidate = await _usersCollection.Find(u => u.Id == cand.CandidateId).FirstOrDefaultAsync();
-            if (candidate == null) continue;
+            var candidate = await _usersCollection.Find(u => u.Id == cand).FirstOrDefaultAsync();
+            var examResult = candidate.TakeExam?.Find(er => er.OrganizeExamId == organizeExamId && er.SessionId == sessionId && er.RoomId == roomId);
 
             candidatesResponse.Add(new CandidatesInSessionRoomDto
             {
-                CandidateId = cand.CandidateId,
+                CandidateId = cand,
                 CandidateName = candidate.FullName,
                 UserCode = candidate.UserCode,
                 Dob = candidate.DateOfBirth,
                 Gender = candidate.Gender,
-                ProgressStatus = cand.ProgressStatus,
-                RecognizedResult = cand.RecognizedResult,
-                Score = cand.TotalScore
+                ProgressStatus = examResult?.Status,
+                RecognizedResult = examResult?.Status,
+                Score = examResult?.TotalScore
             });
         }
 
@@ -397,10 +396,12 @@ public class OrganizeExamService
         
     public async Task<OrganizeExamModel?> AddSession(string examId, SessionRequestDto dto)
     {
+        var organizeExamDuration = _organizeExamCollection.Find(oe => oe.Id == examId).FirstOrDefault().Duration;
         var newSession = new SessionsModel
         {
             SessionName = dto.SessionName,
             ActiveAt = dto.ActiveAt,
+            ForceEndAt = dto.ActiveAt.AddMinutes(2 * organizeExamDuration),
             SessionStatus = dto.SessionStatus
         };
 
@@ -431,7 +432,7 @@ public class OrganizeExamService
         
         var newRoom = new SessionRoomsModel
         {
-            RoomInSessionId = ObjectId.GenerateNewId().ToString(),
+            RoomInSessionId = dto.RoomId,
             SupervisorIds = dto.SupervisorIds
         };
 
@@ -454,14 +455,47 @@ public class OrganizeExamService
             Builders<OrganizeExamModel>.Filter.ElemMatch(o => o.Sessions, s => s.SessionId == sessionId)
         );
 
-        var candidates = dto.CandidateIds.Select(cid => new CandidatesInRoomModel { CandidateId = cid }).ToList();
+        var candidates = dto.CandidateIds;
 
-        var update = Builders<OrganizeExamModel>.Update.PushEach("sessions.$.rooms.$[room].candidates", candidates);
+        var update = Builders<OrganizeExamModel>.Update.PushEach("sessions.$.rooms.$[room].candidateIds", candidates);
 
         var arrayFilters = new List<ArrayFilterDefinition>
         {
             new JsonArrayFilterDefinition<BsonDocument>($"{{'room.roomId': '{roomId}'}}")
         };
+
+        foreach (var filterTakeExam in candidates.Select(candidate => Builders<UsersModel>.Filter.Eq(u => u.Id, candidate)))
+        {
+            var user = await _usersCollection.Find(filterTakeExam).FirstOrDefaultAsync();
+            
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+        
+            user.TakeExam ??= new List<TakeExamsModel>();
+        
+            var exists = user.TakeExam.Exists(te =>
+                te.OrganizeExamId == examId &&
+                te.SessionId == sessionId &&
+                te.RoomId == roomId);
+
+            if (exists) continue;
+            var newTakeExam = new TakeExamsModel
+            {
+                OrganizeExamId = examId,
+                SessionId = sessionId,
+                RoomId = roomId,
+                Status = "closed",
+                Progress = 0,
+                ViolationCount = 0,
+                Answers = []
+            };
+            
+            user.TakeExam.Add(newTakeExam);
+            var updateTakeExam = Builders<UsersModel>.Update.Set(u => u.TakeExam, user.TakeExam);
+            await _usersCollection.UpdateOneAsync(filterTakeExam, updateTakeExam);
+        }
 
         return await _organizeExamCollection.FindOneAndUpdateAsync(
             filter,
@@ -478,7 +512,7 @@ public class OrganizeExamService
     {
         var filter = Builders<OrganizeExamModel>.Filter.ElemMatch(
             o => o.Sessions,
-            session => session.RoomsInSession.Any(room => room.Candidates.Any(c => c.CandidateId == candidateId))
+            session => session.RoomsInSession.Any(room => room.CandidateIds.Any(c => c == candidateId))
         );
 
         var exams = await _organizeExamCollection.Find(filter).ToListAsync();

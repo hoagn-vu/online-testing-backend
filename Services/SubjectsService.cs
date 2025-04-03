@@ -392,20 +392,15 @@ namespace Backend_online_testing.Services
 
                 // Update data
                 var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
-                var result = await this._subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
+                var result = await _subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
                 
-                var user = _usersCollection.Find(u => u.Id == userId).FirstOrDefault();
-                if (user == null) return $"Add question list successfully";
-                user.UserLog ??= [];
-
-                user.UserLog.Add(new UserLogsModel
+                var logInsert = new LogsModel
                 {
+                    MadeBy = userId,
                     LogAction = "create",
                     LogDetails = "Cập nhật câu hỏi có id  " + questionId
-                });
-                
-                var updateLogUser = Builders<UsersModel>.Update.Set(u => u.UserLog, user.UserLog);
-                await _usersCollection.UpdateOneAsync(u => u.Id == userId, updateLogUser);
+                };
+                await _logsCollection.InsertOneAsync(logInsert);
 
                 return result.ModifiedCount > 0 ? "Update question successfully" : "Update failed";
             }

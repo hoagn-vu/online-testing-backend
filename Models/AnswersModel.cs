@@ -11,5 +11,5 @@ public class AnswersModel
     public List<string> AnswerChosen { get; set; } = [];
     
     [BsonElement("answerText")]
-    public List<string> AnswerText { get; set; } = [];
+    public List<string>? AnswerText { get; set; }
 }

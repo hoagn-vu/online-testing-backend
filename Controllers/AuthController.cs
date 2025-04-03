@@ -33,17 +33,17 @@ public class AuthController : ControllerBase
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile()
     {
-        var token = Request.Headers.Authorization.ToString();
-        Console.WriteLine($"Token nhận được: {token}");
-        
-        Console.WriteLine("Claims của user:");
-        foreach (var claim in User.Claims)
-        {
-            Console.WriteLine($"Type: {claim.Type}, Value: {claim.Value}");
-        }
-
+        // var token = Request.Headers.Authorization.ToString();
+        // Console.WriteLine($"Token nhận được: {token}");
+        //
+        // Console.WriteLine("Claims của user:");
+        // foreach (var claim in User.Claims)
+        // {
+        //     Console.WriteLine($"Type: {claim.Type}, Value: {claim.Value}");
+        // }
+        //
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        Console.WriteLine($"UserId: {userId}");
+        // Console.WriteLine($"UserId: {userId}");
         if (userId == null)
             return Unauthorized();
 

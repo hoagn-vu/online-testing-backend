@@ -31,21 +31,24 @@
         public string? DateOfBirth { get; set; }
 
         [BsonElement("groupName")]
-        public List<string> GroupName { get; set; } = new List<string>();
+        public List<string> GroupName { get; set; } = [];
 
-        [BsonElement("accountStatus")]
-        public required string AccountStatus { get; set; }
+        [BsonElement("accountStatus")] 
+        public string AccountStatus { get; set; } = "active";
 
         [BsonElement("authenticate")]
         public List<string>? Authenticate { get; set; }
-
-        [BsonElement("userLogs")]
-        public List<UserLogsModel>? UserLog { get; set; } = [];
         
         [BsonElement("refreshToken")]
         public string? RefreshToken { get; set; }
         
         [BsonElement("tokenExpiration")]
         public DateTime? TokenExpiration { get; set; }
+        
+        [BsonElement("trackExams")]
+        public List<TrackExamsModel>? TrackExam { get; set; }
+
+        [BsonElement("takeExams")] 
+        public List<TakeExamsModel>? TakeExam { get; set; } = [];
     }
 }

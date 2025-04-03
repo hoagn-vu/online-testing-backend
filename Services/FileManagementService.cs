@@ -357,27 +357,27 @@ namespace Backend_online_testing.Services
                     };
 
                     // Find user log data
-                    var userLogInfo = await this._users.Find(u => u.Id == userLogId).FirstOrDefaultAsync();
+                    // var userLogInfo = await this._users.Find(u => u.Id == userLogId).FirstOrDefaultAsync();
 
-                    user.UserLog = new List<UserLogsModel>();
-
-                    user.UserLog.Add(new UserLogsModel
-                    {
-                        LogId = ObjectId.GenerateNewId().ToString(),
-                        LogAction = "Created",
-                        LogDetails = $"User account is created by account {userLogInfo?.UserName ?? "Unknown"} and name {userLogInfo?.FullName ?? "Unknown"}",
-                        LogAt = DateTime.UtcNow,
-                    });
-
-                    // Add user to user list
-                    usersList.Add(user);
-                    usersResponse.Add(new
-                    {
-                        UserName = user.UserName,
-                        FullName = user.FullName,
-                        Role = user.Role,
-                        Status = "Added successfully",
-                    });
+                    // user.UserLog = new List<UserLogsModel>();
+                    //
+                    // user.UserLog.Add(new UserLogsModel
+                    // {
+                    //     LogId = ObjectId.GenerateNewId().ToString(),
+                    //     LogAction = "Created",
+                    //     LogDetails = $"User account is created by account {userLogInfo?.UserName ?? "Unknown"} and name {userLogInfo?.FullName ?? "Unknown"}",
+                    //     LogAt = DateTime.UtcNow,
+                    // });
+                    //
+                    // // Add user to user list
+                    // usersList.Add(user);
+                    // usersResponse.Add(new
+                    // {
+                    //     UserName = user.UserName,
+                    //     FullName = user.FullName,
+                    //     Role = user.Role,
+                    //     Status = "Added successfully",
+                    // });
                 }
             }
 
@@ -388,15 +388,15 @@ namespace Backend_online_testing.Services
 
             await this._users.InsertManyAsync(usersList);
 
-            // Log admin action
-            var logData = new UserLogsModel
-            {
-                 LogAction = "Created",
-                 LogDetails = "Add user using file excel",
-                 LogAt = DateTime.Now,
-            };
-
-            await this._logService.AddActionLog(userLogId, logData);
+            // // Log admin action
+            // var logData = new UserLogsModel
+            // {
+            //      LogAction = "Created",
+            //      LogDetails = "Add user using file excel",
+            //      LogAt = DateTime.Now,
+            // };
+            //
+            // await this._logService.AddActionLog(userLogId, logData);
 
             return usersResponse;
         }
@@ -439,19 +439,19 @@ namespace Backend_online_testing.Services
                             });
 
                             // Find user log data
-                            var userLogInfo = await this._users.Find(u => u.Id == userLogId).FirstOrDefaultAsync();
-
-                            var newLog = new UserLogsModel
-                            {
-                                LogId = ObjectId.GenerateNewId().ToString(),
-                                LogAction = "Created",
-                                LogDetails = $"User account is added to group {groupName} by account {userLogInfo?.UserName ?? "Unknown"} and name {userLogInfo?.FullName ?? "Unknown"}",
-                                LogAt = DateTime.UtcNow,
-                            };
-
-                            var filterLog = Builders<UsersModel>.Filter.Eq(u => u.Id, existingUser.Id);
-                            var logUpdate = Builders<UsersModel>.Update.Push(u => u.UserLog, newLog);
-                            await this._users.UpdateOneAsync(filter, logUpdate);
+                            // var userLogInfo = await this._users.Find(u => u.Id == userLogId).FirstOrDefaultAsync();
+                            //
+                            // var newLog = new UserLogsModel
+                            // {
+                            //     LogId = ObjectId.GenerateNewId().ToString(),
+                            //     LogAction = "Created",
+                            //     LogDetails = $"User account is added to group {groupName} by account {userLogInfo?.UserName ?? "Unknown"} and name {userLogInfo?.FullName ?? "Unknown"}",
+                            //     LogAt = DateTime.UtcNow,
+                            // };
+                            //
+                            // var filterLog = Builders<UsersModel>.Filter.Eq(u => u.Id, existingUser.Id);
+                            // var logUpdate = Builders<UsersModel>.Update.Push(u => u.UserLog, newLog);
+                            // await this._users.UpdateOneAsync(filter, logUpdate);
                         }
                         else
                         {
@@ -479,13 +479,13 @@ namespace Backend_online_testing.Services
                 }
             }
 
-            var logData = new UserLogsModel
-            {
-                LogAction = "Update",
-                LogDetails = "Update group user using excel file",
-            };
-
-            await _logService.AddActionLog(userLogId, logData);
+            // var logData = new UserLogsModel
+            // {
+            //     LogAction = "Update",
+            //     LogDetails = "Update group user using excel file",
+            // };
+            //
+            // await _logService.AddActionLog(userLogId, logData);
 
             return usersResponse;
         }

@@ -8,12 +8,12 @@ public class SessionRoomsModel
     [BsonElement("roomId")]
     public required string RoomInSessionId { get; set; }
 
-    [BsonElement("supervisorId")] 
+    [BsonElement("supervisorIds")] 
     public List<string> SupervisorIds { get; set; } = [];
     
-    [BsonElement("candidates")]
-    public List<CandidatesInRoomModel> Candidates { get; set; } = [];
+    [BsonElement("candidateIds")]
+    public List<string> CandidateIds { get; set; } = [];
     
     [BsonElement("roomStatus")]
-    public string RoomStatus { get; set; } = "inactive";
+    public string RoomStatus { get; set; } = "closed";
 }

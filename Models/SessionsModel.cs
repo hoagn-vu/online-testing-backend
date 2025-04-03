@@ -16,9 +16,13 @@ public class SessionsModel
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime ActiveAt { get; set; }
     
+    [BsonElement("forceEndAt")]
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime ForceEndAt { get; set; }
+    
     [BsonElement("rooms")]
     public List<SessionRoomsModel> RoomsInSession { get; set; } = [];
     
     [BsonElement("sessionStatus")]
-    public string SessionStatus { get; set; } = "available";
+    public string SessionStatus { get; set; } = "closed";
 }

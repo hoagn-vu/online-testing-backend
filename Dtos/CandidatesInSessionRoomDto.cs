@@ -8,7 +8,7 @@ public class CandidatesInSessionRoomDto
     public string? Dob { get; set; } = string.Empty;
     public string? Gender { get; set; } = string.Empty;
     public string? ProgressStatus { get; set; } = string.Empty;
-    public bool? RecognizedResult { get; set; }
+    public string? RecognizedResult { get; set; } = string.Empty;
     public double? Score { get; set; }
 }
 

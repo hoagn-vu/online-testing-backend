@@ -31,6 +31,7 @@ builder.Services.AddSingleton<FileManagementService>();
 builder.Services.AddScoped<IFileManagementService, FileManagementService>();
 builder.Services.AddSingleton<SubjectsService>();
 builder.Services.AddSingleton<OrganizeExamService>();
+builder.Services.AddScoped<ProcessTakeExamService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
