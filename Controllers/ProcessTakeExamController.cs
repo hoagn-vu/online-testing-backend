@@ -23,8 +23,7 @@ public class ProcessTakeExamController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var userRole = User.FindFirstValue(ClaimTypes.Role);
-        if (userId == null || userRole is not "admin") 
-            return Unauthorized();
+        if (userId == null || userRole is not "admin") return Unauthorized();
 
         return Ok();
     }
@@ -54,4 +53,74 @@ public class ProcessTakeExamController : ControllerBase
         var result = await _processTakeExamService.GetActiveExam(userId);
         return Ok(result);
     }
+    
+    [HttpGet("take-exam")]
+    public async Task<IActionResult> TakeExam(
+        [FromQuery] string organizeExamId,
+        [FromQuery] string sessionId,
+        [FromQuery] string roomId,
+        [FromQuery] string userId)
+    {
+        var result = await _processTakeExamService.TakeExam(organizeExamId, sessionId, roomId, userId);
+
+        if (result == null)
+        {
+            return NotFound(new { message = "Không tìm thấy bài thi phù hợp hoặc không có câu hỏi khả dụng." });
+        }
+
+        return Ok(result);
+    }
+    
+    [HttpPost("submit-answers")]
+    public async Task<IActionResult> SubmitAnswers(
+        [FromQuery] string userId,
+        [FromQuery] string takeExamId,
+        [FromQuery] string type,
+        [FromBody] List<SubmitAnswersRequest> request)
+    {
+        var result = await _processTakeExamService.SubmitAnswers(userId, takeExamId, type, request);
+        if (!result)
+            return BadRequest("Không thể lưu/nộp bài.");
+
+        return Ok(new { message = type == "submit" ? "Nộp bài thành công." : "Lưu bài thành công." });
+    }
+
+    [HttpGet("track-exam")]
+    public async Task<IActionResult> GetTrackExam([FromQuery] string userId)
+    {
+        var result = await _processTakeExamService.TrackActiveExam(userId);
+        return Ok(result);
+    }
+    
+    [HttpGet("track-exam-detail")]
+    public async Task<IActionResult> GetTrackExamDetail([FromQuery] string organizeExamId, [FromQuery] string sessionId, [FromQuery] string roomId)
+    {
+        var result = await _processTakeExamService.TrackExamDetail(organizeExamId, sessionId, roomId);
+        if (result == null)
+            return NotFound("Không tìm thấy dữ liệu phù hợp");
+
+        return Ok(result);
+    }
+    
+    [HttpPost("violation")]
+    public async Task<IActionResult> IncreaseViolation([FromQuery] string userId, [FromQuery] string takeExamId)
+    {
+        var success = await _processTakeExamService.IncreaseViolationCount(userId, takeExamId);
+        if (!success) return NotFound("User or TakeExam not found.");
+
+        return Ok("Violation count increased.");
+    }
+    
+    [HttpPost("update-status")]
+    public async Task<IActionResult> UpdateStatus(
+        [FromQuery] string userId,
+        [FromQuery] string takeExamId,
+        [FromBody] UpdateTakeExamStatusRequest request)
+    {
+        var success = await _processTakeExamService.UpdateStatusAndReason(userId, takeExamId, request.Type, request.UnrecognizedReason);
+        if (!success) return NotFound("User or TakeExam not found.");
+
+        return Ok("Status and reason updated.");
+    }
+    
 }

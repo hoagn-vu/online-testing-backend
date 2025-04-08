@@ -25,3 +25,18 @@ public class ToggleRoomStatusRequest
     public string SessionId { get; set; } = string.Empty;
     public string RoomId { get; set; } = string.Empty;
 }
+
+public class SubmitAnswersRequest
+{
+    public string QuestionId { get; set; } = string.Empty;
+    public List<string> OptionIds { get; set; } = [];
+}
+
+public class UpdateTakeExamStatusRequest
+{
+    public string Type { get; set; } = string.Empty;
+    public string? UnrecognizedReason { get; set; }
+}
+
+
+

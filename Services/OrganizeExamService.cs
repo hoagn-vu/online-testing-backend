@@ -435,8 +435,37 @@ public class OrganizeExamService
             RoomInSessionId = dto.RoomId,
             SupervisorIds = dto.SupervisorIds
         };
-
+        
         var update = Builders<OrganizeExamModel>.Update.Push("sessions.$.rooms", newRoom);
+        
+        foreach (var filterTrackExam in dto.SupervisorIds.Select(supv => Builders<UsersModel>.Filter.Eq(u => u.Id, supv)))
+        {
+            var user = await _usersCollection.Find(filterTrackExam).FirstOrDefaultAsync();
+            
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+        
+            user.TrackExam ??= [];
+        
+            var exists = user.TrackExam.Exists(te =>
+                te.OrganizeExamId == examId &&
+                te.SessionId == sessionId &&
+                te.RoomId == dto.RoomId);
+
+            if (exists) continue;
+            var newTrackExam = new TrackExamsModel
+            {
+                OrganizeExamId = examId,
+                SessionId = sessionId,
+                RoomId = dto.RoomId,
+            };
+            
+            user.TrackExam.Add(newTrackExam);
+            var updateTrackExam = Builders<UsersModel>.Update.Set(u => u.TrackExam, user.TrackExam);
+            await _usersCollection.UpdateOneAsync(filterTrackExam, updateTrackExam);
+        }
         
         return await _organizeExamCollection.FindOneAndUpdateAsync(
             filter,
