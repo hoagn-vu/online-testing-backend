@@ -12,7 +12,7 @@
         [BsonElement("matrixName")]
         public string MatrixName { get; set; } = string.Empty;
 
-        [BsonElement("MatrixStatus")]
+        [BsonElement("matrixStatus")]
         public string MatrixStatus { get; set; } = "available";
 
         [BsonElement("subjectId")]

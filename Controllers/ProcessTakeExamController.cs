@@ -123,4 +123,32 @@ public class ProcessTakeExamController : ControllerBase
         return Ok("Status and reason updated.");
     }
     
+    [HttpGet("check-can-continue")]
+    public async Task<IActionResult> CheckCanContinue([FromQuery] string userId, [FromQuery] string takeExamId)
+    {
+        var (status, reason) = await _processTakeExamService.CheckCanContinue(userId, takeExamId);
+
+        if (string.IsNullOrEmpty(status))
+            return NotFound(new { message = "Không tìm thấy user hoặc takeExam." });
+
+        bool canContinue = !status.Equals("terminate", StringComparison.OrdinalIgnoreCase);
+
+        return Ok(new
+        {
+            canContinue,
+            status,
+            unrecognizedReason = reason
+        });
+    }
+    
+    [HttpGet("exam-result")]
+    public async Task<IActionResult> GetExamResult(string userId, string takeExamId)
+    {
+        var result = await _processTakeExamService.GetExamResult(userId, takeExamId);
+        if (result == null)
+            return NotFound("User hoặc TakeExam không tồn tại.");
+
+        return Ok(result);
+    }
+
 }

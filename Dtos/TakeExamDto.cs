@@ -8,6 +8,7 @@ public class TakeExamDto
     public string SessionId { get; set; } = string.Empty;
     public string RoomId { get; set; } = string.Empty;
     public int Duration { get; set; }
+    public string Status { get; set; } = string.Empty;
     public List<TakeExamQuestionDto> Questions { get; set; } = [];
 }
 
@@ -39,6 +40,7 @@ public class TrackExamDto
 
 public class TrackExamDetailDto
 {
+    public string TakeExamId { get; set; } = string.Empty;
     public string OrganizeExamId { get; set; } = string.Empty;
     public string OrganizeExamName { get; set; } = string.Empty;
     public string SessionId { get; set; } = string.Empty;
@@ -62,5 +64,6 @@ public class TrackCandidateDto
     public DateTime? FinishedAt { get; set; }
     public double? TotalScore { get; set; }
     public int ViolationCount { get; set; }
+    public string TakeExamId { get; set; } = string.Empty;
 }
 

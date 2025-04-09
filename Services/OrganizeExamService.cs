@@ -477,65 +477,178 @@ public class OrganizeExamService
         );
     }
     
-    public async Task<OrganizeExamModel?> AddCandidateToRoom(string examId, string sessionId, string roomId, CandidatesInSessionRoomRequestDto dto)
+    // public async Task<OrganizeExamModel?> AddCandidateToRoom(string examId, string sessionId, string roomId, CandidatesInSessionRoomRequestDto dto)
+    // {
+    //     var filter = Builders<OrganizeExamModel>.Filter.And(
+    //         Builders<OrganizeExamModel>.Filter.Eq(o => o.Id, examId),
+    //         Builders<OrganizeExamModel>.Filter.ElemMatch(o => o.Sessions, s => s.SessionId == sessionId)
+    //     );
+    //
+    //     var candidates = dto.CandidateIds;
+    //     var userCodes = dto.UserCodes;
+    //
+    //     var update = Builders<OrganizeExamModel>.Update.PushEach("sessions.$.rooms.$[room].candidateIds", candidates);
+    //
+    //     var arrayFilters = new List<ArrayFilterDefinition>
+    //     {
+    //         new JsonArrayFilterDefinition<BsonDocument>($"{{'room.roomId': '{roomId}'}}")
+    //     };
+    //
+    //     foreach (var filterTakeExam in candidates.Select(candidate => Builders<UsersModel>.Filter.Eq(u => u.Id, candidate)))
+    //     {
+    //         var user = await _usersCollection.Find(filterTakeExam).FirstOrDefaultAsync();
+    //         
+    //         if (user == null)
+    //         {
+    //             throw new Exception("User not found");
+    //         }
+    //     
+    //         user.TakeExam ??= new List<TakeExamsModel>();
+    //     
+    //         var exists = user.TakeExam.Exists(te =>
+    //             te.OrganizeExamId == examId &&
+    //             te.SessionId == sessionId &&
+    //             te.RoomId == roomId);
+    //
+    //         if (exists) continue;
+    //         var newTakeExam = new TakeExamsModel
+    //         {
+    //             OrganizeExamId = examId,
+    //             SessionId = sessionId,
+    //             RoomId = roomId,
+    //             Status = "closed",
+    //             Progress = 0,
+    //             ViolationCount = 0,
+    //             Answers = []
+    //         };
+    //         
+    //         user.TakeExam.Add(newTakeExam);
+    //         var updateTakeExam = Builders<UsersModel>.Update.Set(u => u.TakeExam, user.TakeExam);
+    //         await _usersCollection.UpdateOneAsync(filterTakeExam, updateTakeExam);
+    //     }
+    //
+    //     return await _organizeExamCollection.FindOneAndUpdateAsync(
+    //         filter,
+    //         update,
+    //         new FindOneAndUpdateOptions<OrganizeExamModel>
+    //         {
+    //             ReturnDocument = ReturnDocument.After,
+    //             ArrayFilters = arrayFilters
+    //         }
+    //     );
+    // }
+    public async Task<string> AddCandidateToRoom(string examId, string sessionId, string roomId, CandidatesInSessionRoomRequestDto dto)
     {
         var filter = Builders<OrganizeExamModel>.Filter.And(
             Builders<OrganizeExamModel>.Filter.Eq(o => o.Id, examId),
             Builders<OrganizeExamModel>.Filter.ElemMatch(o => o.Sessions, s => s.SessionId == sessionId)
         );
 
-        var candidates = dto.CandidateIds;
+        List<string> candidates = dto.CandidateIds;
 
-        var update = Builders<OrganizeExamModel>.Update.PushEach("sessions.$.rooms.$[room].candidateIds", candidates);
-
-        var arrayFilters = new List<ArrayFilterDefinition>
+        if (candidates == null || !candidates.Any())
         {
-            new JsonArrayFilterDefinition<BsonDocument>($"{{'room.roomId': '{roomId}'}}")
-        };
+            if (dto.UserCodes != null && dto.UserCodes.Any())
+            {
+                var filterUserCodes = Builders<UsersModel>.Filter.In(u => u.UserCode, dto.UserCodes);
+                var users = await _usersCollection.Find(filterUserCodes).ToListAsync();
 
-        foreach (var filterTakeExam in candidates.Select(candidate => Builders<UsersModel>.Filter.Eq(u => u.Id, candidate)))
+                if (users.Count != dto.UserCodes.Count)
+                {
+                    throw new Exception("Some user codes are invalid");
+                }
+
+                candidates = users.Select(u => u.Id).ToList();
+            }
+            else
+            {
+                throw new Exception("CandidateIds and UserCodes are both empty");
+            }
+        }
+
+        // Lấy danh sách candidateIds hiện tại
+        var projection = Builders<OrganizeExamModel>.Projection
+            .ElemMatch(o => o.Sessions, s => s.SessionId == sessionId);
+        var exam = await _organizeExamCollection
+            .Find(o => o.Id == examId)
+            .Project<OrganizeExamModel>(projection)
+            .FirstOrDefaultAsync();
+
+        var session = exam?.Sessions.FirstOrDefault();
+        var room = session?.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
+
+        if (room == null)
+            throw new Exception("Room not found");
+
+        var existingCandidateIds = room.CandidateIds ?? new List<string>();
+
+        // Lọc thí sinh mới (chưa có trong danh sách)
+        var newCandidates = candidates
+            .Where(c => !existingCandidateIds.Contains(c))
+            .ToList();
+
+        if (!newCandidates.Any())
         {
+            return "Tất cả thí sinh đã tồn tại trong phòng này";
+        }
+
+        // Cập nhật danh sách TakeExam cho từng thí sinh
+        foreach (var candidateId in newCandidates)
+        {
+            var filterTakeExam = Builders<UsersModel>.Filter.Eq(u => u.Id, candidateId);
             var user = await _usersCollection.Find(filterTakeExam).FirstOrDefaultAsync();
-            
+
             if (user == null)
             {
-                throw new Exception("User not found");
+                throw new Exception($"User not found: {candidateId}");
             }
-        
+
             user.TakeExam ??= new List<TakeExamsModel>();
-        
+
             var exists = user.TakeExam.Exists(te =>
                 te.OrganizeExamId == examId &&
                 te.SessionId == sessionId &&
                 te.RoomId == roomId);
 
-            if (exists) continue;
-            var newTakeExam = new TakeExamsModel
+            if (!exists)
             {
-                OrganizeExamId = examId,
-                SessionId = sessionId,
-                RoomId = roomId,
-                Status = "closed",
-                Progress = 0,
-                ViolationCount = 0,
-                Answers = []
-            };
-            
-            user.TakeExam.Add(newTakeExam);
-            var updateTakeExam = Builders<UsersModel>.Update.Set(u => u.TakeExam, user.TakeExam);
-            await _usersCollection.UpdateOneAsync(filterTakeExam, updateTakeExam);
+                var newTakeExam = new TakeExamsModel
+                {
+                    OrganizeExamId = examId,
+                    SessionId = sessionId,
+                    RoomId = roomId,
+                    Status = "closed",
+                    Progress = 0,
+                    ViolationCount = 0,
+                    Answers = []
+                };
+
+                user.TakeExam.Add(newTakeExam);
+                var updateTakeExam = Builders<UsersModel>.Update.Set(u => u.TakeExam, user.TakeExam);
+                await _usersCollection.UpdateOneAsync(filterTakeExam, updateTakeExam);
+            }
         }
 
-        return await _organizeExamCollection.FindOneAndUpdateAsync(
+        // Push danh sách thí sinh mới vào CandidateIds
+        var update = Builders<OrganizeExamModel>.Update.PushEach("sessions.$.rooms.$[room].candidateIds", newCandidates);
+        var arrayFilters = new List<ArrayFilterDefinition>
+        {
+            new JsonArrayFilterDefinition<BsonDocument>($"{{'room.roomId': '{roomId}'}}")
+        };
+
+        await _organizeExamCollection.UpdateOneAsync(
             filter,
             update,
-            new FindOneAndUpdateOptions<OrganizeExamModel>
+            new UpdateOptions
             {
-                ReturnDocument = ReturnDocument.After,
                 ArrayFilters = arrayFilters
             }
         );
+
+        return $"Đã thêm {newCandidates.Count} thí sinh vào phòng";
     }
+
+
 
     public async Task<List<OrganizeExamResponseDto>> GetExamsByCandidateId(string candidateId)
     {

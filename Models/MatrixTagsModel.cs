@@ -14,7 +14,7 @@
         [BsonElement("questionCount")]
         public int QuestionCount { get; set; }
 
-        [BsonElement("scorePerQuestion")]
-        public double ScorePerQuestion { get; set; }
+        [BsonElement("score")]
+        public double Score { get; set; }
     }
 }

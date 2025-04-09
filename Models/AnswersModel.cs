@@ -13,6 +13,9 @@ public class AnswersModel
     [BsonElement("answerChose")] 
     public List<string> AnswerChosen { get; set; } = [];
     
+    [BsonElement("isCorrect")]
+    public bool IsCorrect { get; set; }
+    
     // [BsonElement("answerText")]
     // public List<string>? AnswerText { get; set; }
 }

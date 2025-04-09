@@ -14,5 +14,6 @@ public class CandidatesInSessionRoomDto
 
 public class CandidatesInSessionRoomRequestDto
 {
-    public List<string> CandidateIds { get; set; } = [];
+    public List<string>? CandidateIds { get; set; } = [];
+    public List<string>? UserCodes { get; set; } = [];
 }
