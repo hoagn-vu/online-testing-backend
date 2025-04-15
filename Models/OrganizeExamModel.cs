@@ -40,5 +40,5 @@ public class OrganizeExamModel
     public List<SessionsModel> Sessions { get; set; } = [];
     
     [BsonElement("organizeExamStatus")]
-    public string OrganizeExamStatus { get; set; } = "closed";
+    public string OrganizeExamStatus { get; set; } = "active";
 }

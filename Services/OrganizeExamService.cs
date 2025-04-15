@@ -103,6 +103,7 @@ public class OrganizeExamService
         
         var organizeExams = await _organizeExamCollection
             .Find(filter)
+            .SortByDescending(ex => ex.Id)
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)
             .ToListAsync();

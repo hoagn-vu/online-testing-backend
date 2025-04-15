@@ -628,6 +628,35 @@ public class ProcessTakeExamService
             FinishedAt = finishedAt
         };
     }
+    
+    public async Task<List<ExamHistoryDto>> GetUserExamHistory(string userId)
+    {
+        var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        if (user == null || user.TakeExam == null) return new List<ExamHistoryDto>();
+
+        var results = new List<ExamHistoryDto>();
+
+        foreach (var takeExam in user.TakeExam)
+        {
+            if (takeExam.Status != "done") continue;
+            var organizeExam = await _organizeExamCollection.Find(x => x.Id == takeExam.OrganizeExamId).FirstOrDefaultAsync();
+            if (organizeExam == null) continue;
+
+            var subject = await _subjectsCollection.Find(x => x.Id == organizeExam.SubjectId).FirstOrDefaultAsync();
+
+            results.Add(new ExamHistoryDto
+            {
+                OrganizeExamName = organizeExam.OrganizeExamName,
+                SubjectName = subject?.SubjectName ?? "N/A",
+                TotalScore = takeExam.TotalScore,
+                FinishedAt = takeExam.FinishedAt,
+                UnrecognizedReason = takeExam.UnrecognizedReason
+            });
+        }
+
+        return results;
+    }
+
 
 
 }

@@ -49,4 +49,13 @@ public class ExamResultDto
     public DateTime? FinishedAt { get; set; }
 }
 
+public class ExamHistoryDto
+{
+    public string OrganizeExamName { get; set; } = string.Empty;
+    public string SubjectName { get; set; } = string.Empty;
+    public double TotalScore { get; set; }
+    public DateTime? FinishedAt { get; set; }
+    public string? UnrecognizedReason { get; set; }
+}
+
 
