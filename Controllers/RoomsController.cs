@@ -1,11 +1,11 @@
-﻿#pragma warning disable SA1309
+﻿using Backend_online_testing.Dtos;
+using Backend_online_testing.Models;
+using Backend_online_testing.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
 namespace Backend_online_testing.Controllers
 {
-    using Backend_online_testing.DTO;
-    using Backend_online_testing.Models;
-    using Backend_online_testing.Services;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Mvc;
 
     [Route("api/rooms")]
     [ApiController]
@@ -15,7 +15,7 @@ namespace Backend_online_testing.Controllers
 
         public RoomsController(RoomsService roomsService)
         {
-            this._roomsService = roomsService;
+            _roomsService = roomsService;
         }
 
         // Get all room
@@ -27,66 +27,37 @@ namespace Backend_online_testing.Controllers
         }    
         
         [HttpGet("get-options")]
-        public async Task<ActionResult<RoomsModel>> GetRoomOptions()
+        public async Task<IActionResult> GetRoomOptions()
         {
-            var rooms = await _roomsService.GetRoomOptions();
-            return this.Ok(rooms);
+            var rooms = await _roomsService.GetRoomOptionsAsync();
+            return Ok(rooms);
         }
 
-        // Create Room
         [HttpPost]
-        public async Task<IActionResult> CreateRoom([FromBody] RoomDto roomDTO)
+        public async Task<IActionResult> CreateRoom([FromBody] RoomDto dto)
         {
-            string result = await this._roomsService.CreateRoom(roomDTO);
-
-            if (result == "Success")
-            {
-                return this.Ok(new { message = "Room created successfully" });
-            }
-            else
-            {
-                return this.BadRequest(new { message = result });
-            }
+            var result = await _roomsService.CreateRoomAsync(dto);
+            return result == "Success"
+                ? Ok(new { message = "Created" })
+                : BadRequest(new { message = result });
         }
 
-        // Update Room
-        [HttpPost("{roomId}")]
-        public async Task<IActionResult> UpdateRoom([FromBody] RoomDto roomDTO, string roomId)
+        [HttpPut("{roomId}")]
+        public async Task<IActionResult> UpdateRoom([FromBody] RoomDto dto, string roomId)
         {
-            string result = await this._roomsService.UpdateRoom(roomDTO, roomId);
-
-            if (result == "Success")
-            {
-                return this.Ok(new { message = "Room updated successfully" });
-            }
-            else
-            {
-                return this.BadRequest(new { error = result });
-            }
+            var result = await _roomsService.UpdateRoomAsync(dto, roomId);
+            return result == "Success"
+                ? Ok(new { message = "Updated" })
+                : BadRequest(new { error = result });
         }
 
-        // Delete Room
         [HttpDelete("delete-room/{roomId}")]
-        public async Task<IActionResult> DeleteRoom(string roomId, string userLogId)
+        public async Task<IActionResult> DeleteRoom(string roomId)
         {
-            string result = await this._roomsService.DeleteRoom(roomId, userLogId);
-
-            if (result == "Success")
-            {
-                return this.Ok(new { message = "Success" });
-            }
-            else
-            {
-                return this.BadRequest(new { error = result });
-            }
-        }
-
-        // Insert sample data
-        [HttpPost("seed")]
-        public async Task<IActionResult> SeedData()
-        {
-            await this._roomsService.SeedSampleData();
-            return this.Ok("Insert Room Data successfully");
+            var result = await _roomsService.DeleteRoomAsync(roomId);
+            return result == "Success"
+                ? Ok(new { message = "Deleted" })
+                : BadRequest(new { error = result });
         }
     }
 }

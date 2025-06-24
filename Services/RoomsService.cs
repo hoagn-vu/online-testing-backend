@@ -1,20 +1,24 @@
-﻿#pragma warning disable SA1309
+﻿using Backend_online_testing.Dtos;
+using Backend_online_testing.Repositories;
+using Backend_online_testing.Models;
+using System.Xml.Linq;
+using Backend_online_testing.DTO;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.IdGenerators;
+using MongoDB.Driver;
+
 namespace Backend_online_testing.Services
 {
-    using System.Xml.Linq;
-    using Backend_online_testing.DTO;
-    using Backend_online_testing.Models;
-    using MongoDB.Bson;
-    using MongoDB.Bson.Serialization.IdGenerators;
-    using MongoDB.Driver;
-
     public class RoomsService
     {
         private readonly IMongoCollection<RoomsModel> _rooms;
-
-        public RoomsService(IMongoDatabase database)
+        private readonly RoomRepository _roomRepository;
+        private readonly LogService _logService;
+        
+        public RoomsService(RoomRepository repository, LogService logService)
         {
-            _rooms = database.GetCollection<RoomsModel>("rooms");
+            _roomRepository = repository;
+            _logService = logService;
         }
 
         // Get all room
@@ -24,162 +28,91 @@ namespace Backend_online_testing.Services
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                filter = Builders<RoomsModel>.Filter.Regex(r => r.RoomName, new BsonRegularExpression(keyword, "i"));
-                // filter = Builders<RoomsModel>.Filter.Or(
-                //     Builders<RoomsModel>.Filter.Regex(u => u.RoomName, new BsonRegularExpression(keyword, "i")),
-                //     Builders<RoomsModel>.Filter.Regex(u => u.RoomLocation, new BsonRegularExpression(keyword, "i")),
-                //     Builders<RoomsModel>.Filter.Regex(u => u.RoomStatus, new BsonRegularExpression(keyword, "i")));
+                var keywordFilter = Builders<RoomsModel>.Filter.Regex(r => r.RoomName, new BsonRegularExpression(keyword, "i"));
+                filter = Builders<RoomsModel>.Filter.And(filter, keywordFilter);
+
+                // var regex = new BsonRegularExpression(keyword, "i");
+                // var keywordFilter = Builders<RoomsModel>.Filter.Or(
+                //     Builders<RoomsModel>.Filter.Regex(r => r.RoomName, regex),
+                //     Builders<RoomsModel>.Filter.Regex(r => r.RoomLocation, regex),
+                //     Builders<RoomsModel>.Filter.Regex(r => r.RoomStatus, regex));
+                // filter = Builders<RoomsModel>.Filter.And(filter, keywordFilter);
             }
 
-            var totalCount = await _rooms.CountDocumentsAsync(filter);
+            var total = await _roomRepository.CountAsync(filter);
+            var rooms = await _roomRepository.GetRoomsAsync(filter, (page - 1) * pageSize, pageSize);
 
-            var rooms = await _rooms
-            .Find(filter)
-            .Skip((page - 1) * pageSize)
-            .Limit(pageSize)
-            .ToListAsync();
-
-            return (rooms, totalCount);
+            return (rooms, total);
+        }
+        
+        public async Task<List<RoomOptionsDto>> GetRoomOptionsAsync()
+        {
+            return await _roomRepository.GetRoomOptionsAsync();
         }
 
-        public async Task<List<RoomOptionsDto>> GetRoomOptions()
+        public async Task<string> CreateRoomAsync(RoomDto dto)
         {
-            var filter = Builders<RoomsModel>.Filter.Ne(r => r.RoomStatus, "deleted");
-            
-            var projection = Builders<RoomsModel>.Projection
-                .Expression(rm => new RoomOptionsDto
-                {
-                    RoomId = rm.Id,
-                    RoomName = rm.RoomName,
-                    RoomLocation = rm.RoomLocation,
-                    RoomCapacity = rm.RoomCapacity,
-                });
-
-            var rooms = await _rooms.Find(filter).Project(projection).ToListAsync();
-
-            return rooms;
-        }
-
-        // Create Room
-        public async Task<string> CreateRoom(RoomDto roomData)
-        {
-            if (string.IsNullOrWhiteSpace(roomData.RoomName))
-            {
-                return "Room name cannot be empty.";
-            }
-
-            var newId = ObjectId.GenerateNewId().ToString();
+            if (string.IsNullOrWhiteSpace(dto.RoomName))
+                return "Room name cannot be empty";
 
             var newRoom = new RoomsModel
             {
-                Id = newId,
-                RoomName = roomData.RoomName,
-                RoomStatus = "Active",
-                RoomCapacity = roomData.RoomCapacity,
-                RoomLocation = roomData.RoomLocation,
+                Id = ObjectId.GenerateNewId().ToString(),
+                RoomName = dto.RoomName,
+                RoomStatus = "available",
+                RoomCapacity = dto.RoomCapacity,
+                RoomLocation = dto.RoomLocation
             };
 
-            await this._rooms.InsertOneAsync(newRoom);
+            await _roomRepository.InsertAsync(newRoom);
+            await _logService.AddLogAsync("update thanh userId sau", "create", $"Thêm phòng: {newRoom.RoomName}");
 
-            var insertedRoom = await this._rooms.Find(r => r.Id == newId).FirstOrDefaultAsync();
-            return insertedRoom != null ? "Success" : "Failed to create room.";
+            var inserted = await _roomRepository.GetByIdAsync(newRoom.Id);
+            return inserted != null ? "Success" : "Failed to create room.";
         }
 
-        // Update Room
-        public async Task<string> UpdateRoom(RoomDto roomData, string roomId)
+        public async Task<string> UpdateRoomAsync(RoomDto dto, string roomId)
         {
-            // Find room following RoomName
-            var filter = Builders<RoomsModel>.Filter.Eq(r => r.Id, roomId);
-            var room = await this._rooms.Find(filter).FirstOrDefaultAsync();
-
-            if (room == null)
-            {
+            var existingRoom = await _roomRepository.GetByIdAsync(roomId);
+            if (existingRoom == null)
                 return "Room Not Found!";
-            }
 
-            // Add another field
             var update = Builders<RoomsModel>.Update
-                .Set(r => r.RoomStatus, roomData.RoomStatus)
-                .Set(r => r.RoomCapacity, roomData.RoomCapacity)
-                .Set(r => r.RoomName, roomData.RoomName)
-                .Set(r => r.RoomLocation, roomData.RoomLocation);
+                .Set(r => r.RoomName, dto.RoomName)
+                .Set(r => r.RoomStatus, dto.RoomStatus)
+                .Set(r => r.RoomCapacity, dto.RoomCapacity)
+                .Set(r => r.RoomLocation, dto.RoomLocation);
 
-            // Update
-            var result = await this._rooms.UpdateOneAsync(filter, update);
-
-            if (result.MatchedCount > 0 && result.ModifiedCount > 0)
+            var result = await _roomRepository.UpdateAsync(roomId, update);
+            if (result.ModifiedCount > 0)
             {
-                return "Success";
+                await _logService.AddLogAsync("update thanh userId sau", "update", $"Cập nhật phòng {roomId} - {dto.RoomName}");
             }
-            else if (result.MatchedCount > 0)
+
+            return result.MatchedCount switch
             {
-                return "No changes made";
-            }
-            else
-            {
-                return "Update Failed";
-            }
-        }
-
-        // Update Room Status - Delete Room
-        public async Task<string> DeleteRoom(string roomId, string userLogId)
-        {
-            var filter = Builders<RoomsModel>.Filter.Eq(r => r.Id, roomId);
-            var room = await this._rooms.Find(filter).FirstOrDefaultAsync();
-
-            if (room == null)
-            {
-                return "Room Not Found!";
-            }
-            else
-            {
-                // Get ID from LogRoom
-                // string newLogId = (room.RoomLogs.Count != 0 && int.TryParse(room.RoomLogs.Max(log => log.LogId), out int lastLogId))
-                //     ? (lastLogId + 1).ToString() : "1";
-                // var roomLogData = new RoomLogsModel
-                // {
-                //    LogId = newLogId,
-                //    RoomLogUserId = roomData.UserId,
-                //    RoomLogType = "Updated",
-                //    RoomChangeAt = DateTime.Now,
-                // };
-
-                // Update file
-                var update = Builders<RoomsModel>.Update
-                    .Set(r => r.RoomStatus, "Disable");
-
-                // .Push(r => r.RoomLogs, roomLogData);
-
-                // Update
-                var result = await this._rooms.UpdateOneAsync(filter, update);
-
-                return result.ModifiedCount > 0 ? "Success" : "Disable room error";
-            }
-        }
-
-        public async Task SeedSampleData()
-        {
-            var sampleRooms = new List<RoomsModel>
-            {
-                new RoomsModel
-                {
-                    Id = ObjectId.GenerateNewId().ToString(),
-                    RoomName = "Room A",
-                    RoomStatus = "available",
-                    RoomCapacity = 10,
-                    RoomLocation = "Cơ sở 1",
-                },
-                new RoomsModel
-                {
-                    Id = ObjectId.GenerateNewId().ToString(),
-                    RoomName = "Room B",
-                    RoomStatus = "available",
-                    RoomCapacity = 15,
-                    RoomLocation = "Cơ sở 2",
-                },
+                > 0 when result.ModifiedCount > 0 => "Success",
+                > 0 => "No changes made",
+                _ => "Update Failed"
             };
+        }
 
-            await this._rooms.InsertManyAsync(sampleRooms);
+        public async Task<string> DeleteRoomAsync(string roomId)
+        {
+            var room = await _roomRepository.GetByIdAsync(roomId);
+            if (room == null)
+                return "Room Not Found!";
+
+            var update = Builders<RoomsModel>.Update
+                .Set(r => r.RoomStatus, "deleted");
+                // Nếu có thêm log: .Push(r => r.RoomLogs, roomLog)
+
+            var result = await _roomRepository.UpdateAsync(roomId, update);
+            if (result.ModifiedCount > 0)
+            {
+                await _logService.AddLogAsync("update thanh userId sau", "delete", $"Xóa  phòng {roomId}");
+            }
+            return result.ModifiedCount > 0 ? "Success" : "Disable room error";
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Text;
 using Backend_online_testing.Services;
+using Backend_online_testing.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
@@ -23,10 +24,13 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 
 builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<UsersService>();
-builder.Services.AddSingleton<RoomsService>();
+builder.Services.AddScoped<RoomsService>();
+builder.Services.AddScoped<RoomRepository>();;
 builder.Services.AddSingleton<ExamsService>();
 builder.Services.AddSingleton<ExamMatricesService>();
 builder.Services.AddSingleton<AddLogService>();
+builder.Services.AddScoped<LogService>();
+builder.Services.AddScoped<LogRepository>();
 builder.Services.AddSingleton<FileManagementService>();
 builder.Services.AddScoped<IFileManagementService, FileManagementService>();
 builder.Services.AddSingleton<SubjectsService>();
