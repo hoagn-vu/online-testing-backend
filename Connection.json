@@ -1,0 +1,5 @@
+﻿{
+  "ConnectionStrings": {
+    "MongoDbConnection": "mongodb://nvudev:nvu%40123@157.230.181.252:27017/onlineTestingDB?authSource=admin"
+  }
+}
