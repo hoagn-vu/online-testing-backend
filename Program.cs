@@ -7,7 +7,10 @@ using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add configuration file
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile("Connection.json", optional: true, reloadOnChange: true);
 
 // Configure MongoDb
 builder.Services.AddSingleton<IMongoClient>(sp =>
@@ -23,7 +26,8 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 });
 
 builder.Services.AddSingleton<AuthService>();
-builder.Services.AddSingleton<UsersService>();
+builder.Services.AddScoped<UsersService>();
+builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<RoomsService>();
 builder.Services.AddScoped<RoomRepository>();;
 builder.Services.AddSingleton<ExamsService>();
