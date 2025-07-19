@@ -15,3 +15,4 @@ out/
 *.log
 *.csproj.user
 .DS_Store
+Connection.json

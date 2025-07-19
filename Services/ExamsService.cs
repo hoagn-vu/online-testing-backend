@@ -1,6 +1,7 @@
 ﻿namespace Backend_online_testing.Services
 {
     using Backend_online_testing.DTO;
+    using Backend_online_testing.Dtos;
     using Backend_online_testing.Models;
     using Backend_online_testing.Services;
     using DocumentFormat.OpenXml.Spreadsheet;
@@ -19,7 +20,7 @@
             this._examsCollection = database.GetCollection<ExamsModel>("exams");
             this._subjectsCollection = database.GetCollection<SubjectsModel>("subjects");
         }
-        
+
         // Find all document
         public async Task<(List<ExamResponseDto>, long)> GetExams(string? keyword, int page, int pageSize)
         {
@@ -70,6 +71,86 @@
             }
 
             return (examResponseList, totalCount);
+        }
+
+        // Get question by exam code
+        public async Task<ExamsModel?> GetExamByCodeAsync(string examId)
+        {
+            return await _examsCollection
+                .Find(e => e.Id == examId)
+                .FirstOrDefaultAsync();
+        }
+        public async Task<(string,ExamDetailResponseDto?)> GetExamQuestionsWithDetailsAsync(string examId)
+        {
+            var exam = await _examsCollection.Find(e => e.Id == examId).FirstOrDefaultAsync();
+            if (exam == null)
+            {
+                return ("error-exam", null);
+            }
+
+            // Tìm subject
+            var subject = await _subjectsCollection
+                .Find(s => s.Id == exam.SubjectId)
+                .FirstOrDefaultAsync();
+
+            if (subject == null)
+            {
+                return ("error-subject", null);
+            }
+
+            var questionBank = subject.QuestionBanks
+                .FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
+
+            if (questionBank == null)
+            {
+                return ("error-questionBank", null);
+            }
+
+            var detailedQuestions = new List<ExamQuestionDetailDTO>();
+
+            foreach (var examQ in exam.QuestionSet)
+            {
+                var realQuestion = questionBank.QuestionList
+                    .FirstOrDefault(q => q.QuestionId == examQ.QuestionId);
+
+                if (realQuestion == null)
+                {
+                    Console.WriteLine($"    ❌ Không tìm thấy câu hỏi trong questionBank!");
+                }
+                else
+                {
+                    string chapter = realQuestion.Tags?.Count > 0 ? realQuestion.Tags[0] : "";
+                    string level = realQuestion.Tags?.Count > 1 ? realQuestion.Tags[1] : "";
+
+                    detailedQuestions.Add(new ExamQuestionDetailDTO
+                    {
+                        
+                        QuestionId = realQuestion.QuestionId,
+                        QuestionText = realQuestion.QuestionText,
+                        Chapter = chapter,
+                        Level = level,
+                        QuestionScore = (double)examQ.QuestionScore,
+                        Options = realQuestion.Options.Select(o => new OptionDetailDTO
+                        {
+                            OptionId = o.OptionId,
+                            OptionText = o.OptionText,
+                            IsCorrect = o.IsCorrect
+                        }).ToList()
+                    });
+                }
+            }
+            var examDetail = new ExamDetailResponseDto
+            {
+                Id = exam.Id,
+                ExamCode = exam.ExamCode,
+                ExamName = exam.ExamName,
+                SubjectName = subject.SubjectName,
+                QuestionBankName = questionBank.QuestionBankName,
+                ListQuestion = detailedQuestions,
+
+            };
+
+            return ("Ok",examDetail);
         }
 
         // Create Exam

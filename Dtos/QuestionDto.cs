@@ -11,10 +11,10 @@
         public string QuestionBankId { get; set; } = string.Empty;
 
         public string QuestionBankName { get; set; } = string.Empty;
-        
+
         public List<QuestionModel>? Questions { get; set; }
     }
-    
+
     public class QuestionResponseDto
     {
         public string QuestionId { get; set; } = string.Empty;
@@ -33,5 +33,12 @@
         public string Chapter { get; set; } = string.Empty;
         public string Level { get; set; } = string.Empty;
         public int Total { get; set; }
+    }
+
+    public class OptionDetailDTO
+    {
+        public string OptionId { get; set; } = string.Empty;
+        public string OptionText { get; set; } = string.Empty;
+        public bool? IsCorrect { get; set; }
     }
 }
