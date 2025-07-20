@@ -138,7 +138,7 @@ namespace Backend_online_testing.Services
         }
 
         // Get questions
-        public async Task<(string, string, string, string, List<string>, List<string>, List<QuestionModel>, long)> GetQuestions(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
+        public async Task<(string, string, string, string, List<string>, List<string>, List<QuestionSetModel>, long)> GetQuestions(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
         {
             var filter = Builders<SubjectsModel>.Filter.And(
                 Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
@@ -261,7 +261,7 @@ namespace Backend_online_testing.Services
                     return "Not found question bank";
                 }
                 
-                var newQuestion = new QuestionModel
+                var newQuestion = new QuestionSetModel
                 {
                     Options = question.Options,
                     QuestionType = question.QuestionType,
@@ -545,9 +545,9 @@ namespace Backend_online_testing.Services
                         new QuestionBanksModel
                         {
                             QuestionBankName = "Chapter 1",
-                            QuestionList = new List<QuestionModel>
+                            QuestionList = new List<QuestionSetModel>
                             {
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "2+2=",
                                     QuestionType = "Multiple Choice",
@@ -561,7 +561,7 @@ namespace Backend_online_testing.Services
                                         new OptionsModel { OptionText = "5", IsCorrect = false },
                                     },
                                 },
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "3+2=",
                                     QuestionType = "Multiple Choice",
@@ -575,7 +575,7 @@ namespace Backend_online_testing.Services
                                         new OptionsModel { OptionText = "5", IsCorrect = true },
                                     },
                                 },
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "3+10=",
                                     QuestionType = "Multiple Choice",
@@ -594,9 +594,9 @@ namespace Backend_online_testing.Services
                         new QuestionBanksModel
                         {
                             QuestionBankName = "Chapter 2",
-                            QuestionList = new List<QuestionModel>
+                            QuestionList = new List<QuestionSetModel>
                             {
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "2+2=",
                                     QuestionType = "Multiple Choice",
@@ -610,7 +610,7 @@ namespace Backend_online_testing.Services
                                         new OptionsModel { OptionText = "5", IsCorrect = false },
                                     },
                                 },
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "3+2=",
                                     QuestionType = "Multiple Choice",
@@ -624,7 +624,7 @@ namespace Backend_online_testing.Services
                                         new OptionsModel { OptionText = "5", IsCorrect = true },
                                     },
                                 },
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "3+10=",
                                     QuestionType = "Multiple Choice",
@@ -643,9 +643,9 @@ namespace Backend_online_testing.Services
                         new QuestionBanksModel
                         {
                             QuestionBankName = "Chapter 3",
-                            QuestionList = new List<QuestionModel>
+                            QuestionList = new List<QuestionSetModel>
                             {
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "2+2=",
                                     QuestionType = "Multiple Choice",
@@ -659,7 +659,7 @@ namespace Backend_online_testing.Services
                                         new OptionsModel { OptionText = "5", IsCorrect = false },
                                     },
                                 },
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "3+2=",
                                     QuestionType = "Multiple Choice",
@@ -673,7 +673,7 @@ namespace Backend_online_testing.Services
                                         new OptionsModel { OptionText = "5", IsCorrect = true },
                                     },
                                 },
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "3+10=",
                                     QuestionType = "Multiple Choice",
@@ -699,9 +699,9 @@ namespace Backend_online_testing.Services
                         new QuestionBanksModel
                         {
                             QuestionBankName = "First Term",
-                            QuestionList = new List<QuestionModel>
+                            QuestionList = new List<QuestionSetModel>
                             {
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "What is the speed of light?",
                                     QuestionType = "Multiple Choice",
@@ -715,7 +715,7 @@ namespace Backend_online_testing.Services
                                         new OptionsModel { OptionText = "3x10^10 m/s", IsCorrect = false },
                                     },
                                 },
-                                new QuestionModel
+                                new QuestionSetModel
                                 {
                                     QuestionText = "Which law explains why we need seat belts?",
                                     QuestionType = "Multiple Choice",

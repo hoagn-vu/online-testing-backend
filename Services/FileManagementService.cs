@@ -41,8 +41,8 @@ namespace Backend_online_testing.Services
                 return "Không tìm thấy bộ câu hỏi";
             }
 
-            var questionList = new List<QuestionModel>();
-            QuestionModel? currentQuestion = null;
+            var questionList = new List<QuestionSetModel>();
+            QuestionSetModel? currentQuestion = null;
             var isFirstOption = true;
             string? line;
             var lastTag1 = string.Empty;
@@ -73,7 +73,7 @@ namespace Backend_online_testing.Services
                         questionList.Add(currentQuestion);
                     }
 
-                    currentQuestion = new QuestionModel
+                    currentQuestion = new QuestionSetModel
                     {
                         QuestionText = line.Trim('#'),
                         QuestionId = ObjectId.GenerateNewId().ToString(),
