@@ -22,4 +22,10 @@ namespace Backend_online_testing.Dtos
         public string QuestionBankId { get; set; } = string.Empty;
         public List<MatrixTagsModel> MatrixTags { get; set; } = [];
     }
+    
+    public class MatrixOptionsDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string MatrixName { get; set; } = string.Empty;
+    }
 }

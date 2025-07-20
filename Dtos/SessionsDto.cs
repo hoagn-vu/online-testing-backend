@@ -6,7 +6,8 @@ public class SessionsDto
 {
     public string SessionId { get; set; } = string.Empty;
     public string SessionName { get; set; } = string.Empty;
-    public DateTime ActiveAt { get; set; }
+    public DateTime StartAt { get; set; }
+    public DateTime FinishAt { get; set; }
     public long TotalRooms { get; set; }
     public string SessionStatus { get; set; } = string.Empty;
 }
@@ -14,7 +15,8 @@ public class SessionsDto
 public class SessionRequestDto
 {
     public string SessionName { get; set; } = string.Empty;
-    public DateTime ActiveAt { get; set; }
+    public DateTime StartAt { get; set; }
+    public DateTime FinishAt { get; set; }
     public DateTime? ForceEndAt { get; set; }
-    public string SessionStatus { get; set; } = string.Empty;
+    public string SessionStatus { get; set; } = "active";
 }

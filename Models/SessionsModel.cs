@@ -12,9 +12,13 @@ public class SessionsModel
     [BsonElement("sessionName")]
     public string SessionName { get; set; } = string.Empty;
     
-    [BsonElement("activeAt")]
+    [BsonElement("startAt")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
-    public DateTime ActiveAt { get; set; }
+    public DateTime StartAt { get; set; }
+    
+    [BsonElement("finishAt")]
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime FinishAt { get; set; }
     
     [BsonElement("forceEndAt")]
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
