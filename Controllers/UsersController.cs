@@ -8,6 +8,7 @@ namespace Backend_online_testing.Controllers
     using Microsoft.AspNetCore.Mvc;
     using MongoDB.Bson;
     using MongoDB.Driver;
+    using Backend_online_testing.Dtos;
 
     [Route("api/users")]
     [ApiController]
@@ -37,9 +38,9 @@ namespace Backend_online_testing.Controllers
 
         // Get method with ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<UsersModel?>> GetById(string id)
+        public async Task<ActionResult<UserDto?>> GetById(string id)
         {
-            return await this._userService.GetUserById(id);
+            return await _userService.GetUserByIdAsync(id);
         }
         
         // Add on User
@@ -63,29 +64,36 @@ namespace Backend_online_testing.Controllers
 
         // Update Method
         [HttpPost("update/{id}")]
-        public async Task<ActionResult> UpdateUserById(string id, [FromBody] UsersModel updateUser)
+        public async Task<IActionResult> UpdateUserById(string id, [FromBody] UsersModel updateUser)
         {
             if (updateUser == null)
             {
-                return this.BadRequest(new { message = "Invalid data" });
+                return BadRequest(new { message = "Invalid user data" });
             }
 
-            bool isUpdated = await this._userService.UpdateUserbByID(id, updateUser);
+            string result = await _userService.UpdateUserById(id, updateUser, "");
 
-            if (!isUpdated)
+            return result switch
             {
-                return this.NotFound(new { message = "User not found or not changes" });
+                "Success" => Ok(new { message = "User updated successfully" }),
+                "Update user error" => NotFound(new { message = "User not found or no changes were made" }),
+                _ => StatusCode(500, new { message = "Something went wrong" }) 
+            };
+        }
+
+        [HttpDelete("delete/{id}")]
+        public async Task<IActionResult> DeleteUserById(string id)
+        {
+
+            var result = await _userService.DeleteUserById(id, "");
+
+            if (result == "Success")
+            {
+                return Ok(new { message = "User deleted successfully" });
             }
 
-            return this.Ok(new { message = "User updated sucessfully" });
+            return NotFound(new { message = result });
         }
 
-        // Insert sample data
-        [HttpPost("seed")]
-        public async Task<IActionResult> SeedData()
-        {
-            await this._userService.InsertSampleData();
-            return this.Ok("Sample data inserted successfully");
-        }
     }
 }
