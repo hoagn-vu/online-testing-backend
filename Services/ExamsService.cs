@@ -33,7 +33,7 @@ public class ExamsService
             var subject = await _examsRepository.GetSubjectsAsync(exam);
             var subjectName = subject?.SubjectName ?? string.Empty;
 
-            // Lấy thông tin ngân hàng câu hỏi từ danh sách QuestionBanks trong Subject
+            // Get question bank name
             var questionBankName = string.Empty;
             if (subject != null)
             {
@@ -67,12 +67,6 @@ public class ExamsService
             return "Exam name already exists.";
         }
 
-        // var logCreateData = new ExamLogsModel
-        // {
-        //    ExamLogUserId = createExamData.ExamLogUserId,
-        //    ExamLogType = "Created",
-        //    ExamChangeAt = DateTime.Now,
-        // };
         var newExamData = new ExamsModel
         {
             Id = ObjectId.GenerateNewId().ToString(),
@@ -82,8 +76,6 @@ public class ExamsService
             ExamStatus = createExamData.ExamStatus,
             QuestionBankId = createExamData.QuestionBankId,
             QuestionSet = new List<QuestionSetsModel>(),
-
-            // ExamLogs = new List<ExamLogsModel> { logCreateData },
         };
 
         try
@@ -93,7 +85,6 @@ public class ExamsService
         }
         catch (Exception ex)
         {
-            // Console.WriteLine($"Error inserting exam: {ex.Message}");
             return $"Failed to create exam: {ex.Message}";
         }
     }
@@ -135,31 +126,9 @@ public class ExamsService
     // Update Question
     public async Task<string> UpdateExamQuestion(string examId, string questionId, string userLogId, double questionScore)
     {
-        // if (questionData == null || examId == null || questionData.QuestionSets == null || questionData.QuestionSets.Count == 0)
-        // {
-        //    return "Invalid data";
-        // }
-
-        // var questionSet = questionData.QuestionSets.First();
-        // var questionScore = questionSet.QuestionScore;
-        //var filter = Builders<ExamsModel>.Filter.And(
-        //    Builders<ExamsModel>.Filter.Eq(e => e.Id, examId),
-        //    Builders<ExamsModel>.Filter.ElemMatch(e => e.QuestionSet, qs => qs.QuestionId == questionId));
-
-        //var update = Builders<ExamsModel>.Update.Set("QuestionSet.$.QuestionScore", questionScore);
-
-        //var result = await this._examsCollection.UpdateOneAsync(filter, update);
         var result = await _examsRepository.UpdateExamQuestionAsync(examId, questionId, questionScore);
-        // var updateQuestionLog = new ExamLogsModel
-        // {
-        //    ExamLogUserId = userLogId,
-        //    ExamLogType = "Update Question",
-        //    ExamChangeAt = DateTime.Now,
-        // };
         if (result.ModifiedCount > 0)
         {
-            // var addLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, updateQuestionLog);
-            // var logResult = await this._examsCollection.UpdateOneAsync(filter, addLog);
             return "Question updated successfully";
         }
 
@@ -169,31 +138,10 @@ public class ExamsService
     // Delete Question in Exam
     public async Task<string> DeleteExamQuestion(string examId, string questionId, string userLogId)
     {
-        // if (questionData == null || examId == null || questionData.QuestionSets == null || questionData.QuestionSets.Count == 0)
-        // {
-        //    return "Invalid data";
-        // }
-        // var question = questionData.QuestionSets.First();
-        //var filter = Builders<ExamsModel>.Filter.And(
-        //    Builders<ExamsModel>.Filter.Eq(e => e.Id, examId),
-        //    Builders<ExamsModel>.Filter.ElemMatch(e => e.QuestionSet, qs => qs.QuestionId == questionId));
-
-        //var delete = Builders<ExamsModel>.Update.PullFilter(e => e.QuestionSet, qs => qs.QuestionId == questionId);
-
-        //var result = await this._examsCollection.UpdateOneAsync(filter, delete);
         var result = await _examsRepository.DeleteExamQuestionAsync(examId, questionId);
-        // var deleteQuestionLog = new ExamLogsModel
-        // {
-        //    ExamLogUserId = userLogId,
-        //    ExamLogType = "Delete Question",
-        //    ExamChangeAt = DateTime.Now,
-        // };
+
         if (result.ModifiedCount > 0)
         {
-            // var filterExam = Builders<ExamsModel>.Filter.Eq(e => e.Id, examId);
-
-            // var updateLog = Builders<ExamsModel>.Update.Push(e => e.ExamLogs, deleteQuestionLog);
-            // var logResult = await this._examsCollection.UpdateOneAsync(filterExam, updateLog);
             return "Question deleted successfully";
         }
 

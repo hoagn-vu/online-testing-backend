@@ -38,7 +38,8 @@ builder.Services.AddScoped<LogService>();
 builder.Services.AddScoped<LogRepository>();
 builder.Services.AddSingleton<FileManagementService>();
 builder.Services.AddScoped<IFileManagementService, FileManagementService>();
-builder.Services.AddSingleton<SubjectsService>();
+builder.Services.AddScoped<SubjectsService>();
+builder.Services.AddScoped<SubjectRepository>();
 builder.Services.AddSingleton<OrganizeExamService>();
 builder.Services.AddScoped<ProcessTakeExamService>();
 
