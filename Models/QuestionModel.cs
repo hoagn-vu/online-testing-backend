@@ -3,7 +3,7 @@
     using MongoDB.Bson;
     using MongoDB.Bson.Serialization.Attributes;
 
-    public class QuestionModel
+    public class QuestionSetModel
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]

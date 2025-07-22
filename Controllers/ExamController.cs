@@ -127,12 +127,12 @@ namespace Backend_online_testing.Controllers
             return this.BadRequest(new { status = "Failed", message = deleteStatus });
         }
 
-        // Insert data to database
-        [HttpGet("seed")]
-        public async Task<IActionResult> SeedData()
-        {
-            await this._examsService.SeedData();
-            return new OkObjectResult(new { status = "Success", message = "Example exam data seeded successfully." });
-        }
+        //// Insert data to database
+        //[HttpGet("seed")]
+        //public async Task<IActionResult> SeedData()
+        //{
+        //    await this._examsService.SeedData();
+        //    return new OkObjectResult(new { status = "Success", message = "Example exam data seeded successfully." });
+        //}
     }
 }
