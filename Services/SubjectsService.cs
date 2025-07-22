@@ -103,7 +103,7 @@ public class SubjectsService
     }
 
     // Get questions
-    public async Task<(string, string, string, string, List<string>, List<string>, List<QuestionSetModel>, long)> GetQuestions(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
+    public async Task<(string, string, string, string, List<string>, List<string>, List<QuestionModel>, long)> GetQuestions(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
     {
         //var filter = Builders<SubjectsModel>.Filter.And(
         //    Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
@@ -215,7 +215,7 @@ public class SubjectsService
             return "Not found question bank";
         }
             
-        var newQuestion = new QuestionSetModel
+        var newQuestion = new QuestionModel
         {
             Options = question.Options,
             QuestionType = question.QuestionType,
@@ -280,6 +280,8 @@ public class SubjectsService
     {
         try
         {
+
+            //var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
             var result = await _subjectRepository.UpdateQuestionBankNameAsync(subjectId, questionBankId, questionBankName);
 
             if (result.ModifiedCount > 0)

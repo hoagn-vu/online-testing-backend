@@ -22,6 +22,6 @@
         public List<string> AllLevel { get; set; } = [];
 
         [BsonElement("questionList")]
-        public List<QuestionSetModel> QuestionList { get; set; } = [];
+        public List<QuestionModel> QuestionList { get; set; } = [];
     }
 }
