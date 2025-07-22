@@ -126,5 +126,19 @@ namespace Backend_online_testing.Controllers
         //     await this._examMatricesService.SeedData();
         //     return new OkObjectResult(new { status = "Success", message = "Example exam matrix data seeded successfully." });
         // }
+        
+        [HttpGet("options")]
+        public async Task<IActionResult> GetMatrixOptions([FromQuery] string subjectId, [FromQuery] string? questionBankId)
+        {
+            var (status, result) = await _examMatricesService.GetMatrixOptions(subjectId, questionBankId);
+
+            if (status != "ok")
+            {
+                return BadRequest(new { message = "Không thể lấy dữ liệu ma trận." });
+            }
+
+            return Ok(result);
+        }
+        
     }
 }

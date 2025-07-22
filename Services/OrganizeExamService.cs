@@ -193,7 +193,8 @@ public class OrganizeExamService
             {
                 SessionId = ss.SessionId,
                 SessionName = ss.SessionName,
-                ActiveAt = ss.ActiveAt,
+                StartAt = ss.StartAt,
+                FinishAt = ss.FinishAt,
                 TotalRooms = ss.RoomsInSession.Count,
                 SessionStatus = ss.SessionStatus,
             })
@@ -366,6 +367,45 @@ public class OrganizeExamService
         await _organizeExamCollection.InsertOneAsync(newExam);
         return newExam;
     }
+    
+    public async Task<OrganizeExamModel> CreateOrganizeExamWithSessions(OrganizeExamRequestDto dto)
+    {
+        var newExam = new OrganizeExamModel
+        {
+            OrganizeExamName = dto.OrganizeExamName,
+            Duration = dto.Duration,
+            TotalQuestions = dto.TotalQuestions,
+            MaxScore = dto.MaxScore,
+            SubjectId = dto.SubjectId,
+            QuestionBankId = dto.QuestionBankId,
+            ExamType = dto.ExamType,
+            MatrixId = dto.MatrixId,
+            Exams = dto.Exams,
+            OrganizeExamStatus = dto.OrganizeExamStatus,
+            Sessions = new List<SessionsModel>()
+        };
+
+        if (dto.Sessions is not null && dto.Sessions.Any())
+        {
+            foreach (var sessionDto in dto.Sessions)
+            {
+                var session = new SessionsModel
+                {
+                    SessionName = sessionDto.SessionName,
+                    StartAt = sessionDto.StartAt,
+                    FinishAt = sessionDto.FinishAt,
+                    ForceEndAt = sessionDto.ForceEndAt ?? sessionDto.StartAt.AddMinutes(2 * dto.Duration),
+                    SessionStatus = sessionDto.SessionStatus
+                };
+
+                newExam.Sessions.Add(session);
+            }
+        }
+
+        await _organizeExamCollection.InsertOneAsync(newExam);
+        return newExam;
+    }
+
 
     public async Task<string> UpdateOrganizeExam(string organizeExamId, OrganizeExamRequestDto dto)
     // public async Task<OrganizeExamModel?> UpdateOrganizeExam(string organizeExamId, OrganizeExamRequestDto dto)
@@ -401,8 +441,9 @@ public class OrganizeExamService
         var newSession = new SessionsModel
         {
             SessionName = dto.SessionName,
-            ActiveAt = dto.ActiveAt,
-            ForceEndAt = dto.ActiveAt.AddMinutes(2 * organizeExamDuration),
+            StartAt = dto.StartAt,
+            FinishAt = dto.FinishAt,
+            ForceEndAt = dto.StartAt.AddMinutes(2 * organizeExamDuration),
             SessionStatus = dto.SessionStatus
         };
 
@@ -418,7 +459,8 @@ public class OrganizeExamService
         
         var update = Builders<OrganizeExamModel>.Update
             .Set("sessions.$.sessionName", dto.SessionName)
-            .Set("sessions.$.activeAt", dto.ActiveAt)
+            .Set("sessions.$.startAt", dto.StartAt)
+            .Set("sessions.$.finishAt", dto.FinishAt)
             .Set("sessions.$.sessionStatus", dto.SessionStatus);
         
         var result = await _organizeExamCollection.UpdateOneAsync(filter, update);
@@ -674,10 +716,116 @@ public class OrganizeExamService
         }).ToList();
     }
     
+    // public async Task<(List<QuestionResponseDto>, int, string)> GetQuestionsByExamId(string organizeExamId)
+    // {
+    //     var exam = await _organizeExamCollection.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
+    //     if (exam == null || string.IsNullOrEmpty(exam.SubjectId) || string.IsNullOrEmpty(exam.QuestionBankId))
+    //     {
+    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
+    //     }
+    //
+    //     var subject = await _subjectsCollection.Find(s => s.Id == exam.SubjectId).FirstOrDefaultAsync();
+    //     if (subject == null)
+    //     {
+    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
+    //     }
+    //
+    //     var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
+    //     if (questionBank == null)
+    //     {
+    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
+    //     }
+    //
+    //     var questions = questionBank.QuestionList
+    //         .Where(q => q.QuestionStatus == "available")
+    //         .Take(exam.TotalQuestions ?? 0)
+    //         .Select(q => new QuestionResponseDto
+    //         {
+    //             QuestionId = q.QuestionId,
+    //             QuestionName = q.QuestionText,
+    //             Options = q.Options.Select(o => new OptionsResponseDto
+    //             {
+    //                 OptionId = o.OptionId,
+    //                 OptionText = o.OptionText
+    //             }).ToList()
+    //         }).ToList();
+    //
+    //     return (questions, exam.Duration, exam.Sessions.FirstOrDefault()?.SessionId ?? string.Empty);
+    // }
+    // public async Task<(List<QuestionResponseDto>, int, string)> GetQuestionsByExamId(string organizeExamId)
+    // {
+    //     var exam = await _organizeExamCollection.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
+    //     if (exam == null || string.IsNullOrEmpty(exam.SubjectId) || string.IsNullOrEmpty(exam.QuestionBankId))
+    //     {
+    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
+    //     }
+    //
+    //     var subject = await _subjectsCollection.Find(s => s.Id == exam.SubjectId).FirstOrDefaultAsync();
+    //     if (subject == null)
+    //     {
+    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
+    //     }
+    //
+    //     var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
+    //     if (questionBank == null)
+    //     {
+    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
+    //     }
+    //
+    //     var availableQuestions = questionBank.QuestionList
+    //         .Where(q => q.QuestionStatus == "available" && q.Tags?.Count >= 2)
+    //         .ToList();
+    //
+    //     List<QuestionModel> selectedQuestions = [];
+    //
+    //     if (exam.ExamType == "auto")
+    //     {
+    //         selectedQuestions = availableQuestions
+    //             .Take(exam.TotalQuestions ?? 0)
+    //             .ToList();
+    //     }
+    //     else if (exam.ExamType == "matrix" && !string.IsNullOrEmpty(exam.MatrixId))
+    //     {
+    //         var matrix = await _examMatricesCollection.Find(x => x.Id == exam.MatrixId && x.MatrixStatus != "deleted").FirstOrDefaultAsync();
+    //         if (matrix == null)
+    //         {
+    //             return (new List<QuestionResponseDto>(), 0, string.Empty);
+    //         }
+    //         // questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == matrix.QuestionBankId);
+    //         // availableQuestions = questionBank.QuestionList
+    //         //     // .Where(q => q.QuestionStatus == "available" && q.Tags?.Count >= 2)
+    //         //     .ToList();
+    //
+    //         foreach (var tag in matrix.MatrixTags)
+    //         {
+    //             var matchedQuestions = availableQuestions
+    //                 .Where(q => q.Tags[0] == tag.Chapter && q.Tags[1] == tag.Level)
+    //                 .OrderBy(_ => Guid.NewGuid()) // random
+    //                 .Take(tag.QuestionCount)
+    //                 .ToList();
+    //
+    //             selectedQuestions.AddRange(matchedQuestions);
+    //         }
+    //     }
+    //
+    //     var questionDtos = selectedQuestions
+    //         .Select(q => new QuestionResponseDto
+    //         {
+    //             QuestionId = q.QuestionId,
+    //             QuestionName = q.QuestionText,
+    //             Options = q.Options.Select(o => new OptionsResponseDto
+    //             {
+    //                 OptionId = o.OptionId,
+    //                 OptionText = o.OptionText
+    //             }).ToList()
+    //         }).ToList();
+    //
+    //     return (questionDtos, exam.Duration, exam.Sessions.FirstOrDefault()?.SessionId ?? string.Empty);
+    // }
     public async Task<(List<QuestionResponseDto>, int, string)> GetQuestionsByExamId(string organizeExamId)
     {
         var exam = await _organizeExamCollection.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
-        if (exam == null || string.IsNullOrEmpty(exam.SubjectId) || string.IsNullOrEmpty(exam.QuestionBankId))
+        if (exam == null || string.IsNullOrEmpty(exam.SubjectId))
         {
             return (new List<QuestionResponseDto>(), 0, string.Empty);
         }
@@ -688,15 +836,65 @@ public class OrganizeExamService
             return (new List<QuestionResponseDto>(), 0, string.Empty);
         }
 
-        var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
-        if (questionBank == null)
+        List<QuestionModel> availableQuestions = [];
+        List<QuestionModel> selectedQuestions = [];
+
+        if (exam.ExamType == "matrix" && !string.IsNullOrEmpty(exam.MatrixId))
         {
-            return (new List<QuestionResponseDto>(), 0, string.Empty);
+            var matrix = await _examMatricesCollection
+                .Find(x => x.Id == exam.MatrixId && x.MatrixStatus != "deleted")
+                .FirstOrDefaultAsync();
+
+            if (matrix == null)
+            {
+                return (new List<QuestionResponseDto>(), 0, string.Empty);
+            }
+
+            var questionBank = subject.QuestionBanks
+                .FirstOrDefault(qb => qb.QuestionBankId == matrix.QuestionBankId);
+
+            if (questionBank == null)
+            {
+                return (new List<QuestionResponseDto>(), 0, string.Empty);
+            }
+
+            availableQuestions = questionBank.QuestionList
+                .Where(q => q.QuestionStatus == "available" && q.Tags?.Count >= 2)
+                .ToList();
+
+            foreach (var tag in matrix.MatrixTags)
+            {
+                var matchedQuestions = availableQuestions
+                    .Where(q => q.Tags[0] == tag.Chapter && q.Tags[1] == tag.Level)
+                    .OrderBy(_ => Guid.NewGuid()) // random
+                    .Take(tag.QuestionCount)
+                    .ToList();
+
+                selectedQuestions.AddRange(matchedQuestions);
+            }
+        }
+        else // examType == "auto" hoặc khác
+        {
+            if (string.IsNullOrEmpty(exam.QuestionBankId))
+            {
+                return (new List<QuestionResponseDto>(), 0, string.Empty);
+            }
+
+            var questionBank = subject.QuestionBanks
+                .FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
+
+            if (questionBank == null)
+            {
+                return (new List<QuestionResponseDto>(), 0, string.Empty);
+            }
+
+            selectedQuestions = questionBank.QuestionList
+                .Where(q => q.QuestionStatus == "available")
+                .Take(exam.TotalQuestions ?? 0)
+                .ToList();
         }
 
-        var questions = questionBank.QuestionList
-            .Where(q => q.QuestionStatus == "available")
-            .Take(exam.TotalQuestions ?? 0)
+        var questionDtos = selectedQuestions
             .Select(q => new QuestionResponseDto
             {
                 QuestionId = q.QuestionId,
@@ -708,8 +906,9 @@ public class OrganizeExamService
                 }).ToList()
             }).ToList();
 
-        return (questions, exam.Duration, exam.Sessions.FirstOrDefault()?.SessionId ?? string.Empty);
+        return (questionDtos, exam.Duration, exam.Sessions.FirstOrDefault()?.SessionId ?? string.Empty);
     }
+
 
     
     
