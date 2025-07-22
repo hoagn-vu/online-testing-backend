@@ -12,8 +12,7 @@
 
         public string QuestionBankName { get; set; } = string.Empty;
 
-        public List<QuestionSetModel>? Questions { get; set; }
-//         public List<QuestionModel>? Questions { get; set; }
+        public List<QuestionModel>? Questions { get; set; }
     }
 
     public class QuestionResponseDto

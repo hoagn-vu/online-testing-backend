@@ -5,13 +5,10 @@
 
     public class QuestionSetsModel
     {
-        [BsonId] 
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string QuestionId { get; set; } = ObjectId.GenerateNewId().ToString();
         //[BsonElement("questionId")]
-//         [BsonId]
-//         [BsonRepresentation(BsonType.ObjectId)]
-//         public string QuestionId { get; set; } = string.Empty;
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string QuestionId { get; set; } = string.Empty;
 
         [BsonElement("questionScore")]
         public double? QuestionScore { get; set; }
