@@ -57,8 +57,10 @@ public class OrganizeExamController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateOrganizeExam([FromBody] OrganizeExamRequestDto dto)
     {
-        var result = await _organizeExamService.CreateOrganizeExam(dto);
-        return CreatedAtAction(nameof(CreateOrganizeExam), new { id = result.Id }, result);
+        // var result = await _organizeExamService.CreateOrganizeExam(dto);
+        // return CreatedAtAction(nameof(CreateOrganizeExam), new { id = result.Id }, result);
+        var result = await _organizeExamService.CreateOrganizeExamWithSessions(dto);
+        return Ok(result);
     }
 
     [HttpPut("{organizeExamId}")]
@@ -121,10 +123,10 @@ public class OrganizeExamController : ControllerBase
     public async Task<IActionResult> GetQuestionsByExamId(string organizeExamId)
     {
         var (questions, duration, sessionId) = await _organizeExamService.GetQuestionsByExamId(organizeExamId);
-        if (questions == null || questions.Count == 0)
-        {
-            return NotFound("No questions found for the given exam.");
-        }
+        // if (questions == null || questions.Count == 0)
+        // {
+        //     return NotFound("No questions found for the given exam.");
+        // }
         return Ok(new { Questions = questions, Duration = duration, SessionId = sessionId });
     }
     

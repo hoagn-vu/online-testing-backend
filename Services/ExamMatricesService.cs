@@ -307,5 +307,35 @@ namespace Backend_online_testing.Services
         //
         //     await this._examMatrixsCollection.InsertManyAsync(sampleData);
         // }
+
+        public async Task<(string, List<MatrixOptionsDto>)> GetMatrixOptions(string subjectId, string? questionBankId)
+        {
+            var builder = Builders<ExamMatricesModel>.Filter;
+            var filter = builder.Ne(x => x.MatrixStatus, "deleted");
+
+            if (!string.IsNullOrEmpty(subjectId))
+            {
+                filter &= builder.Eq(x => x.SubjectId, subjectId);
+            }
+
+            if (!string.IsNullOrEmpty(questionBankId))
+            {
+                filter &= builder.Eq(x => x.QuestionBankId, questionBankId);
+            }
+
+            var result = await _examMatrixsCollection
+                .Find(filter)
+                .SortByDescending(x => x.Id)
+                .Project(mt => new MatrixOptionsDto
+                {
+                    Id = mt.Id,
+                    MatrixName = mt.MatrixName
+                })
+                .ToListAsync();
+
+            return ("ok", result);
+        }
+        
+        
     }
 }
