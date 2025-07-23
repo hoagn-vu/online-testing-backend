@@ -110,6 +110,8 @@ public class SubjectsController : ControllerBase
         }
     }
 
+    
+
     [HttpPut("update-question-bank")]
     public async Task<ActionResult> UpdateQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
     {
@@ -134,7 +136,7 @@ public class SubjectsController : ControllerBase
         return Ok( new { subjectId, subjectName, questionBankId, questionBankName, allChapter, allLevel, questions, totalCount });
     }
 
-    // Add question list
+    // Add question
     [HttpPost("add-question")]
     public async Task<ActionResult> AddQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] SubjectQuestionDto question)
     {
@@ -148,6 +150,23 @@ public class SubjectsController : ControllerBase
         {
             return this.BadRequest(new { error = result });
         }
+    }
+
+    // Add question
+    [HttpPost("add-multi-question")]
+    public async Task<ActionResult> AddListQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] List<SubjectQuestionDto> questions)
+    {
+        var result = await _subjectsService.AddMultiQuestion(subjectId, questionBankId, userId, questions);
+
+        if (result.StartsWith("Lỗi") || result.StartsWith("Not found"))
+        {
+            return this.BadRequest(new { error = result });
+        }
+        else
+        {
+            return this.Ok(new { message = result });
+        }
+
     }
 
     // Update question Id

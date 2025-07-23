@@ -6,15 +6,12 @@ namespace Backend_online_testing.Services;
 using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
 using Backend_online_testing.Repositories;
+using DocumentFormat.OpenXml.Office.SpreadSheetML.Y2023.MsForms;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
 public class SubjectsService
 {
-    //private readonly IMongoCollection<SubjectsModel> _subjectsCollection;
-    //private readonly IMongoCollection<UsersModel> _usersCollection;
-    //private readonly IMongoCollection<LogsModel> _logsCollection;
-
     private readonly SubjectRepository _subjectRepository;
 
     public SubjectsService(SubjectRepository subjectRepository)
@@ -260,6 +257,62 @@ public class SubjectsService
             return $"Thêm câu hỏi thành công";
     }
 
+    //Add multi question
+    public async Task<string> AddMultiQuestion(string subjectId, string questionBankId, string userId, List<SubjectQuestionDto> questions)
+    {
+        try
+        {
+            var subject = await _subjectRepository.GetSubjectByIdAsync(subjectId);
+            if (subject == null)
+            {
+                return "Not found subject";
+            }
+
+            var questionBank = subject.QuestionBanks.Find(qb => qb.QuestionBankId == questionBankId);
+            if (questionBank == null)
+            {
+                return "Not found question bank";
+            }
+
+            foreach (var question in questions)
+            {
+                var newQuestion = new QuestionModel
+                {
+                    Options = question.Options,
+                    QuestionType = question.QuestionType,
+                    QuestionText = question.QuestionText,
+                    QuestionStatus = question.QuestionStatus,
+                    IsRandomOrder = question.IsRandomOrder,
+                    Tags = question.Tags,
+                };
+
+                questionBank.QuestionList.Add(newQuestion);
+
+                if (question.Tags != null && question.Tags.Count >= 2)
+                {
+                    if (!questionBank.AllChapter.Contains(question.Tags[0]))
+                    {
+                        questionBank.AllChapter.Add(question.Tags[0]);
+                    }
+                    if (!questionBank.AllLevel.Contains(question.Tags[1]))
+                    {
+                        questionBank.AllLevel.Add(question.Tags[1]);
+                    }
+                }
+            }
+
+            await _subjectRepository.AddQuestionAsync(subjectId, subject);
+
+            return $"Đã thêm {questions.Count} câu hỏi thành công";
+        }
+        catch (Exception ex)
+        {
+            // Có thể log lỗi tại đây nếu cần: _logger.LogError(ex, ...);
+            return $"Lỗi xảy ra khi thêm câu hỏi: {ex.Message}";
+        }
+    }
+
+
     // Update Subject Name
     public async Task<string> UpdateSubjectName(string subjectId, string subjectName)
     {
@@ -358,9 +411,7 @@ public class SubjectsService
         try
         {
             //var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
-
             //var update = Builders<SubjectsModel>.Update.Set(s => s.SubjectStatus, "Deleted/Disable");
-
             //var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
             var result = await _subjectRepository.DeleteSubject(subjectId);
 

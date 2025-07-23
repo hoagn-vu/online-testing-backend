@@ -28,19 +28,19 @@ namespace Backend_online_testing.Controllers
             return Ok(new { exams, totalCount });
         }
 
-        [HttpGet("questions")]
-        public async Task<IActionResult> GetExamQuestionsByCode([FromQuery] string examId)
-        {
-            var (status,detailedQuestions) = await _examsService.GetExamQuestionsWithDetailsAsync(examId);
+        //[HttpGet("questions")]
+        //public async Task<IActionResult> GetExamQuestionsByCode([FromQuery] string examId)
+        //{
+        //    var (status,detailedQuestions) = await _examsService.GetExamQuestionsWithDetailsAsync(examId);
 
-            if (status == "error-exam")
-                return NotFound(new { message = "Không tìm thấy đề thi" });
-            if (status == "error-subject")
-                return NotFound(new { message = "Không tìm thấy phân môn" });
-            if (status == "error-questionBank")
-                return NotFound(new { message = "Không tìm thấy bộ đề thi" });
-            return Ok(detailedQuestions);
-        }
+        //    if (status == "error-exam")
+        //        return NotFound(new { message = "Không tìm thấy đề thi" });
+        //    if (status == "error-subject")
+        //        return NotFound(new { message = "Không tìm thấy phân môn" });
+        //    if (status == "error-questionBank")
+        //        return NotFound(new { message = "Không tìm thấy bộ đề thi" });
+        //    return Ok(detailedQuestions);
+        //}
 
         // Create Exam
         [HttpPost]
