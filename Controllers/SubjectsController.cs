@@ -25,15 +25,70 @@ namespace Backend_online_testing.Controllers
         {
             var (subjects, totalCount) = await this._subjectsService.GetSubjects(keyword ?? string.Empty, page, pageSize);
 
-            return Ok(new { subjects, totalCount });
-        } 
+        if (result == "Update subject successfully")
+        {
+            return Ok(new { message = result });
+        }
+        else
+        {
+            return BadRequest(new { error = result });
+        }
+    }
+
+    // Search by question bank name
+    [HttpGet("question-banks")]
+    public async Task<ActionResult<List<SubjectsModel>>> GetQuestionBanks([FromQuery] string subId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var (subjectId, subjectName, questionBanks, totalCount)  = await this._subjectsService.GetQuestionBanks(subId, keyword, page, pageSize);
+        return this.Ok(new { subjectId, subjectName, questionBanks, totalCount });
+    }
+    
+    [HttpGet("question-bank-options")]
+    public async Task<ActionResult<List<SubjectsModel>>> GetQuestionBankOptions([FromQuery] string subjectId)
+    {
+        var questionBanks  = await _subjectsService.GetQuestionBanksPerSubject(subjectId);
+        return Ok(questionBanks);
+    }
+    
+    // Add question bank
+    [HttpPost("add-question-bank")]
+    public async Task<ActionResult> AddQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
+    {
+        if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
+        var result = await this._subjectsService.AddQuestionBank(questionBankDto.SubjectId, questionBankDto.QuestionBankName);
+
+        if (result == "Add question bank successfully")
+        {
+            return this.Ok(new { message = result });
+        }
+        else
+        {
+            return this.BadRequest(new { error = result });
+        }
+    }
+
+    
+
+    [HttpPut("update-question-bank")]
+    public async Task<ActionResult> UpdateQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
+    {
+        if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
+        var result = await _subjectsService.UpdateQuestionBankName(questionBankDto.SubjectId, questionBankDto.QuestionBankId ?? string.Empty ,questionBankDto.QuestionBankName);
         
         [HttpGet("options")]
         public async Task<IActionResult> GetSubjectOptions()
         {
             var subjects = await this._subjectsService.GetAllSubjects();
 
-            return Ok(subjects);
+    // Add question
+    [HttpPost("add-question")]
+    public async Task<ActionResult> AddQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] SubjectQuestionDto question)
+    {
+        var result = await _subjectsService.AddQuestion(subjectId, questionBankId, userId, question);
+
+        if (result == "Thêm câu hỏi thành công")
+        {
+            return this.Ok(new { message = result });
         }
         
         // Add subject
@@ -56,34 +111,34 @@ namespace Backend_online_testing.Controllers
                 return BadRequest(new { error = result });
             }
         }
-        
-        // Update Subject
-        [HttpPut("update/{subjectId}")]
-        public async Task<ActionResult> UpdateSubject(string subjectId, [FromBody] SubjectRequestDto? subjectDto)
-        {
-            if (subjectDto == null || string.IsNullOrEmpty(subjectDto.SubjectName))
-            {
-                return BadRequest(new { error = "Subject is required" });
-            }
-            
-            var result = await _subjectsService.UpdateSubject(subjectId, subjectDto.SubjectName);
+    }
 
-            if (result == "Update subject successfully")
-            {
-                return Ok(new { message = result });
-            }
-            else
-            {
-                return BadRequest(new { error = result });
-            }
+    // Add question
+    [HttpPost("add-multi-question")]
+    public async Task<ActionResult> AddListQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] List<SubjectQuestionDto> questions)
+    {
+        var result = await _subjectsService.AddMultiQuestion(subjectId, questionBankId, userId, questions);
+
+        if (result.StartsWith("Lỗi") || result.StartsWith("Not found"))
+        {
+            return this.BadRequest(new { error = result });
+        }
+        else
+        {
+            return this.Ok(new { message = result });
         }
 
-        // Search by question bank name
-        [HttpGet("question-banks")]
-        public async Task<ActionResult<List<SubjectsModel>>> GetQuestionBanks([FromQuery] string subId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    }
+
+    // Update question Id
+    [HttpPut("update-question/{questionId}")]
+    public async Task<ActionResult> UpdateQuestion(string questionId, [FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] SubjectQuestionDto questionData)
+    {
+        var result = await _subjectsService.UpdateQuestion(subjectId, questionBankId, questionId, userId, questionData);
+
+        if (result == "Update question successfully")
         {
-            var (subjectId, subjectName, questionBanks, totalCount)  = await this._subjectsService.GetQuestionBanks(subId, keyword, page, pageSize);
-            return this.Ok(new { subjectId, subjectName, questionBanks, totalCount });
+            return Ok(new { message = result });
         }
         
         [HttpGet("question-bank-options")]

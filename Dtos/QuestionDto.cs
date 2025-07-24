@@ -11,7 +11,7 @@
         public string QuestionBankId { get; set; } = string.Empty;
 
         public string QuestionBankName { get; set; } = string.Empty;
-
+        
         public List<QuestionModel>? Questions { get; set; }
     }
 

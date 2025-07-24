@@ -1,14 +1,20 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
 #pragma warning disable SA1309
-namespace Backend_online_testing.Services
-{
-    using Backend_online_testing.Dtos;
-    using Backend_online_testing.Models;
-    using MongoDB.Bson;
-    using MongoDB.Driver;
+namespace Backend_online_testing.Services;
 
-    public class SubjectsService
+using Backend_online_testing.Dtos;
+using Backend_online_testing.Models;
+using Backend_online_testing.Repositories;
+using DocumentFormat.OpenXml.Office.SpreadSheetML.Y2023.MsForms;
+using MongoDB.Bson;
+using MongoDB.Driver;
+
+public class SubjectsService
+{
+    private readonly SubjectRepository _subjectRepository;
+
+    public SubjectsService(SubjectRepository subjectRepository)
     {
         private readonly IMongoCollection<SubjectsModel> _subjectsCollection;
         private readonly IMongoCollection<UsersModel> _usersCollection;
@@ -106,8 +112,13 @@ namespace Backend_online_testing.Services
                 }))
             .ToList();
 
-            var totalQuestionBanks = questionBanks.Count;
-            var subjectName = subjects.FirstOrDefault()?.SubjectName;
+    // Get questions
+    public async Task<(string, string, string, string, List<string>, List<string>, List<QuestionModel>, long)> GetQuestions(string subjectId, string questionBankId, string? keyWord, int page, int pageSize)
+    {
+        //var filter = Builders<SubjectsModel>.Filter.And(
+        //    Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
+        //    Builders<SubjectsModel>.Filter.Ne(s => s.SubjectStatus, "deleted")
+        //);
 
             return (subjectId, subjectName, questionBanks, totalQuestionBanks);
         }     
@@ -236,12 +247,30 @@ namespace Backend_online_testing.Services
                 var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
                 await this._subjectsCollection.UpdateOneAsync(s => s.Id == subjectNameId, update);
 
-                return $"Add question bank successfully";
-            }
-            catch (Exception ex)
-            {
-                return $"Error: {ex.Message}";
-            }
+        var questionBank = subject.QuestionBanks.Find(qb => qb.QuestionBankId == questionBankId);
+        if (questionBank == null)
+        {
+            return "Not found question bank";
+        }
+            
+        var newQuestion = new QuestionModel
+        {
+            Options = question.Options,
+            QuestionType = question.QuestionType,
+            QuestionText = question.QuestionText,
+            QuestionStatus = question.QuestionStatus,
+            IsRandomOrder = question.IsRandomOrder,
+            Tags = question.Tags,
+        };
+
+        questionBank.QuestionList.Add(newQuestion);
+        if (!questionBank.AllChapter.Contains(newQuestion.Tags[0]))
+        {
+            questionBank.AllChapter.Add(newQuestion.Tags[0]);
+        } 
+        if (!questionBank.AllLevel.Contains(newQuestion.Tags[1]))
+        {
+            questionBank.AllLevel.Add(newQuestion.Tags[1]);
         }
 
         // Add Question
@@ -281,8 +310,68 @@ namespace Backend_online_testing.Services
                     questionBank.AllLevel.Add(newQuestion.Tags[1]);
                 }
 
-                var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
-                await _subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
+    //Add multi question
+    public async Task<string> AddMultiQuestion(string subjectId, string questionBankId, string userId, List<SubjectQuestionDto> questions)
+    {
+        try
+        {
+            var subject = await _subjectRepository.GetSubjectByIdAsync(subjectId);
+            if (subject == null)
+            {
+                return "Not found subject";
+            }
+
+            var questionBank = subject.QuestionBanks.Find(qb => qb.QuestionBankId == questionBankId);
+            if (questionBank == null)
+            {
+                return "Not found question bank";
+            }
+
+            foreach (var question in questions)
+            {
+                var newQuestion = new QuestionModel
+                {
+                    Options = question.Options,
+                    QuestionType = question.QuestionType,
+                    QuestionText = question.QuestionText,
+                    QuestionStatus = question.QuestionStatus,
+                    IsRandomOrder = question.IsRandomOrder,
+                    Tags = question.Tags,
+                };
+
+                questionBank.QuestionList.Add(newQuestion);
+
+                if (question.Tags != null && question.Tags.Count >= 2)
+                {
+                    if (!questionBank.AllChapter.Contains(question.Tags[0]))
+                    {
+                        questionBank.AllChapter.Add(question.Tags[0]);
+                    }
+                    if (!questionBank.AllLevel.Contains(question.Tags[1]))
+                    {
+                        questionBank.AllLevel.Add(question.Tags[1]);
+                    }
+                }
+            }
+
+            await _subjectRepository.AddQuestionAsync(subjectId, subject);
+
+            return $"Đã thêm {questions.Count} câu hỏi thành công";
+        }
+        catch (Exception ex)
+        {
+            // Có thể log lỗi tại đây nếu cần: _logger.LogError(ex, ...);
+            return $"Lỗi xảy ra khi thêm câu hỏi: {ex.Message}";
+        }
+    }
+
+
+    // Update Subject Name
+    public async Task<string> UpdateSubjectName(string subjectId, string subjectName)
+    {
+        try
+        {
+            var result = await _subjectRepository.UpdateSubjectNameAsync(subjectId, subjectName);
 
                 var logInsert = new LogsModel
                 {
@@ -316,10 +405,8 @@ namespace Backend_online_testing.Services
         // Update Subject Name
         public async Task<string> UpdateSubjectName(string id, string subjectName)
         {
-            try
-            {
-                var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, id);
-                var update = Builders<SubjectsModel>.Update.Set(s => s.SubjectName, subjectName);
+            //var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
+            var result = await _subjectRepository.UpdateQuestionBankNameAsync(subjectId, questionBankId, questionBankName);
 
                 var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
 
@@ -360,47 +447,10 @@ namespace Backend_online_testing.Services
         // Update Question List
         public async Task<string> UpdateQuestion(string id, string questionBankId, string questionId, string userId, SubjectQuestionDto questionData)
         {
-            try
-            {
-                var subject = await this._subjectsCollection.Find(s => s.Id == id).FirstOrDefaultAsync();
-                if (subject == null)
-                {
-                    return "Subject not found";
-                }
-
-                // Find question bank
-                var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
-                if (questionBank == null)
-                {
-                    return "QuestionBank not found";
-                }
-
-                // Find question
-                var questionIndex = questionBank.QuestionList.FindIndex(q => q.QuestionId == questionId);
-                if (questionIndex == -1)
-                {
-                    return "Question not found";
-                }
-
-                // Update question data
-                questionBank.QuestionList[questionIndex].Options = questionData.Options;
-                questionBank.QuestionList[questionIndex].QuestionType = questionData.QuestionType;
-                questionBank.QuestionList[questionIndex].QuestionStatus = questionData.QuestionStatus;
-                questionBank.QuestionList[questionIndex].QuestionText = questionData.QuestionText;
-                questionBank.QuestionList[questionIndex].IsRandomOrder = questionData.IsRandomOrder;
-                questionBank.QuestionList[questionIndex].Tags = questionData.Tags;
-
-                // Update data
-                var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
-                var result = await _subjectsCollection.UpdateOneAsync(s => s.Id == id, update);
-                
-                var logInsert = new LogsModel
-                {
-                    MadeBy = userId,
-                    LogAction = "create",
-                    LogDetails = "Cập nhật câu hỏi có id  " + questionId
-                };
-                await _logsCollection.InsertOneAsync(logInsert);
+            //var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
+            //var update = Builders<SubjectsModel>.Update.Set(s => s.SubjectStatus, "Deleted/Disable");
+            //var result = await this._subjectsCollection.UpdateOneAsync(filter, update);
+            var result = await _subjectRepository.DeleteSubject(subjectId);
 
                 return result.ModifiedCount > 0 ? "Update question successfully" : "Update failed";
             }
