@@ -11,7 +11,7 @@ namespace Backend_online_testing.Services
 {
     public class RoomsService
     {
-        //private readonly IMongoCollection<RoomsModel> _rooms;
+        private readonly IMongoCollection<RoomsModel> _rooms;
         private readonly RoomRepository _roomRepository;
         private readonly LogService _logService;
         
