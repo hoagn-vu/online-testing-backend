@@ -19,11 +19,11 @@ public class ExamRepository
     }
 
     //Filter definition
-    private FilterDefinition<ExamsModel> FilterById(string id) =>
-        Builders<ExamsModel>.Filter.Eq(e => e.Id, id);
+    private FilterDefinition<ExamsModel> FilterById(string examId) =>
+        Builders<ExamsModel>.Filter.Eq(e => e.Id, examId);
 
     //Get subject information
-    public async Task<SubjectsModel> GetSubjectsAsync(ExamsModel exam)
+    public async Task<SubjectsModel> GetSubjectByIdAsync(ExamsModel exam)
     {
         return await _subjects.Find(s => s.Id == exam.SubjectId).FirstOrDefaultAsync();
     }
