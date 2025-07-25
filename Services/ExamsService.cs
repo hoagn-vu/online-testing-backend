@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using OfficeOpenXml.Style.XmlAccess;
 
 public class ExamsService
 {
@@ -136,6 +137,7 @@ public class ExamsService
             Id = exam.Id,
             ExamCode = exam.ExamCode,
             ExamName = exam.ExamName,
+            ExamStatus = exam.ExamStatus,
             SubjectName = subject.SubjectName,
             QuestionBankName = questionBank.QuestionBankName,
             ListQuestion = detailedQuestions,
@@ -163,7 +165,8 @@ public class ExamsService
             SubjectId = createExamData.SubjectId,
             ExamStatus = createExamData.ExamStatus,
             QuestionBankId = createExamData.QuestionBankId,
-            QuestionSet = new List<QuestionSetsModel>(),
+            //QuestionSet = new List<QuestionSetsModel>(),
+            QuestionSet = createExamData.QuestionSets,
         };
 
         try
