@@ -31,6 +31,7 @@ builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<RoomsService>();
 builder.Services.AddScoped<RoomRepository>();;
 builder.Services.AddScoped<ExamsService>();
+builder.Services.AddScoped<ExamRepository>();
 builder.Services.AddSingleton<ExamMatricesService>();
 builder.Services.AddSingleton<AddLogService>();
 builder.Services.AddScoped<LogService>();

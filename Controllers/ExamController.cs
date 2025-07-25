@@ -28,21 +28,21 @@ namespace Backend_online_testing.Controllers
             return Ok(new { exams, totalCount });
         }
 
-        //[HttpGet("questions")]
-        //public async Task<IActionResult> GetExamQuestionsByCode([FromQuery] string examId)
-        //{
-        //    var (status,detailedQuestions) = await _examsService.GetExamQuestionsWithDetailsAsync(examId);
+        [HttpGet("questions")]
+        public async Task<IActionResult> GetExamQuestionsByCode([FromQuery] string examId)
+        {
+            var (status, detailedQuestions) = await _examsService.GetExamQuestionsWithDetailsAsync(examId);
 
-        //    if (status == "error-exam")
-        //        return NotFound(new { message = "Không tìm thấy đề thi" });
-        //    if (status == "error-subject")
-        //        return NotFound(new { message = "Không tìm thấy phân môn" });
-        //    if (status == "error-questionBank")
-        //        return NotFound(new { message = "Không tìm thấy bộ đề thi" });
-        //    return Ok(detailedQuestions);
-        //}
+            if (status == "error-exam")
+                return NotFound(new { message = "Không tìm thấy đề thi" });
+            if (status == "error-subject")
+                return NotFound(new { message = "Không tìm thấy phân môn" });
+            if (status == "error-questionBank")
+                return NotFound(new { message = "Không tìm thấy bộ đề thi" });
+            return Ok(detailedQuestions);
+        }
 
-        // Create Exam
+        // Create Exam //Add multi question when add an exam
         [HttpPost]
         public async Task<IActionResult> CreateExam([FromBody] ExamDto createExamData)
         {
@@ -67,6 +67,20 @@ namespace Backend_online_testing.Controllers
             }
         }
 
+        // Add questions to Exam
+        [HttpPost("{examId}/questions")]
+        public async Task<IActionResult> AddQuestionExam(string examId, [FromBody] ExamQuestionDTO addQuestionData, string userLogId)
+        {
+            string addStatus = await this._examsService.AddExamQuestion(addQuestionData, examId, userLogId);
+
+            if (addStatus == "Question added successfully")
+            {
+                return this.Ok(new { status = "Success", message = "Added question successfully." });
+            }
+
+            return this.BadRequest(new { status = "Failed", message = addStatus });
+        }
+
         // Update exam
         [HttpPost("update/{examId}")]
         public async Task<IActionResult> UpdateExam(string examId, [FromBody] ExamDto updateExamData, string userLogId)
@@ -84,20 +98,6 @@ namespace Backend_online_testing.Controllers
             }
 
             return this.NotFound(new { status = "Error", message = "Exam update failed." });
-        }
-
-        // Add questions to Exam
-        [HttpPost("{examId}/questions")]
-        public async Task<IActionResult> AddQuestionExam(string examId, [FromBody] ExamQuestionDTO addQuestionData, string userLogId)
-        {
-            string addStatus = await this._examsService.AddExamQuestion(addQuestionData, examId, userLogId);
-
-            if (addStatus == "Question added successfully")
-            {
-                return this.Ok(new { status = "Success", message = "Added question successfully." });
-            }
-
-            return this.BadRequest(new { status = "Failed", message = addStatus });
         }
 
         // Update a question to exam

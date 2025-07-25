@@ -14,6 +14,8 @@
         public string ExamStatus { get; set; } = string.Empty;
 
         public string QuestionBankId { get; set; } = string.Empty;
+
+        public List<QuestionSetsModel> QuestionSets { get; set; } = new List<QuestionSetsModel>();
     }
     
     public class ExamResponseDto {
