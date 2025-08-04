@@ -21,6 +21,9 @@
         [BsonElement("questionText")]
         public string QuestionText { get; set; } = string.Empty;
 
+        [BsonElement("imgSources")]
+        public List<string> ImgLinks { get; set; } = [];
+
         [BsonElement("isRandomOrder")]
         public bool? IsRandomOrder { get; set; } = false;
 

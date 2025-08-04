@@ -222,6 +222,7 @@ public class SubjectsService
             QuestionStatus = question.QuestionStatus,
             IsRandomOrder = question.IsRandomOrder,
             Tags = question.Tags,
+            ImgLinks = question.ImgLinks ?? new List<string>()
         };
 
         questionBank.QuestionList.Add(newQuestion);
@@ -321,12 +322,34 @@ public class SubjectsService
             }
 
             // Update question data
-            questionBank.QuestionList[questionIndex].Options = questionData.Options;
-            questionBank.QuestionList[questionIndex].QuestionType = questionData.QuestionType;
-            questionBank.QuestionList[questionIndex].QuestionStatus = questionData.QuestionStatus;
-            questionBank.QuestionList[questionIndex].QuestionText = questionData.QuestionText;
-            questionBank.QuestionList[questionIndex].IsRandomOrder = questionData.IsRandomOrder;
-            questionBank.QuestionList[questionIndex].Tags = questionData.Tags;
+            if (questionData.Options != null && questionData.Options.Count > 0)
+            {
+                questionBank.QuestionList[questionIndex].Options = questionData.Options;
+            }
+            if (questionData.QuestionType != null && questionData.QuestionType != "")
+            {
+                questionBank.QuestionList[questionIndex].QuestionType = questionData.QuestionType;
+            }
+            if (questionData.QuestionStatus != null && questionData.QuestionStatus != "")
+            {
+                questionBank.QuestionList[questionIndex].QuestionStatus = questionData.QuestionStatus;
+            }
+            if (questionData.QuestionText != null && questionData.QuestionText != "")
+            {
+                questionBank.QuestionList[questionIndex].QuestionText = questionData.QuestionText;
+            }
+            if (questionData.IsRandomOrder != null)
+            {
+                questionBank.QuestionList[questionIndex].IsRandomOrder = questionData.IsRandomOrder;
+            }
+            if (questionData.Tags != null && questionData.Tags.Count > 0)
+            {
+                questionBank.QuestionList[questionIndex].Tags = questionData.Tags;
+            }
+            if (questionData.ImgLinks != null && questionData.ImgLinks.Count > 0)
+            {
+                questionBank.QuestionList[questionIndex].ImgLinks = questionData.ImgLinks;
+            }
 
             // Update data
             //var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
@@ -341,7 +364,12 @@ public class SubjectsService
             //};
             //await _logsCollection.InsertOneAsync(logInsert);
 
-            return result.ModifiedCount > 0 ? "Update question successfully" : "Update failed";
+            //return result.ModifiedCount > 0 ? "Update question successfully" : "Update failed";
+            if (result.ModifiedCount > 0)
+                return "Update question successfully";
+            else
+                return "No field was changed, but update completed";
+
         }
         catch (Exception ex)
         {
