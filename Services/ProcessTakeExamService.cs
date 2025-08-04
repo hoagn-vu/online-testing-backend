@@ -1,5 +1,6 @@
 using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
+using Backend_online_testing.Repositories;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -14,7 +15,8 @@ public class ProcessTakeExamService
     private readonly IMongoCollection<ExamsModel> _examsCollection;
     private readonly IMongoCollection<ExamMatricesModel> _examMatricesCollection;
 
-    public ProcessTakeExamService(IMongoDatabase database)
+    private readonly ProcessTakeExamRepository _processTakeExamRepository;
+    public ProcessTakeExamService(IMongoDatabase database, ProcessTakeExamRepository processTakeExamRepository)
     {
         _organizeExamCollection = database.GetCollection<OrganizeExamModel>("organizeExams");
         _subjectsCollection = database.GetCollection<SubjectsModel>("subjects");
@@ -22,35 +24,25 @@ public class ProcessTakeExamService
         _usersCollection = database.GetCollection<UsersModel>("users");
         _examsCollection = database.GetCollection<ExamsModel>("exams");
         _examMatricesCollection = database.GetCollection<ExamMatricesModel>("examMatrices");
+
+        _processTakeExamRepository = processTakeExamRepository;
     }
 
     public async Task<string?> ToggleSessionStatus(string organizeExamId, string sessionId)
     {
-        var filter = Builders<OrganizeExamModel>.Filter.And(
-            Builders<OrganizeExamModel>.Filter.Eq(x => x.Id, organizeExamId),
-            Builders<OrganizeExamModel>.Filter.ElemMatch(x => x.Sessions, s => s.SessionId == sessionId)
-        );
-        
-        var session = (await _organizeExamCollection.Find(filter).FirstOrDefaultAsync())?
+        var session = (await _processTakeExamRepository.GetSessionAsync(organizeExamId, sessionId))?
             .Sessions.FirstOrDefault(s => s.SessionId == sessionId);
 
         if (session == null) return null;
         
         var newStatus = session.SessionStatus == "active" ? "closed" : "active";
-        var update = Builders<OrganizeExamModel>.Update.Set("sessions.$.sessionStatus", newStatus);
-
-        var result = await _organizeExamCollection.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0 ? newStatus : null;
+        var update = await _processTakeExamRepository.UpdateSessionStatusAsync(organizeExamId, sessionId, newStatus);
+        return update ? newStatus : null;
     }
 
     public async Task<string?> ToggleRoomStatus(string organizeExamId, string sessionId, string roomId)
     {
-        var filter = Builders<OrganizeExamModel>.Filter.And(
-            Builders<OrganizeExamModel>.Filter.Eq(x => x.Id, organizeExamId),
-            Builders<OrganizeExamModel>.Filter.ElemMatch(x => x.Sessions, s => s.SessionId == sessionId)
-        );
-        
-        var session = (await _organizeExamCollection.Find(filter).FirstOrDefaultAsync())?
+        var session = (await _processTakeExamRepository.GetSessionAsync(organizeExamId, sessionId))?
             .Sessions.FirstOrDefault(s => s.SessionId == sessionId);
 
         if (session == null) return null;
@@ -60,29 +52,16 @@ public class ProcessTakeExamService
 
 
         var newStatus = room.RoomStatus == "active" ? "closed" : "active";
-        var update = Builders<OrganizeExamModel>.Update.Set("sessions.$.rooms.$[room].roomStatus", newStatus);
+        await _processTakeExamRepository.UpdateCandidateRoomStatusAsync(room.CandidateIds, newStatus);
 
-        var arrayFilters = new List<ArrayFilterDefinition>
-        {
-            new JsonArrayFilterDefinition<BsonDocument>($"{{ 'room.roomId': '{roomId}' }}")
-        };
-        
-        var candidateIds = room.CandidateIds;
-        var userFilter = Builders<UsersModel>.Filter.In(u => u.Id, candidateIds);
-        var userUpdate = Builders<UsersModel>.Update.Set("takeExams.$[].status", newStatus);
-
-        await _usersCollection.UpdateManyAsync(userFilter, userUpdate);
-
-        var updateOptions = new UpdateOptions { ArrayFilters = arrayFilters };
-        var result = await _organizeExamCollection.UpdateOneAsync(filter, update, updateOptions);
-
-        return result.ModifiedCount > 0 ? newStatus : null;
+        var updated = await _processTakeExamRepository.UpdateRoomStatusAsync(organizeExamId, sessionId, roomId, newStatus);
+        return updated ? newStatus : null;
     }
 
     public async Task<List<ProcessTakeExamDto>> GetActiveExam(string userId)
     {
         List<ProcessTakeExamDto> allActiveExams = [];
-        var user = await _usersCollection.Find(usr => usr.Id == userId).FirstOrDefaultAsync();
+        var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
         if (user == null) return allActiveExams;
     
         List<string> accessStatus = ["active", "notin", "reinexam", "outexam"];
@@ -91,7 +70,7 @@ public class ProcessTakeExamService
             
         foreach (var ex in activeExams)
         {
-            var orgExam = _organizeExamCollection.Find(oe => oe.Id == ex.OrganizeExamId).FirstOrDefault();
+            var orgExam = await _processTakeExamRepository.GetOrganizeExamByIdAsync(ex.Id);
             var session = orgExam?.Sessions.FirstOrDefault(s => s.SessionId == ex.SessionId);
                 
             allActiveExams.Add(new ProcessTakeExamDto
@@ -113,9 +92,7 @@ public class ProcessTakeExamService
     
     public async Task<TakeExamDto?> TakeExam(string organizeExamId, string sessionId, string roomId, string userId)
     {
-        var user = await _usersCollection
-            .Find(u => u.Id == userId)
-            .FirstOrDefaultAsync();
+        var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
 
         if (user == null || user.TakeExam == null)
             return null;
@@ -129,16 +106,12 @@ public class ProcessTakeExamService
         if (matchedTakeExam == null)
             return null;
 
-        var organizeExam = await _organizeExamCollection
-            .Find(x => x.Id == organizeExamId)
-            .FirstOrDefaultAsync();
+        var organizeExam = await _processTakeExamRepository.GetOrganizeExamByIdAsync(organizeExamId);
 
         if (organizeExam == null || organizeExam.ExamType != "auto")
             return null;
 
-        var subject = await _subjectsCollection
-            .Find(s => s.Id == organizeExam.SubjectId)
-            .FirstOrDefaultAsync();
+        var subject = await _processTakeExamRepository.GetSubjectByIdAsync(organizeExam.SubjectId);  
 
         if (subject == null || subject.QuestionBanks == null)
             return null;
@@ -229,8 +202,7 @@ public class ProcessTakeExamService
         matchedTakeExam.Status = "inexam";
 
         // Lưu lại vào DB
-        var update = Builders<UsersModel>.Update.Set(u => u.TakeExam, user.TakeExam);
-        await _usersCollection.UpdateOneAsync(u => u.Id == userId, update);
+        await _processTakeExamRepository.UpdateTakeExamsAsync(userId, user.TakeExam);
 
         // Trả về DTO
         return new TakeExamDto
@@ -342,109 +314,107 @@ public class ProcessTakeExamService
     //     return true;
     // }
     public async Task<bool> SubmitAnswers(string userId, string takeExamId, string type, List<SubmitAnswersRequest>? answersRequest)
-{
-    var user = await _usersCollection
-        .Find(u => u.Id == userId)
-        .FirstOrDefaultAsync();
-
-    if (user == null || user.TakeExam == null) return false;
-
-    var takeExam = user.TakeExam.FirstOrDefault(te => te.Id == takeExamId);
-    if (takeExam == null) return false;
-
-    var organizeExam = await _organizeExamCollection
-        .Find(x => x.Id == takeExam.OrganizeExamId)
-        .FirstOrDefaultAsync();
-    if (organizeExam == null) return false;
-
-    var subject = await _subjectsCollection
-        .Find(x => x.Id == organizeExam.SubjectId)
-        .FirstOrDefaultAsync();
-    if (subject == null) return false;
-
-    var questionBank = subject.QuestionBanks
-        .FirstOrDefault(qb => qb.QuestionBankId == organizeExam.QuestionBankId);
-    if (questionBank == null) return false;
-
-    // Chỉ xử lý answersRequest nếu type != "submit"
-    if (type != "submit" && answersRequest != null)
     {
-        foreach (var req in answersRequest)
+        var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
+
+        if (user == null || user.TakeExam == null) return false;
+
+        var takeExam = user.TakeExam.FirstOrDefault(te => te.Id == takeExamId);
+        if (takeExam == null) return false;
+
+        //var organizeExam = await _organizeExamCollection
+        //    .Find(x => x.Id == takeExam.OrganizeExamId)
+        //    .FirstOrDefaultAsync();
+        var organizeExam = await _processTakeExamRepository.GetOrganizeExamByIdAsync(takeExam.OrganizeExamId);
+        if (organizeExam == null) return false;
+
+            //var subject = await _subjectsCollection
+            //    .Find(x => x.Id == organizeExam.SubjectId)
+            //    .FirstOrDefaultAsync();
+            var subject = await _processTakeExamRepository.GetSubjectByIdAsync(organizeExam.SubjectId);
+        if (subject == null) return false;
+
+        var questionBank = subject.QuestionBanks
+            .FirstOrDefault(qb => qb.QuestionBankId == organizeExam.QuestionBankId);
+        if (questionBank == null) return false;
+
+        // Chỉ xử lý answersRequest nếu type != "submit"
+        if (type != "submit" && answersRequest != null)
         {
-            var existingAnswer = takeExam.Answers.FirstOrDefault(a => a.QuestionId == req.QuestionId);
+            foreach (var req in answersRequest)
+            {
+                var existingAnswer = takeExam.Answers.FirstOrDefault(a => a.QuestionId == req.QuestionId);
 
-            if (existingAnswer != null)
-            {
-                existingAnswer.AnswerChosen = req.OptionIds ?? [];
-            }
-            else
-            {
-                takeExam.Answers.Add(new AnswersModel
+                if (existingAnswer != null)
                 {
-                    QuestionId = req.QuestionId,
-                    AnswerChosen = req.OptionIds ?? []
-                });
-            }
-        }
-
-        // Cập nhật tiến độ
-        takeExam.Progress = takeExam.Answers.Count(a => a.AnswerChosen != null && a.AnswerChosen.Any());
-    }
-
-    if (type == "submit")
-    {
-        int correctCount = 0;
-        double totalScoreByAnswer = 0;
-
-        foreach (var ans in takeExam.Answers)
-        {
-            var question = questionBank.QuestionList
-                .FirstOrDefault(q => q.QuestionId == ans.QuestionId);
-            if (question == null) continue;
-
-            var correctOptions = question.Options
-                .Where(o => o.IsCorrect == true)
-                .Select(o => o.OptionId)
-                .OrderBy(x => x)
-                .ToList();
-
-            var chosenOptions = ans.AnswerChosen.OrderBy(x => x).ToList();
-
-            var isCorrect = correctOptions.SequenceEqual(chosenOptions);
-            ans.IsCorrect = isCorrect;
-            if (isCorrect)
-            {
-                correctCount++;
-                if (ans.Score.HasValue && ans.Score.Value > 0)
+                    existingAnswer.AnswerChosen = req.OptionIds ?? [];
+                }
+                else
                 {
-                    totalScoreByAnswer += ans.Score.Value;
+                    takeExam.Answers.Add(new AnswersModel
+                    {
+                        QuestionId = req.QuestionId,
+                        AnswerChosen = req.OptionIds ?? []
+                    });
                 }
             }
+
+            // Cập nhật tiến độ
+            takeExam.Progress = takeExam.Answers.Count(a => a.AnswerChosen != null && a.AnswerChosen.Any());
         }
 
-        var totalQuestions = organizeExam.TotalQuestions ?? 1;
-        var maxScore = organizeExam.MaxScore ?? 10;
+        if (type == "submit")
+        {
+            int correctCount = 0;
+            double totalScoreByAnswer = 0;
 
-        takeExam.TotalScore = totalScoreByAnswer > 0
-            ? totalScoreByAnswer
-            : correctCount * (maxScore / (double)totalQuestions);
+            foreach (var ans in takeExam.Answers)
+            {
+                var question = questionBank.QuestionList
+                    .FirstOrDefault(q => q.QuestionId == ans.QuestionId);
+                if (question == null) continue;
 
-        takeExam.Status = "done";
+                var correctOptions = question.Options
+                    .Where(o => o.IsCorrect == true)
+                    .Select(o => o.OptionId)
+                    .OrderBy(x => x)
+                    .ToList();
+
+                var chosenOptions = ans.AnswerChosen.OrderBy(x => x).ToList();
+
+                var isCorrect = correctOptions.SequenceEqual(chosenOptions);
+                ans.IsCorrect = isCorrect;
+                if (isCorrect)
+                {
+                    correctCount++;
+                    if (ans.Score.HasValue && ans.Score.Value > 0)
+                    {
+                        totalScoreByAnswer += ans.Score.Value;
+                    }
+                }
+            }
+
+            var totalQuestions = organizeExam.TotalQuestions ?? 1;
+            var maxScore = organizeExam.MaxScore ?? 10;
+
+            takeExam.TotalScore = totalScoreByAnswer > 0
+                ? totalScoreByAnswer
+                : correctCount * (maxScore / (double)totalQuestions);
+
+            takeExam.Status = "done";
+        }
+
+        takeExam.FinishedAt = DateTime.UtcNow;
+
+        await _processTakeExamRepository.UpdateTakeExamsAsync(userId, user.TakeExam);
+        return true;
     }
-
-    takeExam.FinishedAt = DateTime.UtcNow;
-
-    // Ghi lại vào MongoDB
-    var update = Builders<UsersModel>.Update.Set(u => u.TakeExam, user.TakeExam);
-    await _usersCollection.UpdateOneAsync(u => u.Id == userId, update);
-
-    return true;
-}
 
     
     public async Task<List<TrackExamDto>> TrackActiveExam(string userId)
     {
-        var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
+
         if (user == null || user.TrackExam == null)
             return [];
 
@@ -485,9 +455,9 @@ public class ProcessTakeExamService
         return result;
     }
     
-    public async Task<TrackExamDetailDto> TrackExamDetail(string organizeExamId, string sessionId, string roomId)
+    public async Task<TrackExamDetailDto?> TrackExamDetail(string organizeExamId, string sessionId, string roomId)
     {
-        var exam = await _organizeExamCollection.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
+        var exam = await _processTakeExamRepository.GetOrganizeExamByIdAsync(organizeExamId);
         if (exam == null) return null;
 
         var session = exam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
@@ -496,10 +466,10 @@ public class ProcessTakeExamService
         var roomInSession = session.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
         if (roomInSession == null) return null;
 
-        var roomInfo = await _roomsCollection.Find(r => r.Id == roomId).FirstOrDefaultAsync();
+        var roomInfo = await _processTakeExamRepository.GetRoomByRoomIdAsync(roomId);
         var candidateIds = roomInSession.CandidateIds;
 
-        var candidates = await _usersCollection.Find(u => candidateIds.Contains(u.Id)).ToListAsync();
+        var candidates = await _processTakeExamRepository.GetCandidatesByIdsAsync(candidateIds);
 
         var candidateDtos = candidates.Select(user =>
         {
@@ -538,55 +508,21 @@ public class ProcessTakeExamService
             Status = session.SessionStatus
         };
     }
-    
+
+    //Check point
     public async Task<bool> IncreaseViolationCount(string userId, string takeExamId)
     {
-        var filter = Builders<UsersModel>.Filter.And(
-            Builders<UsersModel>.Filter.Eq(u => u.Id, userId),
-            Builders<UsersModel>.Filter.ElemMatch(u => u.TakeExam, te => te.Id == takeExamId)
-        );
-
-        var update = Builders<UsersModel>.Update.Inc("takeExams.$.violationCount", 1);
-
-        var result = await _usersCollection.UpdateOneAsync(filter, update);
-        return result.ModifiedCount > 0;
+        return await _processTakeExamRepository.IncreaseViolationCountRepository(userId, takeExamId);
     }
     
     public async Task<bool> UpdateStatusAndReason(string userId, string takeExamId, string type, string? unrecognizedReason)
     {
-        var filter = Builders<UsersModel>.Filter.And(
-            Builders<UsersModel>.Filter.Eq(u => u.Id, userId),
-            Builders<UsersModel>.Filter.ElemMatch(u => u.TakeExam, te => te.Id == takeExamId)
-        );
-        
-        
-
-        var updates = new List<UpdateDefinition<UsersModel>>
-        {
-            Builders<UsersModel>.Update.Set("takeExams.$.status", type)
-        };
-        
-        if (type == "active")
-        {
-            updates.Add(Builders<UsersModel>.Update.Set("takeExams.$.answers", new List<AnswersModel>()));
-        }
-
-        if (!string.IsNullOrEmpty(unrecognizedReason))
-        {
-            updates.Add(Builders<UsersModel>.Update.Set("takeExams.$.unrecognizedReason", unrecognizedReason));
-        }
-
-        var update = Builders<UsersModel>.Update.Combine(updates);
-        var result = await _usersCollection.UpdateOneAsync(filter, update);
-
-        return result.ModifiedCount > 0;
+        return await _processTakeExamRepository.UpdateStatusAndReasonRepository(userId, takeExamId, type, unrecognizedReason);
     }
 
     public async Task<(string, string)> CheckCanContinue(string userId, string takeExamId)
     {
-        var user = await _usersCollection
-            .Find(u => u.Id == userId)
-            .FirstOrDefaultAsync();
+        var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
 
         if (user == null || user.TakeExam == null) return ("", "");
 
@@ -599,8 +535,7 @@ public class ProcessTakeExamService
     
     public async Task<ExamResultDto?> GetExamResult(string userId, string takeExamId)
     {
-        var filter = Builders<UsersModel>.Filter.Eq(u => u.Id, userId);
-        var user = await _usersCollection.Find(filter).FirstOrDefaultAsync();
+        var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
 
         if (user == null || user.TakeExam == null)
             return null;
@@ -631,7 +566,7 @@ public class ProcessTakeExamService
     
     public async Task<List<ExamHistoryDto>> GetUserExamHistory(string userId)
     {
-        var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
         if (user == null || user.TakeExam == null) return new List<ExamHistoryDto>();
 
         var results = new List<ExamHistoryDto>();
@@ -656,7 +591,4 @@ public class ProcessTakeExamService
 
         return results;
     }
-
-
-
 }
