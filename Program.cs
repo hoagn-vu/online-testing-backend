@@ -42,6 +42,7 @@ builder.Services.AddScoped<SubjectsService>();
 builder.Services.AddScoped<SubjectRepository>();
 builder.Services.AddSingleton<OrganizeExamService>();
 builder.Services.AddScoped<ProcessTakeExamService>();
+builder.Services.AddSingleton<S3Service>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

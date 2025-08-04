@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 public class SubjectsController : ControllerBase
 {
     private readonly SubjectsService _subjectsService;
+    private readonly S3Service _s3Service;
 
     public SubjectsController(SubjectsService subjectsService)
     {
@@ -136,8 +137,28 @@ public class SubjectsController : ControllerBase
 
     // Add question list
     [HttpPost("add-question")]
-    public async Task<ActionResult> AddQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string userId, [FromBody] SubjectQuestionDto question)
+    public async Task<ActionResult> AddQuestion(
+        [FromQuery] string subjectId, 
+        [FromQuery] string questionBankId, 
+        [FromQuery] string userId, 
+        [FromBody] SubjectQuestionDto question,
+        [FromForm] List<IFormFile>? images
+    )
     {
+        var uploadedImageUrls = new List<string>();
+
+        if (images is not null)
+        {
+            foreach (var image in images)
+            {
+                var url = await _s3Service.UploadFileAsync(image);
+                uploadedImageUrls.Add(url);
+            }
+        }
+
+        // Gán đường dẫn ảnh vào câu hỏi
+        question.ImgLinks = uploadedImageUrls;
+
         var result = await _subjectsService.AddQuestion(subjectId, questionBankId, userId, question);
 
         if (result == "Thêm câu hỏi thành công")
