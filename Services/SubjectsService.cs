@@ -200,7 +200,7 @@ public class SubjectsService
     }
 
     // Add Question
-    public async Task<string> AddQuestion(string subjectId, string questionBankId, string userId, SubjectQuestionDto question)
+public async Task<string> AddQuestion(string subjectId, string questionBankId, string userId, SubjectQuestionDto question)
     {
         var subject = await _subjectRepository.GetSubjectByIdAsync(subjectId);
         if (subject == null)
@@ -236,29 +236,57 @@ public class SubjectsService
         }
 
         await _subjectRepository.AddQuestionAsync(subjectId, subject);
-        //var logInsert = new LogsModel
-        //{
-        //    MadeBy = userId,
-        //    LogAction = "create",
-        //    LogDetails = "Tạo câu hỏi: " + question.QuestionText
-        //};
-        //await _logsCollection.InsertOneAsync(logInsert);
-
-        // var user = _usersCollection.Find(u => u.Id == userId).FirstOrDefault();
-        // if (user == null) return $"Add question list successfully";
-        // user.UserLog ??= [];
-        //
-        // user.UserLog.Add(new UserLogsModel
-        // {
-        //     LogAction = "create",
-        //     LogDetails = "Tạo câu hỏi: " + question.QuestionText
-        // });
-        //
-        // var updateLogUser = Builders<UsersModel>.Update.Set(u => u.UserLog, user.UserLog);
-        // await _usersCollection.UpdateOneAsync(u => u.Id == userId, updateLogUser);
-
         return $"Thêm câu hỏi thành công";
     }
+    
+    // Add Questions
+    public async Task<string> AddQuestions(string subjectId, string questionBankId, List<SubjectQuestionDto> questions)
+    {
+        var subject = await _subjectRepository.GetSubjectByIdAsync(subjectId);
+        if (subject == null)
+        {
+            return "Not found subject";
+        }
+
+        var questionBank = subject.QuestionBanks.Find(qb => qb.QuestionBankId == questionBankId);
+        if (questionBank == null)
+        {
+            return "Not found question bank";
+        }
+
+        foreach (var question in questions)
+        {
+            var newQuestion = new QuestionModel
+            {
+                Options = question.Options,
+                QuestionType = question.QuestionType,
+                QuestionText = question.QuestionText,
+                QuestionStatus = question.QuestionStatus,
+                IsRandomOrder = question.IsRandomOrder,
+                Tags = question.Tags,
+            };
+
+            questionBank.QuestionList.Add(newQuestion);
+
+            // Chỉ thêm nếu tag không rỗng
+            var chapter = newQuestion.Tags[0];
+            var level = newQuestion.Tags[1];
+
+            if (!string.IsNullOrWhiteSpace(chapter) && !questionBank.AllChapter.Contains(chapter))
+            {
+                questionBank.AllChapter.Add(chapter);
+            }
+
+            if (!string.IsNullOrWhiteSpace(level) && !questionBank.AllLevel.Contains(level))
+            {
+                questionBank.AllLevel.Add(level);
+            }
+        }
+
+        await _subjectRepository.AddQuestionAsync(subjectId, subject);
+        return $"ok";
+    }
+
 
     // Update Subject Name
     public async Task<string> UpdateSubjectName(string subjectId, string subjectName)
@@ -322,34 +350,12 @@ public class SubjectsService
             }
 
             // Update question data
-            if (questionData.Options != null && questionData.Options.Count > 0)
-            {
-                questionBank.QuestionList[questionIndex].Options = questionData.Options;
-            }
-            if (questionData.QuestionType != null && questionData.QuestionType != "")
-            {
-                questionBank.QuestionList[questionIndex].QuestionType = questionData.QuestionType;
-            }
-            if (questionData.QuestionStatus != null && questionData.QuestionStatus != "")
-            {
-                questionBank.QuestionList[questionIndex].QuestionStatus = questionData.QuestionStatus;
-            }
-            if (questionData.QuestionText != null && questionData.QuestionText != "")
-            {
-                questionBank.QuestionList[questionIndex].QuestionText = questionData.QuestionText;
-            }
-            if (questionData.IsRandomOrder != null)
-            {
-                questionBank.QuestionList[questionIndex].IsRandomOrder = questionData.IsRandomOrder;
-            }
-            if (questionData.Tags != null && questionData.Tags.Count > 0)
-            {
-                questionBank.QuestionList[questionIndex].Tags = questionData.Tags;
-            }
-            if (questionData.ImgLinks != null && questionData.ImgLinks.Count > 0)
-            {
-                questionBank.QuestionList[questionIndex].ImgLinks = questionData.ImgLinks;
-            }
+            questionBank.QuestionList[questionIndex].Options = questionData.Options;
+            questionBank.QuestionList[questionIndex].QuestionType = questionData.QuestionType;
+            questionBank.QuestionList[questionIndex].QuestionStatus = questionData.QuestionStatus;
+            questionBank.QuestionList[questionIndex].QuestionText = questionData.QuestionText;
+            questionBank.QuestionList[questionIndex].IsRandomOrder = questionData.IsRandomOrder;
+            questionBank.QuestionList[questionIndex].Tags = questionData.Tags;
 
             // Update data
             //var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
@@ -364,12 +370,7 @@ public class SubjectsService
             //};
             //await _logsCollection.InsertOneAsync(logInsert);
 
-            //return result.ModifiedCount > 0 ? "Update question successfully" : "Update failed";
-            if (result.ModifiedCount > 0)
-                return "Update question successfully";
-            else
-                return "No field was changed, but update completed";
-
+            return result.ModifiedCount > 0 ? "Update question successfully" : "Update failed";
         }
         catch (Exception ex)
         {

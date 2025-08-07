@@ -15,9 +15,10 @@ public class SubjectsController : ControllerBase
     private readonly SubjectsService _subjectsService;
     private readonly S3Service _s3Service;
 
-    public SubjectsController(SubjectsService subjectsService)
+    public SubjectsController(SubjectsService subjectsService, S3Service s3Service)
     {
-        this._subjectsService = subjectsService;
+        _subjectsService = subjectsService;
+        _s3Service = s3Service;
     }
 
     // Get subject
@@ -168,6 +169,21 @@ public class SubjectsController : ControllerBase
         else
         {
             return this.BadRequest(new { error = result });
+        }
+    }
+    
+    [HttpPost("questions")]
+    public async Task<ActionResult> AddQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromBody] List<SubjectQuestionDto> questions)
+    {
+        var result = await _subjectsService.AddQuestions(subjectId, questionBankId, questions);
+
+        if (result == "ok")
+        {
+            return Ok(new { message = result });
+        }
+        else
+        {
+            return BadRequest(new { error = result });
         }
     }
 

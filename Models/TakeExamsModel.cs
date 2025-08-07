@@ -43,9 +43,6 @@ public class TakeExamsModel
     
     [BsonElement("progress")] 
     public int Progress { get; set; }
-
-    // [BsonElement("examProgressStatus")]
-    // public string ProgressStatus { get; set; }
     
     [BsonElement("violationCount")]
     public int ViolationCount { get; set; }

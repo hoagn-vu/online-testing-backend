@@ -341,105 +341,104 @@ public class ProcessTakeExamService
     //
     //     return true;
     // }
-    public async Task<bool> SubmitAnswers(string userId, string takeExamId, string type, List<SubmitAnswersRequest>? answersRequest)
-{
-    var user = await _usersCollection
-        .Find(u => u.Id == userId)
-        .FirstOrDefaultAsync();
-
-    if (user == null || user.TakeExam == null) return false;
-
-    var takeExam = user.TakeExam.FirstOrDefault(te => te.Id == takeExamId);
-    if (takeExam == null) return false;
-
-    var organizeExam = await _organizeExamCollection
-        .Find(x => x.Id == takeExam.OrganizeExamId)
-        .FirstOrDefaultAsync();
-    if (organizeExam == null) return false;
-
-    var subject = await _subjectsCollection
-        .Find(x => x.Id == organizeExam.SubjectId)
-        .FirstOrDefaultAsync();
-    if (subject == null) return false;
-
-    var questionBank = subject.QuestionBanks
-        .FirstOrDefault(qb => qb.QuestionBankId == organizeExam.QuestionBankId);
-    if (questionBank == null) return false;
-
-    // Chỉ xử lý answersRequest nếu type != "submit"
-    if (type != "submit" && answersRequest != null)
+    public async Task<(string, bool)> SubmitAnswers(string userId, string takeExamId, string type, List<SubmitAnswersRequestDto>? answersRequest)
     {
-        foreach (var req in answersRequest)
+        var user = await _usersCollection
+            .Find(u => u.Id == userId)
+            .FirstOrDefaultAsync();
+
+        if (user == null || user.TakeExam == null) return ("error-user", false);
+
+        var takeExam = user.TakeExam.FirstOrDefault(te => te.OrganizeExamId == takeExamId);
+        if (takeExam == null) return ("error-texam", false);
+
+        var organizeExam = await _organizeExamCollection
+            .Find(x => x.Id == takeExam.OrganizeExamId)
+            .FirstOrDefaultAsync();
+        if (organizeExam == null) return ("error-oexam", false);
+
+        var subject = await _subjectsCollection
+            .Find(x => x.Id == organizeExam.SubjectId)
+            .FirstOrDefaultAsync();
+        if (subject == null) return ("error-subject", false);
+
+        var questionBank = subject.QuestionBanks
+            .FirstOrDefault(qb => qb.QuestionBankId == organizeExam.QuestionBankId);
+        if (questionBank == null) return ("error-qb", false);
+
+        // Chỉ xử lý answersRequest nếu type != "submit"
+        if (type != "submit" && answersRequest != null)
         {
-            var existingAnswer = takeExam.Answers.FirstOrDefault(a => a.QuestionId == req.QuestionId);
+            foreach (var req in answersRequest)
+            {
+                var existingAnswer = takeExam.Answers.FirstOrDefault(a => a.QuestionId == req.QuestionId);
 
-            if (existingAnswer != null)
-            {
-                existingAnswer.AnswerChosen = req.OptionIds ?? [];
-            }
-            else
-            {
-                takeExam.Answers.Add(new AnswersModel
+                if (existingAnswer != null)
                 {
-                    QuestionId = req.QuestionId,
-                    AnswerChosen = req.OptionIds ?? []
-                });
-            }
-        }
-
-        // Cập nhật tiến độ
-        takeExam.Progress = takeExam.Answers.Count(a => a.AnswerChosen != null && a.AnswerChosen.Any());
-    }
-
-    if (type == "submit")
-    {
-        int correctCount = 0;
-        double totalScoreByAnswer = 0;
-
-        foreach (var ans in takeExam.Answers)
-        {
-            var question = questionBank.QuestionList
-                .FirstOrDefault(q => q.QuestionId == ans.QuestionId);
-            if (question == null) continue;
-
-            var correctOptions = question.Options
-                .Where(o => o.IsCorrect == true)
-                .Select(o => o.OptionId)
-                .OrderBy(x => x)
-                .ToList();
-
-            var chosenOptions = ans.AnswerChosen.OrderBy(x => x).ToList();
-
-            var isCorrect = correctOptions.SequenceEqual(chosenOptions);
-            ans.IsCorrect = isCorrect;
-            if (isCorrect)
-            {
-                correctCount++;
-                if (ans.Score.HasValue && ans.Score.Value > 0)
+                    existingAnswer.AnswerChosen = req.OptionIds ?? [];
+                }
+                else
                 {
-                    totalScoreByAnswer += ans.Score.Value;
+                    takeExam.Answers.Add(new AnswersModel
+                    {
+                        QuestionId = req.QuestionId,
+                        AnswerChosen = req.OptionIds ?? []
+                    });
                 }
             }
+
+            // Cập nhật tiến độ
+            takeExam.Progress = takeExam.Answers.Count(a => a.AnswerChosen != null && a.AnswerChosen.Any());
         }
 
-        var totalQuestions = organizeExam.TotalQuestions ?? 1;
-        var maxScore = organizeExam.MaxScore ?? 10;
+        if (type == "submit")
+        {
+            int correctCount = 0;
+            double totalScoreByAnswer = 0;
 
-        takeExam.TotalScore = totalScoreByAnswer > 0
-            ? totalScoreByAnswer
-            : correctCount * (maxScore / (double)totalQuestions);
+            foreach (var ans in takeExam.Answers)
+            {
+                var question = questionBank.QuestionList
+                    .FirstOrDefault(q => q.QuestionId == ans.QuestionId);
+                if (question == null) continue;
 
-        takeExam.Status = "done";
+                var correctOptions = question.Options
+                    .Where(o => o.IsCorrect == true)
+                    .Select(o => o.OptionId)
+                    .OrderBy(x => x)
+                    .ToList();
+
+                var chosenOptions = ans.AnswerChosen.OrderBy(x => x).ToList();
+
+                var isCorrect = correctOptions.SequenceEqual(chosenOptions);
+                ans.IsCorrect = isCorrect;
+                if (isCorrect)
+                {
+                    correctCount++;
+                    if (ans.Score is > 0)
+                    {
+                        totalScoreByAnswer += ans.Score.Value;
+                    }
+                }
+            }
+
+            var totalQuestions = organizeExam.TotalQuestions ?? 1;
+            var maxScore = organizeExam.MaxScore ?? 10;
+
+            takeExam.TotalScore = totalScoreByAnswer > 0
+                ? totalScoreByAnswer
+                : correctCount * (maxScore / (double)totalQuestions);
+
+            takeExam.Status = "done";
+        }
+
+        takeExam.FinishedAt = DateTime.UtcNow;
+
+        var update = Builders<UsersModel>.Update.Set(u => u.TakeExam, user.TakeExam);
+        await _usersCollection.UpdateOneAsync(u => u.Id == userId, update);
+
+        return ("ok", true);
     }
-
-    takeExam.FinishedAt = DateTime.UtcNow;
-
-    // Ghi lại vào MongoDB
-    var update = Builders<UsersModel>.Update.Set(u => u.TakeExam, user.TakeExam);
-    await _usersCollection.UpdateOneAsync(u => u.Id == userId, update);
-
-    return true;
-}
 
     
     public async Task<List<TrackExamDto>> TrackActiveExam(string userId)
@@ -605,7 +604,7 @@ public class ProcessTakeExamService
         if (user == null || user.TakeExam == null)
             return null;
 
-        var takeExam = user.TakeExam.FirstOrDefault(te => te.Id == takeExamId);
+        var takeExam = user.TakeExam.FirstOrDefault(te => te.OrganizeExamId == takeExamId);
 
         if (takeExam == null)
             return null;

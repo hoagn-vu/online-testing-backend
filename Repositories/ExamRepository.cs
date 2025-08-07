@@ -125,4 +125,29 @@ public class ExamRepository
 
         return await _exams.UpdateOneAsync(filter, delete);
     }
+    
+    public async Task<List<ExamOptionsDTO>> GetExamOptionsAsync(string? subjectId)
+    {
+        var filters = new List<FilterDefinition<ExamsModel>>
+        {
+            Builders<ExamsModel>.Filter.Ne(r => r.ExamStatus, "deleted")
+        };
+
+        if (!string.IsNullOrEmpty(subjectId))
+        {
+            filters.Add(Builders<ExamsModel>.Filter.Eq(r => r.SubjectId, subjectId));
+        }
+
+        var filter = Builders<ExamsModel>.Filter.And(filters);
+
+        var projection = Builders<ExamsModel>.Projection
+            .Expression(e => new ExamOptionsDTO
+            {
+                Id = e.Id,
+                ExamCode = e.ExamCode,
+                ExamName = e.ExamName,
+            });
+
+        return await _exams.Find(filter).Project(projection).ToListAsync();
+    }
 }

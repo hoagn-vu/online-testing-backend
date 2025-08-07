@@ -134,5 +134,12 @@ namespace Backend_online_testing.Controllers
             await this._examsService.SeedData();
             return new OkObjectResult(new { status = "Success", message = "Example exam data seeded successfully." });
         }
+
+        [HttpGet("options")]
+        public async Task<IActionResult> GetOptions([FromQuery] string? subjectId)
+        {
+            var result = await _examsService.GetExamOptionsAsync(subjectId);
+            return new OkObjectResult(new { status = "Success", data = result });
+        }
     }
 }

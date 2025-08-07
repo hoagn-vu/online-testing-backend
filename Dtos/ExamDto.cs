@@ -11,8 +11,7 @@
 
         public string SubjectId { get; set; } = string.Empty;
 
-        public string ExamStatus { get; set; } = string.Empty;
-
+        public string ExamStatus { get; set; } = "available";
         public string QuestionBankId { get; set; } = string.Empty;
 
         public List<QuestionSetsModel> QuestionSets { get; set; } = new List<QuestionSetsModel>();
@@ -48,5 +47,12 @@
         public string Level { get; set; } = string.Empty;
         public double QuestionScore { get; set; }
         public List<OptionDetailDTO> Options { get; set; } = new();
+    }
+    
+    public class ExamOptionsDTO
+    {
+        public string Id { get; set; } = string.Empty;
+        public string? ExamCode { get; set; } = string.Empty;
+        public string ExamName { get; set; } = string.Empty;
     }
 }

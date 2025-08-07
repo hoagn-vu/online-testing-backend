@@ -25,6 +25,9 @@ public class SubjectRepository
     //Filter subject base
     private static readonly FilterDefinition<SubjectsModel> SubjectBaseFilter =
         Builders<SubjectsModel>.Filter.Ne(s => s.SubjectStatus, "deleted");
+    
+    private static readonly SortDefinition<SubjectsModel> SubjectBaseSort =
+        Builders<SubjectsModel>.Sort.Descending("_id");
 
     //Filter by subject name
     private FilterDefinition<SubjectsModel> SubjectFilterByName(string? keyword)
@@ -78,6 +81,7 @@ public class SubjectRepository
 
         return await _subjects
             .Find(filter)
+            .Sort(SubjectBaseSort)
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)
             .Project(projection)
@@ -100,6 +104,7 @@ public class SubjectRepository
 
         return await _subjects
             .Find(filter)
+            .Sort(SubjectBaseSort)
             .Project(projection)
             .ToListAsync();
     }
@@ -121,6 +126,7 @@ public class SubjectRepository
 
         return await _subjects
             .Find(filter)
+            .Sort(SubjectBaseSort)
             .ToListAsync();
     }
 
@@ -131,6 +137,7 @@ public class SubjectRepository
 
         return await _subjects
             .Find(filter)
+            .Sort(SubjectBaseSort)
             .ToListAsync();
     }
 
