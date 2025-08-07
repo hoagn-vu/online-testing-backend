@@ -200,7 +200,7 @@ public class SubjectsService
     }
 
     // Add Question
-public async Task<string> AddQuestion(string subjectId, string questionBankId, string userId, SubjectQuestionDto question)
+    public async Task<string> AddQuestion(string subjectId, string questionBankId, SubjectQuestionDto question)
     {
         var subject = await _subjectRepository.GetSubjectByIdAsync(subjectId);
         if (subject == null)

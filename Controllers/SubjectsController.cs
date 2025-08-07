@@ -141,7 +141,6 @@ public class SubjectsController : ControllerBase
     public async Task<ActionResult> AddQuestion(
         [FromQuery] string subjectId, 
         [FromQuery] string questionBankId, 
-        [FromQuery] string userId, 
         [FromBody] SubjectQuestionDto question,
         [FromForm] List<IFormFile>? images
     )
@@ -160,7 +159,7 @@ public class SubjectsController : ControllerBase
         // Gán đường dẫn ảnh vào câu hỏi
         question.ImgLinks = uploadedImageUrls;
 
-        var result = await _subjectsService.AddQuestion(subjectId, questionBankId, userId, question);
+        var result = await _subjectsService.AddQuestion(subjectId, questionBankId, question);
 
         if (result == "Thêm câu hỏi thành công")
         {
@@ -172,8 +171,39 @@ public class SubjectsController : ControllerBase
         }
     }
     
+    [HttpPost("new-add-question")]
+    public async Task<ActionResult> NewAddQuestion(
+        [FromQuery] string subjectId,
+        [FromQuery] string questionBankId,
+        [FromForm] AddQuestionDto request
+    )
+    {
+        var uploadedImageUrls = new List<string>();
+
+        if (request.Images is not null)
+        {
+            foreach (var image in request.Images)
+            {
+                var url = await _s3Service.UploadFileAsync(image);
+                uploadedImageUrls.Add(url);
+            }
+        }
+
+        // Gán đường dẫn ảnh vào câu hỏi
+        request.Question.ImgLinks = uploadedImageUrls;
+
+        var result = await _subjectsService.AddQuestion(subjectId, questionBankId, request.Question);
+
+        if (result == "Thêm câu hỏi thành công")
+        {
+            return this.Ok(new { message = result });
+        }
+
+        return BadRequest(new { error = result });
+    }
+    
     [HttpPost("questions")]
-    public async Task<ActionResult> AddQuestion([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromBody] List<SubjectQuestionDto> questions)
+    public async Task<ActionResult> AddQuestions([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromBody] List<SubjectQuestionDto> questions)
     {
         var result = await _subjectsService.AddQuestions(subjectId, questionBankId, questions);
 
