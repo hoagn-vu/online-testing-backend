@@ -314,30 +314,28 @@ public class ProcessTakeExamService
     //     return true;
     // }
 
-    public async Task<bool> SubmitAnswers(string userId, string takeExamId, string type, List<SubmitAnswersRequest>? answersRequest)
+    public async Task<(string, bool)> SubmitAnswers(string userId, string takeExamId, string type, List<SubmitAnswersRequestDto>? answersRequest)
     {
         var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
 
-        if (user == null || user.TakeExam == null) return false;
+        if (user == null || user.TakeExam == null) return ("error-user", false);
 
-        var takeExam = user.TakeExam.FirstOrDefault(te => te.Id == takeExamId);
-        if (takeExam == null) return false;
+        var takeExam = user.TakeExam.FirstOrDefault(te => te.OrganizeExamId == takeExamId);
+        if (takeExam == null) return ("error-texam", false);
 
-        //var organizeExam = await _organizeExamCollection
-        //    .Find(x => x.Id == takeExam.OrganizeExamId)
-        //    .FirstOrDefaultAsync();
-        var organizeExam = await _processTakeExamRepository.GetOrganizeExamByIdAsync(takeExam.OrganizeExamId);
-        if (organizeExam == null) return false;
+        var organizeExam = await _organizeExamCollection
+            .Find(x => x.Id == takeExam.OrganizeExamId)
+            .FirstOrDefaultAsync();
+        if (organizeExam == null) return ("error-oexam", false);
 
-            //var subject = await _subjectsCollection
-            //    .Find(x => x.Id == organizeExam.SubjectId)
-            //    .FirstOrDefaultAsync();
-            var subject = await _processTakeExamRepository.GetSubjectByIdAsync(organizeExam.SubjectId);
-        if (subject == null) return false;
+        var subject = await _subjectsCollection
+            .Find(x => x.Id == organizeExam.SubjectId)
+            .FirstOrDefaultAsync();
+        if (subject == null) return ("error-subject", false);
 
         var questionBank = subject.QuestionBanks
             .FirstOrDefault(qb => qb.QuestionBankId == organizeExam.QuestionBankId);
-        if (questionBank == null) return false;
+        if (questionBank == null) return ("error-qb", false);
 
         // Chỉ xử lý answersRequest nếu type != "submit"
         if (type != "submit" && answersRequest != null)
@@ -407,7 +405,7 @@ public class ProcessTakeExamService
         takeExam.FinishedAt = DateTime.UtcNow;
 
         await _processTakeExamRepository.UpdateTakeExamsAsync(userId, user.TakeExam);
-        return true;
+        return ("ok", true);
     }
 
     
