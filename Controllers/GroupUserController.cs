@@ -1,0 +1,65 @@
+﻿using Backend_online_testing.Dtos;
+using Backend_online_testing.Models;
+using Backend_online_testing.Services;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Backend_online_testing.Controllers;
+
+[ApiController]
+[Route("api/groupUser")]
+public class GroupUserController : ControllerBase
+{
+    private readonly GroupUserService _groupUserService;
+
+    public GroupUserController(GroupUserService groupUserService)
+    {
+        _groupUserService = groupUserService;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<List<GroupUserModel>>> GetAll()
+    {
+        var groups = await _groupUserService.GetAllGroupUserAsync();
+        return Ok(groups);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<GroupUserModel>> GetGroupUserById(string id)
+    {
+        var group = await _groupUserService.GetGroupUserByIdAsync(id);
+        if (group == null) return NotFound();
+        return Ok(group);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> CreateGroupUser([FromBody] GroupUserCreateDto groupDto)
+    {
+        var result = await _groupUserService.CreateGroupUserAsync(groupDto);
+        if (!result) return BadRequest("Cannot create group");
+        return Ok("Group created successfully");
+    }
+
+    [HttpPut("update/{groupId}")]
+    public async Task<IActionResult> UpdateGroupName(string groupId, [FromBody] string newName)
+    {
+        var success = await _groupUserService.UpdateGroupNameAsync(groupId, newName);
+        if (!success) return NotFound("Group not found or update failed");
+        return Ok("Group name updated");
+    }
+
+    [HttpDelete("/delete/{groupId}/user/{userCode}")]
+    public async Task<ActionResult> RemoveUserFromGroup(string groupId, string userCode)
+    {
+        var result = await _groupUserService.RemoveUserFromGroupUserAsync(groupId, userCode);
+        if (!result) return NotFound("User not found in group");
+        return Ok("User removed from group");
+    }
+
+    [HttpDelete("/delete/{id}")]
+    public async Task<ActionResult> DeleteById(string id)
+    {
+        var result = await _groupUserService.DeleteGroupUserAsync(id);
+        if (!result) return NotFound("Group not found");
+        return Ok("Deleted successfully");
+    }
+}
