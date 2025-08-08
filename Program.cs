@@ -36,12 +36,19 @@ builder.Services.AddSingleton<ExamMatricesService>();
 builder.Services.AddSingleton<AddLogService>();
 builder.Services.AddScoped<LogService>();
 builder.Services.AddScoped<LogRepository>();
+builder.Services.AddScoped<GroupUserRepository>();
+builder.Services.AddScoped<GroupUserService>();
 builder.Services.AddSingleton<FileManagementService>();
 builder.Services.AddScoped<IFileManagementService, FileManagementService>();
 builder.Services.AddScoped<SubjectsService>();
 builder.Services.AddScoped<SubjectRepository>();
+builder.Services.AddScoped<LevelService>();
+builder.Services.AddScoped<LevelRepository>();
+builder.Services.AddScoped<TrackExamService>();
+builder.Services.AddScoped<TrackExamRepository>();
 builder.Services.AddSingleton<OrganizeExamService>();
 builder.Services.AddScoped<ProcessTakeExamService>();
+builder.Services.AddScoped<ProcessTakeExamRepository>();
 builder.Services.AddSingleton<S3Service>();
 
 // JWT Authentication
