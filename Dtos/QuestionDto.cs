@@ -19,7 +19,8 @@
     {
         public string QuestionId { get; set; } = string.Empty;
         public string QuestionName { get; set; } = string.Empty;
-        public required List<OptionsResponseDto> Options { get; set; }
+        public List<OptionsResponseDto> Options { get; set; } = [];
+        public double? QuestionScore { get; set; }
     }
 
     public class OptionsResponseDto

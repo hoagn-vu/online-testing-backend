@@ -313,6 +313,7 @@ public class ProcessTakeExamService
     //
     //     return true;
     // }
+
     public async Task<bool> SubmitAnswers(string userId, string takeExamId, string type, List<SubmitAnswersRequest>? answersRequest)
     {
         var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
@@ -387,13 +388,12 @@ public class ProcessTakeExamService
                 if (isCorrect)
                 {
                     correctCount++;
-                    if (ans.Score.HasValue && ans.Score.Value > 0)
+                    if (ans.Score is > 0)
                     {
                         totalScoreByAnswer += ans.Score.Value;
                     }
                 }
             }
-
             var totalQuestions = organizeExam.TotalQuestions ?? 1;
             var maxScore = organizeExam.MaxScore ?? 10;
 
@@ -540,7 +540,7 @@ public class ProcessTakeExamService
         if (user == null || user.TakeExam == null)
             return null;
 
-        var takeExam = user.TakeExam.FirstOrDefault(te => te.Id == takeExamId);
+        var takeExam = user.TakeExam.FirstOrDefault(te => te.OrganizeExamId == takeExamId);
 
         if (takeExam == null)
             return null;

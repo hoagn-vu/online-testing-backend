@@ -12,4 +12,10 @@
         public List<string>? Tags { get; set; } = [];
         public List<string>? ImgLinks { get; set; }
     }
+    
+    public class AddQuestionDto
+    {
+        public SubjectQuestionDto Question { get; set; } = new();
+        public List<IFormFile>? Images { get; set; }
+    }
 }

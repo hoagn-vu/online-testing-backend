@@ -520,66 +520,6 @@ public class OrganizeExamService
         );
     }
     
-    // public async Task<OrganizeExamModel?> AddCandidateToRoom(string examId, string sessionId, string roomId, CandidatesInSessionRoomRequestDto dto)
-    // {
-    //     var filter = Builders<OrganizeExamModel>.Filter.And(
-    //         Builders<OrganizeExamModel>.Filter.Eq(o => o.Id, examId),
-    //         Builders<OrganizeExamModel>.Filter.ElemMatch(o => o.Sessions, s => s.SessionId == sessionId)
-    //     );
-    //
-    //     var candidates = dto.CandidateIds;
-    //     var userCodes = dto.UserCodes;
-    //
-    //     var update = Builders<OrganizeExamModel>.Update.PushEach("sessions.$.rooms.$[room].candidateIds", candidates);
-    //
-    //     var arrayFilters = new List<ArrayFilterDefinition>
-    //     {
-    //         new JsonArrayFilterDefinition<BsonDocument>($"{{'room.roomId': '{roomId}'}}")
-    //     };
-    //
-    //     foreach (var filterTakeExam in candidates.Select(candidate => Builders<UsersModel>.Filter.Eq(u => u.Id, candidate)))
-    //     {
-    //         var user = await _usersCollection.Find(filterTakeExam).FirstOrDefaultAsync();
-    //         
-    //         if (user == null)
-    //         {
-    //             throw new Exception("User not found");
-    //         }
-    //     
-    //         user.TakeExam ??= new List<TakeExamsModel>();
-    //     
-    //         var exists = user.TakeExam.Exists(te =>
-    //             te.OrganizeExamId == examId &&
-    //             te.SessionId == sessionId &&
-    //             te.RoomId == roomId);
-    //
-    //         if (exists) continue;
-    //         var newTakeExam = new TakeExamsModel
-    //         {
-    //             OrganizeExamId = examId,
-    //             SessionId = sessionId,
-    //             RoomId = roomId,
-    //             Status = "closed",
-    //             Progress = 0,
-    //             ViolationCount = 0,
-    //             Answers = []
-    //         };
-    //         
-    //         user.TakeExam.Add(newTakeExam);
-    //         var updateTakeExam = Builders<UsersModel>.Update.Set(u => u.TakeExam, user.TakeExam);
-    //         await _usersCollection.UpdateOneAsync(filterTakeExam, updateTakeExam);
-    //     }
-    //
-    //     return await _organizeExamCollection.FindOneAndUpdateAsync(
-    //         filter,
-    //         update,
-    //         new FindOneAndUpdateOptions<OrganizeExamModel>
-    //         {
-    //             ReturnDocument = ReturnDocument.After,
-    //             ArrayFilters = arrayFilters
-    //         }
-    //     );
-    // }
     public async Task<string> AddCandidateToRoom(string examId, string sessionId, string roomId, CandidatesInSessionRoomRequestDto dto)
     {
         var filter = Builders<OrganizeExamModel>.Filter.And(
@@ -716,112 +656,6 @@ public class OrganizeExamService
         }).ToList();
     }
     
-    // public async Task<(List<QuestionResponseDto>, int, string)> GetQuestionsByExamId(string organizeExamId)
-    // {
-    //     var exam = await _organizeExamCollection.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
-    //     if (exam == null || string.IsNullOrEmpty(exam.SubjectId) || string.IsNullOrEmpty(exam.QuestionBankId))
-    //     {
-    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
-    //     }
-    //
-    //     var subject = await _subjectsCollection.Find(s => s.Id == exam.SubjectId).FirstOrDefaultAsync();
-    //     if (subject == null)
-    //     {
-    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
-    //     }
-    //
-    //     var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
-    //     if (questionBank == null)
-    //     {
-    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
-    //     }
-    //
-    //     var questions = questionBank.QuestionList
-    //         .Where(q => q.QuestionStatus == "available")
-    //         .Take(exam.TotalQuestions ?? 0)
-    //         .Select(q => new QuestionResponseDto
-    //         {
-    //             QuestionId = q.QuestionId,
-    //             QuestionName = q.QuestionText,
-    //             Options = q.Options.Select(o => new OptionsResponseDto
-    //             {
-    //                 OptionId = o.OptionId,
-    //                 OptionText = o.OptionText
-    //             }).ToList()
-    //         }).ToList();
-    //
-    //     return (questions, exam.Duration, exam.Sessions.FirstOrDefault()?.SessionId ?? string.Empty);
-    // }
-    // public async Task<(List<QuestionResponseDto>, int, string)> GetQuestionsByExamId(string organizeExamId)
-    // {
-    //     var exam = await _organizeExamCollection.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
-    //     if (exam == null || string.IsNullOrEmpty(exam.SubjectId) || string.IsNullOrEmpty(exam.QuestionBankId))
-    //     {
-    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
-    //     }
-    //
-    //     var subject = await _subjectsCollection.Find(s => s.Id == exam.SubjectId).FirstOrDefaultAsync();
-    //     if (subject == null)
-    //     {
-    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
-    //     }
-    //
-    //     var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
-    //     if (questionBank == null)
-    //     {
-    //         return (new List<QuestionResponseDto>(), 0, string.Empty);
-    //     }
-    //
-    //     var availableQuestions = questionBank.QuestionList
-    //         .Where(q => q.QuestionStatus == "available" && q.Tags?.Count >= 2)
-    //         .ToList();
-    //
-    //     List<QuestionModel> selectedQuestions = [];
-    //
-    //     if (exam.ExamType == "auto")
-    //     {
-    //         selectedQuestions = availableQuestions
-    //             .Take(exam.TotalQuestions ?? 0)
-    //             .ToList();
-    //     }
-    //     else if (exam.ExamType == "matrix" && !string.IsNullOrEmpty(exam.MatrixId))
-    //     {
-    //         var matrix = await _examMatricesCollection.Find(x => x.Id == exam.MatrixId && x.MatrixStatus != "deleted").FirstOrDefaultAsync();
-    //         if (matrix == null)
-    //         {
-    //             return (new List<QuestionResponseDto>(), 0, string.Empty);
-    //         }
-    //         // questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == matrix.QuestionBankId);
-    //         // availableQuestions = questionBank.QuestionList
-    //         //     // .Where(q => q.QuestionStatus == "available" && q.Tags?.Count >= 2)
-    //         //     .ToList();
-    //
-    //         foreach (var tag in matrix.MatrixTags)
-    //         {
-    //             var matchedQuestions = availableQuestions
-    //                 .Where(q => q.Tags[0] == tag.Chapter && q.Tags[1] == tag.Level)
-    //                 .OrderBy(_ => Guid.NewGuid()) // random
-    //                 .Take(tag.QuestionCount)
-    //                 .ToList();
-    //
-    //             selectedQuestions.AddRange(matchedQuestions);
-    //         }
-    //     }
-    //
-    //     var questionDtos = selectedQuestions
-    //         .Select(q => new QuestionResponseDto
-    //         {
-    //             QuestionId = q.QuestionId,
-    //             QuestionName = q.QuestionText,
-    //             Options = q.Options.Select(o => new OptionsResponseDto
-    //             {
-    //                 OptionId = o.OptionId,
-    //                 OptionText = o.OptionText
-    //             }).ToList()
-    //         }).ToList();
-    //
-    //     return (questionDtos, exam.Duration, exam.Sessions.FirstOrDefault()?.SessionId ?? string.Empty);
-    // }
     public async Task<(List<QuestionResponseDto>, int, string)> GetQuestionsByExamId(string organizeExamId)
     {
         var exam = await _organizeExamCollection.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
@@ -871,6 +705,39 @@ public class OrganizeExamService
                     .ToList();
 
                 selectedQuestions.AddRange(matchedQuestions);
+            }
+        }
+        else if (exam is { ExamType: "exams", Exams.Count: > 0 })
+        {
+            var randomExamId = exam.Exams.OrderBy(_ => Guid.NewGuid()).FirstOrDefault();
+
+            var examSet = await _examsCollection
+                .Find(e => e.Id == randomExamId && e.ExamStatus == "available")
+                .FirstOrDefaultAsync();
+
+            if (examSet == null || string.IsNullOrEmpty(examSet.QuestionBankId))
+            {
+                return (new List<QuestionResponseDto>(), 0, string.Empty);
+            }
+
+            var questionBank = subject.QuestionBanks
+                .FirstOrDefault(qb => qb.QuestionBankId == examSet.QuestionBankId);
+
+            if (questionBank == null)
+            {
+                return (new List<QuestionResponseDto>(), 0, string.Empty);
+            }
+
+            var questionDict = questionBank.QuestionList
+                .Where(q => q.QuestionStatus == "available")
+                .ToDictionary(q => q.QuestionId, q => q);
+
+            foreach (var qs in examSet.QuestionSet)
+            {
+                if (questionDict.TryGetValue(qs.QuestionId, out var question))
+                {
+                    selectedQuestions.Add(question);
+                }
             }
         }
         else // examType == "auto" hoặc khác
