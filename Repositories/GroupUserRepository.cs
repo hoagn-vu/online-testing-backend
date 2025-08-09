@@ -41,6 +41,25 @@ public class GroupUserRepository
         await _groupUser.InsertOneAsync(group);
     }
 
+
+    //Add multi user to group user
+    public async Task<bool> AddUserIdsToGroupAsync(string groupId, List<string> userIds)
+    {
+        if (userIds == null || userIds.Count == 0)
+            return false;
+
+        var update = Builders<GroupUserModel>.Update
+            .AddToSet(g => g.ListUser, userIds.First())
+            .AddToSetEach(g => g.ListUser, userIds);
+
+        var result = await _groupUser.UpdateOneAsync(
+            g => g.Id == groupId,
+            update
+        );
+
+        return result.ModifiedCount > 0;
+    }
+
     //Update group name
     public async Task<bool> UpdateGroupNameAsync(string groupId, string newGroupName)
     {
