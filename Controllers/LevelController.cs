@@ -16,9 +16,9 @@ public class LevelController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(int page, int pageSize)
     {
-        var levels = await _levelService.GetAllLevelAsync();
+        var levels = await _levelService.GetAllLevelAsync(page, pageSize);
         return Ok(levels);
     }
 

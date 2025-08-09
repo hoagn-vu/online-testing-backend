@@ -13,9 +13,13 @@ public class LevelRepository
     }
 
     //Get all level
-    public async Task<List<LevelModel>> GetAllLevelAsync()
+    public async Task<List<LevelModel>> GetAllLevelAsync(int page, int pageSize)
     {
-        return await _levels.Find(_ => true).ToListAsync();
+        return await _levels.Find(_ => true)
+            .SortByDescending(l => l.Id)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
     }
 
     //Get level by id
