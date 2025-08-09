@@ -48,6 +48,21 @@ public class GroupUserService
         return true;
     }
 
+    //Add users to group
+    public async Task<bool> AddUsersToGroupAsync(string groupId, List<string> userCodes)
+    {
+        if (string.IsNullOrEmpty(groupId) || userCodes == null || userCodes.Count == 0)
+            return false;
+
+        var userIds = await _groupUserRepository.GetUserIdsByUserCodesAsync(userCodes);
+
+        if (userIds == null || userIds.Count == 0)
+            throw new Exception("No matching users found for given user codes.");
+
+        return await _groupUserRepository.AddUserIdsToGroupAsync(groupId, userIds);
+    }
+
+
     //Delete group user by id
     public async Task<bool> DeleteGroupUserAsync(string userGroupId)
     {

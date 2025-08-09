@@ -31,13 +31,24 @@ public class GroupUserController : ControllerBase
         return Ok(group);
     }
 
-    [HttpPost]
+    [HttpPost("create-group-users")]
     public async Task<ActionResult> CreateGroupUser([FromBody] GroupUserCreateDto groupDto)
     {
         var result = await _groupUserService.CreateGroupUserAsync(groupDto);
         if (!result) return BadRequest("Cannot create group");
         return Ok("Group created successfully");
     }
+
+    [HttpPost("add-users")]
+    public async Task<IActionResult> AddUsersToGroup(string groupId, [FromBody] List<string> userCodes)
+    {
+        var success = await _groupUserService.AddUsersToGroupAsync(groupId, userCodes);
+        if (!success)
+            return BadRequest("Failed to add users to group.");
+
+        return Ok("Users added to group successfully.");
+    }
+
 
     [HttpPut("update/{groupId}")]
     public async Task<IActionResult> UpdateGroupName(string groupId, [FromBody] string newName)
