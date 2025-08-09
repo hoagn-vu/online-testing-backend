@@ -15,9 +15,9 @@ public class GroupUserService
     }
 
     //Get all group user
-    public async Task<List<GroupUserModel>> GetAllGroupUserAsync()
+    public async Task<List<GroupUserModel>> GetAllGroupUserAsync(int page, int pageSize)
     {
-        return await _groupUserRepository.GetAllAsync();
+        return await _groupUserRepository.GetAllAsync(page, pageSize);
     }
 
     //Get group user by id

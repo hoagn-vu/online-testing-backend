@@ -1,4 +1,5 @@
 ﻿using Backend_online_testing.Models;
+using DocumentFormat.OpenXml.Math;
 using DocumentFormat.OpenXml.Spreadsheet;
 using MongoDB.Driver;
 
@@ -16,9 +17,13 @@ public class GroupUserRepository
     }
 
     //Get all group user
-    public async Task<List<GroupUserModel>> GetAllAsync()
+    public async Task<List<GroupUserModel>> GetAllAsync(int page, int pageSize)
     {
-        return await _groupUser.Find(_ => true).ToListAsync();
+        return await _groupUser.Find(_ => true)
+            .SortByDescending(g => g.Id)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
     }
 
     //Get by group user id
@@ -26,6 +31,7 @@ public class GroupUserRepository
     {
         return await _groupUser.Find(g => g.Id == id).FirstAsync();
     }
+
     //Find list user id by list usercode 
     public async Task<List<string>> GetUserIdsByUserCodesAsync(List<string> userCodes)
     {
