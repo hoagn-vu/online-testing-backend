@@ -58,7 +58,7 @@ public class GroupUserController : ControllerBase
         return Ok("Group name updated");
     }
 
-    [HttpDelete("/delete/{groupId}/user/{userCode}")]
+    [HttpDelete("delete/{groupId}/user/{userCode}")]
     public async Task<ActionResult> RemoveUserFromGroup(string groupId, string userCode)
     {
         var result = await _groupUserService.RemoveUserFromGroupUserAsync(groupId, userCode);
@@ -66,7 +66,7 @@ public class GroupUserController : ControllerBase
         return Ok("User removed from group");
     }
 
-    [HttpDelete("/delete/{id}")]
+    [HttpDelete("delete/{id}")]
     public async Task<ActionResult> DeleteById(string id)
     {
         var result = await _groupUserService.DeleteGroupUserAsync(id);
