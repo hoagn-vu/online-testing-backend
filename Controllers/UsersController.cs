@@ -23,9 +23,9 @@ namespace Backend_online_testing.Controllers
 
         // Get all user
         [HttpGet]
-        public async Task<IActionResult> Get(string? keyword, int page, int pageSize)
+        public async Task<IActionResult> Get(string? keyword, int page, int pageSize, string? role)
         {
-            var (users, total) = await this._userService.GetAllUsers(keyword, page, pageSize);
+            var (users, total) = await this._userService.GetAllUsers(keyword, page, pageSize, role);
             return this.Ok(new { users, total });
         }   
         

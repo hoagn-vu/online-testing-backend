@@ -1,4 +1,5 @@
 ﻿#pragma warning disable
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.JavaScript;
 using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
@@ -22,21 +23,42 @@ public class UsersService
     }
 
     //Get all User
-    public async Task<(List<UserDto>, long)> GetAllUsers(string? keyword, int page, int pageSize)
+    public async Task<(List<UserDto>, long)> GetAllUsers(string? keyword, int page, int pageSize, string? role)
     {
-        FilterDefinition<UsersModel>? keywordFilter = null;
+        //FilterDefinition<UsersModel>? keywordFilter = null;
+        //if (!string.IsNullOrWhiteSpace(keyword))
+        //{
+        //    var regex = new BsonRegularExpression(keyword, "i");
+        //    keywordFilter = Builders<UsersModel>.Filter.Or(
+        //        Builders<UsersModel>.Filter.Regex(u => u.FullName, regex),
+        //        Builders<UsersModel>.Filter.Regex(u => u.UserCode, regex));
+        //}
+        var f = Builders<UsersModel>.Filter;
+        var filter = f.Empty;
+
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            var regex = new BsonRegularExpression(keyword, "i");
-            keywordFilter = Builders<UsersModel>.Filter.Or(
-                Builders<UsersModel>.Filter.Regex(u => u.FullName, regex),
-                Builders<UsersModel>.Filter.Regex(u => u.UserCode, regex));
+            var safe = System.Text.RegularExpressions.Regex.Escape(keyword.Trim());
+            var rx = new BsonRegularExpression(safe, "i");
+
+            var keywordFilter = f.Or(
+                f.Regex(u => u.FullName, rx),
+                f.Regex(u => u.UserCode, rx)
+            );
+
+            filter = f.And(filter, keywordFilter);
+        }
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            var roleFilter = f.Eq(u => u.Role, role.Trim());
+            filter = f.And(filter, roleFilter);
         }
 
         int skip = (page - 1) * pageSize;
 
-        var users = await _userRepository.GetUsersAsync(keywordFilter, skip, pageSize);
-        var total = await _userRepository.CountAsync(keywordFilter);
+        var users = await _userRepository.GetUsersAsync(filter, skip, pageSize);
+        var total = await _userRepository.CountAsync(filter);
 
         return (users, total);
     }
