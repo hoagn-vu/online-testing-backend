@@ -1,7 +1,9 @@
 ﻿using Backend_online_testing.Models;
 using DocumentFormat.OpenXml.Math;
 using DocumentFormat.OpenXml.Spreadsheet;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
 namespace Backend_online_testing.Repositories;
 
@@ -16,10 +18,29 @@ public class GroupUserRepository
         _user = database.GetCollection<UsersModel>("users");
     }
 
-    //Get all group user
-    public async Task<List<GroupUserModel>> GetAllAsync(int page, int pageSize)
+    private static readonly FilterDefinition<GroupUserModel> GroupUserBaseFilter = Builders<GroupUserModel>.Filter.Empty;
+
+    private FilterDefinition<GroupUserModel> GroupUserFilterByName(string? keyword)
     {
-        return await _groupUser.Find(_ => true)
+        var builder = Builders<GroupUserModel>.Filter;
+
+        if (string.IsNullOrEmpty(keyword))
+        {
+            return GroupUserBaseFilter;
+        }
+
+        return builder.And(
+                GroupUserBaseFilter,
+                builder.Regex(s => s.GroupName, new BsonRegularExpression(keyword, "i"))
+        );
+    }
+
+    //Get all group user
+    public async Task<List<GroupUserModel>> GetAllAsync(string? keyword, int page, int pageSize)
+    {
+        var filter = GroupUserFilterByName(keyword);
+
+        return await _groupUser.Find(filter)
             .SortByDescending(g => g.Id)
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)

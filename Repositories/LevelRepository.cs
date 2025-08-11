@@ -1,4 +1,5 @@
 ﻿using Backend_online_testing.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Backend_online_testing.Repositories;
@@ -12,10 +13,29 @@ public class LevelRepository
         _levels = database.GetCollection<LevelModel>("level");
     }
 
-    //Get all level
-    public async Task<List<LevelModel>> GetAllLevelAsync(int page, int pageSize)
+    private static readonly FilterDefinition<LevelModel> LevelBaseFilter = Builders<LevelModel>.Filter.Empty;
+
+    private FilterDefinition<LevelModel> LevelFilterByName(string? keyword)
     {
-        return await _levels.Find(_ => true)
+        var builder = Builders<LevelModel>.Filter;
+
+        if (string.IsNullOrEmpty(keyword))
+        {
+            return LevelBaseFilter;
+        }
+
+        return builder.And(
+                LevelBaseFilter,
+                builder.Regex(s => s.LevelName, new BsonRegularExpression(keyword, "i"))
+        );
+    }
+
+    //Get all level
+    public async Task<List<LevelModel>> GetAllLevelAsync(string? keyword, int page, int pageSize)
+    {
+        var filter = LevelFilterByName(keyword);
+
+        return await _levels.Find(filter)
             .SortByDescending(l => l.Id)
             .Skip((page - 1) * pageSize)
             .Limit(pageSize)
