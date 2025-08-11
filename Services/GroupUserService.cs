@@ -15,9 +15,12 @@ public class GroupUserService
     }
 
     //Get all group user
-    public async Task<List<GroupUserModel>> GetAllGroupUserAsync(string? keyword, int page, int pageSize)
+    public async Task<(List<GroupUserModel>, long)> GetAllGroupUserAsync(string? keyword, int page, int pageSize)
     {
-        return await _groupUserRepository.GetAllAsync(keyword, page, pageSize);
+        var totalCount = await _groupUserRepository.CountGroupUserAsync(keyword);
+        var groupUsers = await _groupUserRepository.GetAllAsync(keyword, page, pageSize);
+
+        return (groupUsers,  totalCount);
     }
 
     //Get group user by id

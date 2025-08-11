@@ -20,7 +20,7 @@ public class GroupUserRepository
 
     private static readonly FilterDefinition<GroupUserModel> GroupUserBaseFilter = Builders<GroupUserModel>.Filter.Empty;
 
-    private FilterDefinition<GroupUserModel> GroupUserFilterByName(string? keyword)
+    private FilterDefinition<GroupUserModel> GroupUserBaseFilterByName(string? keyword)
     {
         var builder = Builders<GroupUserModel>.Filter;
 
@@ -34,11 +34,18 @@ public class GroupUserRepository
                 builder.Regex(s => s.GroupName, new BsonRegularExpression(keyword, "i"))
         );
     }
+    //Count group user
+    public async Task<long> CountGroupUserAsync(string? keyword)
+    {
+        var filter = GroupUserBaseFilterByName(keyword);
+
+        return await _groupUser.CountDocumentsAsync(filter);
+    }   
 
     //Get all group user
     public async Task<List<GroupUserModel>> GetAllAsync(string? keyword, int page, int pageSize)
     {
-        var filter = GroupUserFilterByName(keyword);
+        var filter = GroupUserBaseFilterByName(keyword);
 
         return await _groupUser.Find(filter)
             .SortByDescending(g => g.Id)

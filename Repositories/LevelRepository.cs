@@ -30,6 +30,14 @@ public class LevelRepository
         );
     }
 
+    //Count document
+    public async Task<long> CountLevelAsync(string? keyword)
+    {
+        var filter = LevelFilterByName(keyword);
+
+        return await _levels.CountDocumentsAsync(filter);
+    }
+
     //Get all level
     public async Task<List<LevelModel>> GetAllLevelAsync(string? keyword, int page, int pageSize)
     {
