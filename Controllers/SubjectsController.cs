@@ -39,7 +39,7 @@ public class SubjectsController : ControllerBase
     }
 
     // Add subject
-    [HttpPost("add-subject")]
+    [HttpPost]
     public async Task<ActionResult> AddSubject([FromBody] SubjectRequestDto? subjectDto)
     {
         if (subjectDto == null || string.IsNullOrEmpty(subjectDto.SubjectName))
@@ -96,7 +96,7 @@ public class SubjectsController : ControllerBase
     }
 
     // Add question bank
-    [HttpPost("add-question-bank")]
+    [HttpPost("question-bank")]
     public async Task<ActionResult> AddQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
     {
         if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
@@ -112,7 +112,7 @@ public class SubjectsController : ControllerBase
         }
     }
 
-    [HttpPut("update-question-bank")]
+    [HttpPut]
     public async Task<ActionResult> UpdateQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
     {
         if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
