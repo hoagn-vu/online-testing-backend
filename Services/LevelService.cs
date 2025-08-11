@@ -15,9 +15,12 @@ public class LevelService
     }
 
     //Get all level
-    public async Task<List<LevelModel>> GetAllLevelAsync(int page, int pageSize)
+    public async Task<(List<LevelModel>, long)> GetAllLevelAsync(string? keyword, int page, int pageSize)
     {
-        return await _levelRepository.GetAllLevelAsync(page, pageSize);
+        var totalCount = await _levelRepository.CountLevelAsync(keyword);
+        var levels = await _levelRepository.GetAllLevelAsync(keyword, page, pageSize);
+
+        return (levels, totalCount);
     }
 
     //Get level by id

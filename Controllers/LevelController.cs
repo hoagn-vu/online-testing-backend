@@ -16,10 +16,10 @@ public class LevelController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll(int page, int pageSize)
+    public async Task<IActionResult> GetAll(string? keyword, int page, int pageSize)
     {
-        var levels = await _levelService.GetAllLevelAsync(page, pageSize);
-        return Ok(levels);
+        var (levels, totalCount) = await _levelService.GetAllLevelAsync(keyword, page, pageSize);
+        return Ok(new { levels, totalCount });
     }
 
     [HttpGet("{id}")]

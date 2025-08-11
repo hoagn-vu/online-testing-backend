@@ -17,10 +17,10 @@ public class GroupUserController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<GroupUserModel>>> GetAll(int page, int pageSize)
+    public async Task<ActionResult<List<GroupUserModel>>> GetAll(string? keyword, int page, int pageSize)
     {
-        var groups = await _groupUserService.GetAllGroupUserAsync(page, pageSize);
-        return Ok(groups);
+        var (groups, totalCount) = await _groupUserService.GetAllGroupUserAsync(keyword, page, pageSize);
+        return Ok( new { groups, totalCount });
     }
 
     [HttpGet("{id}")]
