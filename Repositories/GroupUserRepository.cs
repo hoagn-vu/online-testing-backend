@@ -150,6 +150,8 @@ public class GroupUserRepository
             // Find by name or gender
             var orFilter = f.Or(
                 f.Regex(u => u.UserName, rx),
+                f.Regex(u => u.FullName, rx),
+                f.Regex(u => u.UserCode, rx),
                 f.Regex(u => u.Gender, rx)
             );
 
@@ -172,6 +174,8 @@ public class GroupUserRepository
             // Find by name or gender
             var orFilter = f.Or(
                 f.Regex(u => u.UserName, rx),
+                f.Regex(u => u.FullName, rx),
+                f.Regex(u => u.UserCode, rx),
                 f.Regex(u => u.Gender, rx)
             );
 

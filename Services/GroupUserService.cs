@@ -49,6 +49,7 @@ public class GroupUserService
             UserId = u.Id,
             UserCode = u.UserCode,
             UserName = u.UserName,
+            FullName = u.FullName,
             Gender = u.Gender,
             DateOfBirth = u.DateOfBirth
         }).ToList();
