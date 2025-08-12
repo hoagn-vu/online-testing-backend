@@ -83,14 +83,14 @@ namespace Backend_online_testing.Controllers
 
         // Update exam
         [HttpPost("update/{examId}")]
-        public async Task<IActionResult> UpdateExam(string examId, [FromBody] ExamDto updateExamData, string userLogId)
+        public async Task<IActionResult> UpdateExam(string examId, [FromBody] ExamDto updateExamData)
         {
             if (updateExamData == null || string.IsNullOrEmpty(examId))
             {
                 return this.BadRequest(new { status = "Error", message = "Invalid exam data provided." });
             }
 
-            bool updateSuccess = await this._examsService.UpdateExam(updateExamData, examId, userLogId);
+            bool updateSuccess = await this._examsService.UpdateExam(updateExamData, examId);
 
             if (updateSuccess)
             {

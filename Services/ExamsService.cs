@@ -181,11 +181,12 @@ public class ExamsService
     }
 
     // Update Exam(Not include question)
-    public async Task<bool> UpdateExam(ExamDto updateExamData, string examId, string userLogId)
+    public async Task<bool> UpdateExam(ExamDto updateExamData, string examId)
     {
-        var result = await _examsRepository.UpdateExamAsync(updateExamData, examId, userLogId);
-        return result.ModifiedCount > 0;
+        var result = await _examsRepository.UpdateExamAsync(updateExamData, examId);
+        return result.MatchedCount > 0;
     }
+
 
     // Add question one/list
     public async Task<string> AddExamQuestion([FromBody] ExamQuestionDTO questionData, string examId, string userLogId)
