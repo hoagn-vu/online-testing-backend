@@ -42,6 +42,7 @@ public class GroupUserRepository
         return await _groupUser.CountDocumentsAsync(filter);
     }   
 
+
     //Get all group user
     public async Task<List<GroupUserModel>> GetAllAsync(string? keyword, int page, int pageSize)
     {
@@ -69,6 +70,14 @@ public class GroupUserRepository
 
         return users.Select(u => u.Id).ToList();
     }
+    //Find user by user id
+    public async Task<UsersModel> GetUserById(string userId)
+    {
+        return await _user
+        .Find(u => u.Id == userId)
+        .FirstOrDefaultAsync();
+    }
+
     //Create group user
     public async Task CreateGroupUserAsync(GroupUserModel group)
     {
@@ -125,5 +134,58 @@ public class GroupUserRepository
         );
 
         return result.ModifiedCount > 0;
+    }
+
+    //Count user after filter
+    public async Task<long> CountUsersByIdsAsync(IEnumerable<string> userIds, string? keyword)
+    {
+        var f = Builders<UsersModel>.Filter;
+        var filter = f.In(u => u.Id, userIds);
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var safe = System.Text.RegularExpressions.Regex.Escape(keyword.Trim());
+            var rx = new BsonRegularExpression(safe, "i");
+
+            // Find by name or gender
+            var orFilter = f.Or(
+                f.Regex(u => u.UserName, rx),
+                f.Regex(u => u.FullName, rx),
+                f.Regex(u => u.UserCode, rx),
+                f.Regex(u => u.Gender, rx)
+            );
+
+            filter = f.And(filter, orFilter);
+        }
+
+        return await _user.CountDocumentsAsync(filter);
+    }
+
+    public async Task<List<UsersModel>> GetUsersByIdsAsync(IEnumerable<string> userIds, string? keyword, int page, int pageSize)
+    {
+        var f = Builders<UsersModel>.Filter;
+        var filter = f.In(u => u.Id, userIds);
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var safe = System.Text.RegularExpressions.Regex.Escape(keyword.Trim());
+            var rx = new BsonRegularExpression(safe, "i");
+
+            // Find by name or gender
+            var orFilter = f.Or(
+                f.Regex(u => u.UserName, rx),
+                f.Regex(u => u.FullName, rx),
+                f.Regex(u => u.UserCode, rx),
+                f.Regex(u => u.Gender, rx)
+            );
+
+            filter = f.And(filter, orFilter);
+        }
+
+        return await _user.Find(filter)
+            .SortByDescending(u => u.UserName)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
     }
 }

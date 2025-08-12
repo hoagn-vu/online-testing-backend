@@ -23,6 +23,40 @@ public class GroupUserService
         return (groupUsers,  totalCount);
     }
 
+    //Get list user info in a group
+    public async Task<(string, string, string, int, List<GroupUserInfoDto>)> GetUserInfoInGroup(string groupId, string ? keyword, int page, int pageSize)
+    {
+        var group = await _groupUserRepository.GetByIdAsync(groupId);
+        var groupName = group.GroupName;
+
+        if (group == null)
+            return ("", "", "Group not found", 0, new List<GroupUserInfoDto>());
+
+        var userIds = group.ListUser ?? new List<string>();
+        if (userIds.Count == 0)
+            return ("", "", "Empty group", 0, new List<GroupUserInfoDto>());
+
+        var totalLong = await _groupUserRepository.CountUsersByIdsAsync(userIds, keyword);
+        var total = (int)totalLong;
+
+        if (total == 0)
+            return (groupName, groupId, "Not found user!", 0, new List<GroupUserInfoDto>());
+
+        var users = await _groupUserRepository.GetUsersByIdsAsync(userIds, keyword, page, pageSize);
+
+        var items = users.Select(u => new GroupUserInfoDto
+        {
+            UserId = u.Id,
+            UserCode = u.UserCode,
+            UserName = u.UserName,
+            FullName = u.FullName,
+            Gender = u.Gender,
+            DateOfBirth = u.DateOfBirth
+        }).ToList();
+
+        return (groupName, groupId,"success", total, items);
+    }
+
     //Get group user by id
     public async Task<GroupUserModel?> GetGroupUserByIdAsync(string groupUserId)
     {

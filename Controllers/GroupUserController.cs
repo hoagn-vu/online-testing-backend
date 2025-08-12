@@ -23,6 +23,14 @@ public class GroupUserController : ControllerBase
         return Ok( new { groups, totalCount });
     }
 
+    [HttpGet("group/users")]
+    public async Task<IActionResult> GetUsersInGroup(string groupId, string? keyword, int page, int pageSize)
+    {
+        var (groupName, group_id, status, total, items) = await _groupUserService.GetUserInfoInGroup(groupId, keyword, page, pageSize);
+
+        return Ok(new { groupName, group_id, status, total, items });
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<GroupUserModel>> GetGroupUserById(string id)
     {
