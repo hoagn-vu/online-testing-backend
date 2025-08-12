@@ -26,7 +26,7 @@ public class ToggleRoomStatusRequest
     public string RoomId { get; set; } = string.Empty;
 }
 
-public class SubmitAnswersRequest
+public class SubmitAnswersRequestDto
 {
     public string QuestionId { get; set; } = string.Empty;
     public List<string> OptionIds { get; set; } = [];

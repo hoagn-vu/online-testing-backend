@@ -76,11 +76,11 @@ public class ProcessTakeExamController : ControllerBase
         [FromQuery] string userId,
         [FromQuery] string takeExamId,
         [FromQuery] string type,
-        [FromBody] List<SubmitAnswersRequest> request)
+        [FromBody] List<SubmitAnswersRequestDto> request)
     {
-        var result = await _processTakeExamService.SubmitAnswers(userId, takeExamId, type, request);
-        if (!result)
-            return BadRequest("Không thể lưu/nộp bài.");
+        var (description, status) = await _processTakeExamService.SubmitAnswers(userId, takeExamId, type, request);
+        if (!status)
+            return BadRequest(new { code = description, description = "Không thể lưu/nộp bài."});
 
         return Ok(new { message = type == "submit" ? "Nộp bài thành công." : "Lưu bài thành công." });
     }

@@ -15,7 +15,4 @@ public class AnswersModel
     
     [BsonElement("isCorrect")]
     public bool IsCorrect { get; set; }
-    
-    // [BsonElement("answerText")]
-    // public List<string>? AnswerText { get; set; }
 }

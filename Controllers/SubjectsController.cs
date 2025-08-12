@@ -15,9 +15,10 @@ public class SubjectsController : ControllerBase
     private readonly SubjectsService _subjectsService;
     private readonly S3Service _s3Service;
 
-    public SubjectsController(SubjectsService subjectsService)
+    public SubjectsController(SubjectsService subjectsService, S3Service s3Service)
     {
-        this._subjectsService = subjectsService;
+        _subjectsService = subjectsService;
+        _s3Service = s3Service;
     }
 
     // Get subject
@@ -38,7 +39,7 @@ public class SubjectsController : ControllerBase
     }
 
     // Add subject
-    [HttpPost("add-subject")]
+    [HttpPost]
     public async Task<ActionResult> AddSubject([FromBody] SubjectRequestDto? subjectDto)
     {
         if (subjectDto == null || string.IsNullOrEmpty(subjectDto.SubjectName))
@@ -95,7 +96,7 @@ public class SubjectsController : ControllerBase
     }
 
     // Add question bank
-    [HttpPost("add-question-bank")]
+    [HttpPost("question-bank")]
     public async Task<ActionResult> AddQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
     {
         if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
@@ -111,7 +112,7 @@ public class SubjectsController : ControllerBase
         }
     }
 
-    [HttpPut("update-question-bank")]
+    [HttpPut]
     public async Task<ActionResult> UpdateQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
     {
         if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
@@ -140,7 +141,6 @@ public class SubjectsController : ControllerBase
     public async Task<ActionResult> AddQuestion(
         [FromQuery] string subjectId, 
         [FromQuery] string questionBankId, 
-        [FromQuery] string userId, 
         [FromBody] SubjectQuestionDto question,
         [FromForm] List<IFormFile>? images
     )
@@ -159,7 +159,7 @@ public class SubjectsController : ControllerBase
         // Gán đường dẫn ảnh vào câu hỏi
         question.ImgLinks = uploadedImageUrls;
 
-        var result = await _subjectsService.AddQuestion(subjectId, questionBankId, userId, question);
+        var result = await _subjectsService.AddQuestion(subjectId, questionBankId, question);
 
         if (result == "Thêm câu hỏi thành công")
         {
@@ -168,6 +168,52 @@ public class SubjectsController : ControllerBase
         else
         {
             return this.BadRequest(new { error = result });
+        }
+    }
+    
+    [HttpPost("new-add-question")]
+    public async Task<ActionResult> NewAddQuestion(
+        [FromQuery] string subjectId,
+        [FromQuery] string questionBankId,
+        [FromForm] AddQuestionDto request
+    )
+    {
+        var uploadedImageUrls = new List<string>();
+
+        if (request.Images is not null)
+        {
+            foreach (var image in request.Images)
+            {
+                var url = await _s3Service.UploadFileAsync(image);
+                uploadedImageUrls.Add(url);
+            }
+        }
+
+        // Gán đường dẫn ảnh vào câu hỏi
+        request.Question.ImgLinks = uploadedImageUrls;
+
+        var result = await _subjectsService.AddQuestion(subjectId, questionBankId, request.Question);
+
+        if (result == "Thêm câu hỏi thành công")
+        {
+            return this.Ok(new { message = result });
+        }
+
+        return BadRequest(new { error = result });
+    }
+    
+    [HttpPost("questions")]
+    public async Task<ActionResult> AddQuestions([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromBody] List<SubjectQuestionDto> questions)
+    {
+        var result = await _subjectsService.AddQuestions(subjectId, questionBankId, questions);
+
+        if (result == "ok")
+        {
+            return Ok(new { message = result });
+        }
+        else
+        {
+            return BadRequest(new { error = result });
         }
     }
 
