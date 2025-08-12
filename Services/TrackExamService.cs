@@ -116,4 +116,56 @@ public class TrackExamService
             Candidates = userDetails
         };
     }
+    //Report 
+    public async Task<ReportDto> Report(string organizeExamId, string sessionId, string roomId)
+    {
+        var organizeExam = await _trackExamRepository.GetOrganizeExamById(organizeExamId);
+        if (organizeExam == null || organizeExam.Sessions == null)
+        {
+            return new ReportDto { OrganizeExamId = organizeExamId, SessionId = sessionId, RoomId = roomId };
+        }
+
+        var session = organizeExam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        if (session == null || session.RoomsInSession == null)
+        {
+            return new ReportDto { OrganizeExamId = organizeExamId, SessionId = sessionId, RoomId = roomId };
+        }
+
+        var room = session.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
+        var candidateIds = room?.CandidateIds ?? new List<string>();
+        if (!candidateIds.Any())
+        {
+            return new ReportDto { OrganizeExamId = organizeExamId, SessionId = sessionId, RoomId = roomId };
+        }
+
+        var userDetails = new List<CandidateReportInfo>();
+        foreach (var candidateId in candidateIds)
+        {
+            var user = await _trackExamRepository.GetUserByUserId(candidateId);
+            if (user != null)
+            {
+                var takeExam = user.TakeExam?
+                .FirstOrDefault(t =>
+                    t.OrganizeExamId == organizeExamId &&
+                    t.SessionId == sessionId &&
+                    t.RoomId == roomId);
+
+                var totalScore = takeExam?.TotalScore ?? 0;
+                var date = user.DateOfBirth ?? ""; 
+
+                userDetails.Add(new CandidateReportInfo { UserId = user.Id, FullName = user.FullName, UserCode = user.UserCode, DateOfBirth = date, TotalScore = totalScore });
+            }
+        }
+
+        // Ensure a return statement after the loop
+        return new ReportDto
+        {
+            OrganizeExamId = organizeExamId,
+            OrganizeName = organizeExam.OrganizeExamName,
+            SessionId = sessionId,
+            SessionName = session.SessionName,
+            RoomId = roomId,
+            Candidates = userDetails
+        };
+    }
 }
