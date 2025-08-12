@@ -60,8 +60,11 @@ public class SubjectsService
 
         var questionBanks = subjects
         .SelectMany(s => s.QuestionBanks
-            .Where(qb => string.IsNullOrEmpty(keyword) || qb.QuestionBankName.Contains(keyword, StringComparison.CurrentCultureIgnoreCase) && !qb.QuestionBankStatus.Equals("deleted", StringComparison.CurrentCultureIgnoreCase))
-            .Select(qb => new QuestionBankDto
+        .Where(qb =>
+            !qb.QuestionBankStatus.Equals("deleted", StringComparison.CurrentCultureIgnoreCase) &&
+            (string.IsNullOrEmpty(keyword) || qb.QuestionBankName.Contains(keyword, StringComparison.CurrentCultureIgnoreCase))
+        )
+        .Select(qb => new QuestionBankDto
             {
                 QuestionBankId = qb.QuestionBankId,
                 QuestionBankName = qb.QuestionBankName,
