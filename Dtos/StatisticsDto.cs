@@ -11,6 +11,11 @@ public class OrganizeExamScoreStatistisDto
     public string OrganizeExamName { get; set; } = default!;
     public int TotalCandidates { get; set; }
     public int NoScoreCount { get; set; }
+    public ScoreDistributionDto ScoreDistribution { get; set; } = new();
+}
+
+public class ScoreDistributionDto
+{
     public int Bin0_1 { get; set; }
     public int Bin1_2 { get; set; }
     public int Bin2_3 { get; set; }

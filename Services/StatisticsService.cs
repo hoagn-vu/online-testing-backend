@@ -63,16 +63,16 @@ public class StatisticsService
         }
 
         // map bins -> DTO
-        dto.Bin0_1 = bins[0];
-        dto.Bin1_2 = bins[1];
-        dto.Bin2_3 = bins[2];
-        dto.Bin3_4 = bins[3];
-        dto.Bin4_5 = bins[4];
-        dto.Bin5_6 = bins[5];
-        dto.Bin6_7 = bins[6];
-        dto.Bin7_8 = bins[7];
-        dto.Bin8_9 = bins[8];
-        dto.Bin9_10 = bins[9];
+        dto.ScoreDistribution.Bin0_1 = bins[0];
+        dto.ScoreDistribution.Bin1_2 = bins[1];
+        dto.ScoreDistribution.Bin2_3 = bins[2];
+        dto.ScoreDistribution.Bin3_4 = bins[3];
+        dto.ScoreDistribution.Bin4_5 = bins[4];
+        dto.ScoreDistribution.Bin5_6 = bins[5];
+        dto.ScoreDistribution.Bin6_7 = bins[6];
+        dto.ScoreDistribution.Bin7_8 = bins[7];
+        dto.ScoreDistribution.Bin8_9 = bins[8];
+        dto.ScoreDistribution.Bin9_10 = bins[9];
 
         return dto;
     }
