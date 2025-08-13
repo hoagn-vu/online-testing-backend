@@ -110,6 +110,35 @@ public class CandidateInfoDto
     public int TotalQuestions { get; set; }
 }
 
+public class ReportDto
+{
+    public string OrganizeExamId { get; set; } = string.Empty;
+
+    public string OrganizeName {  get; set; } = string.Empty;
+
+    public string SessionId { get; set; } = string.Empty;
+
+    public string SessionName {  get; set; } = string.Empty;
+
+    public string RoomId { get; set; } = string.Empty;
+
+    //public string RoomName { get; set; } = string.Empty;
+
+    public List<CandidateReportInfo> Candidates { get; set; } = new List<CandidateReportInfo>();
+}
+
+public class CandidateReportInfo
+{
+    public string FullName { get; set; } = string.Empty;
+
+    public string UserCode { get; set; } = string.Empty;
+
+    public string DateOfBirth {  get; set; } = string.Empty;
+
+    public string UserId { get; set; } = string.Empty;
+
+    public double TotalScore {  get; set; } 
+}
 public class UserAllTrackExamResponseDto
 {
     public string UserId { get; set; } = string.Empty;

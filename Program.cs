@@ -49,6 +49,8 @@ builder.Services.AddScoped<TrackExamRepository>();
 builder.Services.AddSingleton<OrganizeExamService>();
 builder.Services.AddScoped<ProcessTakeExamService>();
 builder.Services.AddScoped<ProcessTakeExamRepository>();
+builder.Services.AddScoped<StatisticsService>();
+builder.Services.AddScoped<StatisticsRepository>();
 builder.Services.AddSingleton<S3Service>();
 
 // JWT Authentication
