@@ -1,0 +1,117 @@
+﻿using Amazon.S3;
+using Backend_online_testing.Dtos;
+using Backend_online_testing.Models;
+using Backend_online_testing.Repositories;
+
+namespace Backend_online_testing.Services;
+
+public class StatisticsService
+{
+    private readonly StatisticsRepository _statisticsRepository;
+
+    public StatisticsService(StatisticsRepository statisticRepository)
+    {
+        _statisticsRepository = statisticRepository;
+    }
+
+    public async Task<OrganizeExamScoreStatistisDto> GetScoreHistogram10Async(string organizeExamId)
+    {
+        var organizeExam = await _statisticsRepository.GetOrganizeExamById(organizeExamId)
+                  ?? throw new KeyNotFoundException("OrganizeExam not found");
+
+        var dto = new OrganizeExamScoreStatistisDto
+        {
+            OrganizeExamId = organizeExam.Id,
+            OrganizeExamName = organizeExam.OrganizeExamName
+        };
+
+        var bins = new int[10];
+        int noScoreCount = 0;
+
+        var sessions = organizeExam.Sessions ?? new List<SessionsModel>();
+        foreach (var ss in sessions)
+        {
+            var sessionId = ss.SessionId;
+
+            var rooms = ss.RoomsInSession ?? new List<SessionRoomsModel>();
+            foreach (var room in rooms)
+            {
+                var roomId = room.RoomInSessionId;
+                var candidates = room.CandidateIds ?? new List<string>();
+
+                foreach (var candId in candidates)
+                {
+                    dto.TotalCandidates++;
+
+                    // get user score -> takeExams following (organizeExamId, sessionId, roomId)
+                    var score = await _statisticsRepository.GetTotalScoreFromTakeExamAsync(
+                        candId, organizeExam.Id, sessionId, roomId);
+
+                    if (score is null)
+                    {
+                        noScoreCount++; // No score
+                        continue;
+                    }
+
+                    var idx = (int)Math.Floor(score.Value);
+                    if (idx < 0) idx = 0;
+                    if (idx > 9) idx = 9;
+
+                    bins[idx]++;
+                }
+            }
+        }
+
+        // map bins -> DTO
+        dto.Bin0_1 = bins[0];
+        dto.Bin1_2 = bins[1];
+        dto.Bin2_3 = bins[2];
+        dto.Bin3_4 = bins[3];
+        dto.Bin4_5 = bins[4];
+        dto.Bin5_6 = bins[5];
+        dto.Bin6_7 = bins[6];
+        dto.Bin7_8 = bins[7];
+        dto.Bin8_9 = bins[8];
+        dto.Bin9_10 = bins[9];
+
+        return dto;
+    }
+
+    public async Task<ParticipationViolationDto> GetParticipationViolationAsync(string organizeExamId)
+    {
+        var organizeExam = await _statisticsRepository.GetOrganizeExamById(organizeExamId)
+                  ?? throw new KeyNotFoundException("OrganizeExam not found");
+
+        var dto = new ParticipationViolationDto
+        {
+            OrganizeExamId = organizeExam.Id,
+            OrganizeExamName = organizeExam.OrganizeExamName
+        };
+
+        var sessions = organizeExam.Sessions ?? new List<SessionsModel>();
+        foreach (var ss in sessions)
+        {
+            var sessionId = ss.SessionId;
+            var rooms = ss.RoomsInSession ?? new List<SessionRoomsModel>();
+
+            foreach (var room in rooms)
+            {
+                var roomId = room.RoomInSessionId;
+                var candidates = room.CandidateIds ?? new List<string>();
+
+                foreach (var candId in candidates)
+                {
+                    dto.TotalCandidates++;
+
+                    var status = await _statisticsRepository.GetTakeExamStatusAsync(
+                        candId, organizeExam.Id, sessionId, roomId);
+
+                    if (string.Equals(status, "terminate", StringComparison.OrdinalIgnoreCase))
+                        dto.TotalCandidateTerminated++;
+                }
+            }
+        }
+
+        return dto;
+    }
+}

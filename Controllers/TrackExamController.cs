@@ -52,4 +52,12 @@ public class TrackExamController : ControllerBase
 
         return Ok(candidateDetails);
     }
+
+    //Get report info
+    [HttpGet("get-report-info")]
+    public async Task<IActionResult> GetReportInfo(string organizeExamId, string sessionId, string roomId) {
+        var reportDetail = await _trackExamService.Report(organizeExamId, sessionId, roomId);
+
+        return Ok(reportDetail);
+    }
 }

@@ -80,7 +80,7 @@ public class ExamRepository
     }
 
     //Update exam
-    public async Task<UpdateResult> UpdateExamAsync(ExamDto updateExamData, string examId, string userLogId)
+    public async Task<UpdateResult> UpdateExamAsync(ExamDto updateExamData, string examId)
     {
         var update = Builders<ExamsModel>.Update
             .Set(e => e.ExamName, updateExamData.ExamName)
