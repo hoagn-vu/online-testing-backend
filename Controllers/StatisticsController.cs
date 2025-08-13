@@ -1,11 +1,11 @@
-﻿using Backend_online_testing.Services;
+using Backend_online_testing.Services;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend_online_testing.Controllers;
 
-[ApiController]
 [Route("api/statistics")]
+[ApiController]
 public class StatisticsController : ControllerBase
 {
     private readonly StatisticsService _statisticsService;
@@ -15,7 +15,7 @@ public class StatisticsController : ControllerBase
         _statisticsService = statisticService;
     }
 
-    [HttpGet("/organize-exam-by-id")]
+    [HttpGet("organize-exam-by-id")]
     public async Task<IActionResult> StatisticsOrganizeExam(string organizeExamId)
     {
         if (string.IsNullOrWhiteSpace(organizeExamId))
@@ -25,7 +25,7 @@ public class StatisticsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("/participation-violation-by-id")]
+    [HttpGet("participation-violation-by-id")]
     public async Task<IActionResult> GetParticipationViolation(string organizeExamId)
     {
         if (string.IsNullOrWhiteSpace(organizeExamId))
