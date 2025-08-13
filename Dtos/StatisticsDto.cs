@@ -47,3 +47,24 @@ public class ParticipationViolationDto
     public int TotalCandidates { get; set; }
     public int TotalCandidateTerminated { get; set; }
 }
+
+public class ExamSetStatisticDto
+{
+    public string OrganizeExamId { get; set; } = string.Empty;
+
+    public string OrganizeExamName { get; set; } = string.Empty;
+
+    public int TotalCandidates { get; set; }
+
+    public List<ExamCountItem> ExamCounts { get; set; } = new();
+}
+
+//Exam set statistic
+public class ExamCountItem
+{
+    public string ExamId { get; set; } = string.Empty;
+
+    public string ExamName { get; set; } = string.Empty;
+
+    public int Count { get; set; }
+}

@@ -131,4 +131,67 @@ public class StatisticsService
 
         return dto;
     }
+
+    public async Task<ExamSetStatisticDto> ExamSetSatisticAsync(string organizeExamId)
+    {
+        var organizeExam = await _statisticsRepository.GetOrganizeExamById(organizeExamId)
+              ?? throw new KeyNotFoundException("OrganizeExam not found");
+
+        var examSet = organizeExam.Exams ?? new List<string>();
+        var nameMap = await _statisticsRepository.GetExamNamesByIdsAsync(examSet);
+
+        //Map examId to ExamCountItem
+        var examCountMap = examSet.Distinct()
+        .ToDictionary(
+            id => id,
+            id => new ExamCountItem
+            {
+                ExamId = id,
+                ExamName = (nameMap.TryGetValue(id, out var nm) ? nm : "") ?? "",
+                Count = 0
+            });
+
+        //Get candidate and assignment
+        var allCandidateIds = new HashSet<string>();
+        var assignments = new List<(string SessionId, string RoomId, List<string> CandidateIds)>();
+        foreach (var ss in organizeExam.Sessions ?? new List<SessionsModel>())
+        {
+            foreach (var room in ss.RoomsInSession ?? new List<SessionRoomsModel>())
+            {
+                var cands = room.CandidateIds ?? new List<string>();
+                assignments.Add((ss.SessionId, room.RoomInSessionId, cands));
+                assignments.Add((ss.SessionId, room.RoomInSessionId, cands));
+                foreach (var cid in cands) allCandidateIds.Add(cid);
+            }
+        }
+
+        var users = await _statisticsRepository.GetUsersByIdsAsync(allCandidateIds);
+        var takeExamLookup = users.ToDictionary(u => u.Id, u => u.TakeExam ?? new List<TakeExamsModel>());
+
+        foreach (var (sessionId, roomId, cands) in assignments)
+        {
+            foreach (var candId in cands)
+            {
+                if (!takeExamLookup.TryGetValue(candId, out var takeExams) || takeExams.Count == 0)
+                    continue;
+
+                var te = takeExams.FirstOrDefault(x =>
+                    x.OrganizeExamId == organizeExam.Id &&
+                    x.SessionId == sessionId &&
+                    x.RoomId == roomId);
+
+                var examId = te?.ExamId;
+                if (!string.IsNullOrEmpty(examId) && examCountMap.TryGetValue(examId!, out var item))
+                    item.Count++;
+            }
+        }
+
+        return new ExamSetStatisticDto
+        {
+            OrganizeExamId = organizeExam.Id,
+            OrganizeExamName = organizeExam.OrganizeExamName,
+            TotalCandidates = allCandidateIds.Count,
+            ExamCounts = examSet.Distinct().Select(id => examCountMap[id]).ToList()
+        };
+    }
 }

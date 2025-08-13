@@ -1,3 +1,4 @@
+using Backend_online_testing.Dtos;
 using Backend_online_testing.Services;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.AspNetCore.Mvc;
@@ -33,5 +34,19 @@ public class StatisticsController : ControllerBase
 
         var result = await _statisticsService.GetParticipationViolationAsync(organizeExamId);
         return Ok(result);
+    }
+
+    [HttpGet("exam-set")]
+    public async Task<ActionResult<ExamSetStatisticDto>> GetExamSetStats(string organizeExamId)
+    {
+        try
+        {
+            var result = await _statisticsService.ExamSetSatisticAsync(organizeExamId);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 }
