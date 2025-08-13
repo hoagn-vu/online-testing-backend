@@ -8,9 +8,26 @@ public class StatisticsDto
 public class OrganizeExamScoreStatistisDto
 {
     public string OrganizeExamId { get; set; } = default!;
+
     public string OrganizeExamName { get; set; } = default!;
+
+    public string SubjecName { get; set; } = string.Empty;
+
     public int TotalCandidates { get; set; }
+
     public int NoScoreCount { get; set; }
+
+    public double? MinScore { get; set; }
+
+    public double? MaxScore { get; set; }
+
+    public double? AverageScore { get; set; }
+
+    public ScoreDistributionDto ScoreDistribution { get; set; } = new();
+}
+
+public class ScoreDistributionDto
+{
     public int Bin0_1 { get; set; }
     public int Bin1_2 { get; set; }
     public int Bin2_3 { get; set; }

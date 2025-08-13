@@ -8,11 +8,29 @@ public class StatisticsRepository
 {
     private readonly IMongoCollection<UsersModel> _users;
     private readonly IMongoCollection<OrganizeExamModel> _organizeExam;
+    private readonly IMongoCollection<SubjectsModel> _subjects;
+    private readonly IMongoCollection<RoomsModel> _rooms;
 
     public StatisticsRepository(IMongoDatabase database)
     {
         _users = database.GetCollection<UsersModel>("users");
         _organizeExam = database.GetCollection<OrganizeExamModel>("organizeExams");
+        _subjects = database.GetCollection<SubjectsModel>("subjects");
+        _rooms = database.GetCollection<RoomsModel>("rooms");
+    }
+
+    //Get Subject Name
+    public async Task<string?> GetSubjectNameByIdAsync(string subjectId)
+    {
+        var subject = await _subjects.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
+        return subject?.SubjectName;
+    }
+
+    // Get Room Name
+    public async Task<string?> GetRoomNameByIdAsync(string roomId)
+    {
+        var room = await _rooms.Find(r => r.Id == roomId).FirstOrDefaultAsync();
+        return room?.RoomName;
     }
 
     //Get organize exam by id
@@ -26,6 +44,8 @@ public class StatisticsRepository
     {
         return await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
     }
+
+    //Get subject name by id
 
     //Get user score
     public async Task<double?> GetTotalScoreFromTakeExamAsync(

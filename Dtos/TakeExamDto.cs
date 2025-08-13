@@ -122,7 +122,9 @@ public class ReportDto
 
     public string RoomId { get; set; } = string.Empty;
 
-    //public string RoomName { get; set; } = string.Empty;
+    public string SubjectName { get; set; } = string.Empty;
+
+    public string RoomName { get; set; } = string.Empty;
 
     public List<CandidateReportInfo> Candidates { get; set; } = new List<CandidateReportInfo>();
 }
