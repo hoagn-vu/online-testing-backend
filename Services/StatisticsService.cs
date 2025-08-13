@@ -90,6 +90,7 @@ public class StatisticsService
         dto.MinScore = dto.TotalCandidates > 0 ? min : (double?)null;
         dto.MaxScore = dto.TotalCandidates > 0 ? max : (double?)null;
         dto.AverageScore = dto.TotalCandidates > 0 ? Math.Round(sum / dto.TotalCandidates, 2) : (double?)null;
+      
         return dto;
     }
 
