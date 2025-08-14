@@ -125,6 +125,7 @@ public class TrackExamService
             return new ReportDto { OrganizeExamId = organizeExamId, SessionId = sessionId, RoomId = roomId };
         }
 
+        var subjectName = await _trackExamRepository.GetSubjectNameByIdAsync(organizeExam.SubjectId) ?? "";
         var session = organizeExam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
         if (session == null || session.RoomsInSession == null)
         {
@@ -132,6 +133,8 @@ public class TrackExamService
         }
 
         var room = session.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
+        var roomName = await _trackExamRepository.GetRoomNameByIdAsync(room.RoomInSessionId) ?? "";
+
         var candidateIds = room?.CandidateIds ?? new List<string>();
         if (!candidateIds.Any())
         {
@@ -162,9 +165,11 @@ public class TrackExamService
         {
             OrganizeExamId = organizeExamId,
             OrganizeName = organizeExam.OrganizeExamName,
+            SubjectName = subjectName,
             SessionId = sessionId,
             SessionName = session.SessionName,
             RoomId = roomId,
+            RoomName = roomName,
             Candidates = userDetails
         };
     }

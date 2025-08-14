@@ -8,9 +8,21 @@ public class StatisticsDto
 public class OrganizeExamScoreStatistisDto
 {
     public string OrganizeExamId { get; set; } = default!;
+
     public string OrganizeExamName { get; set; } = default!;
+
+    public string SubjecName { get; set; } = string.Empty;
+
     public int TotalCandidates { get; set; }
+
     public int NoScoreCount { get; set; }
+
+    public double? MinScore { get; set; }
+
+    public double? MaxScore { get; set; }
+
+    public double? AverageScore { get; set; }
+
     public ScoreDistributionDto ScoreDistribution { get; set; } = new();
 }
 
@@ -34,4 +46,25 @@ public class ParticipationViolationDto
     public string OrganizeExamName { get; set; } = default!;
     public int TotalCandidates { get; set; }
     public int TotalCandidateTerminated { get; set; }
+}
+
+public class ExamSetStatisticDto
+{
+    public string OrganizeExamId { get; set; } = string.Empty;
+
+    public string OrganizeExamName { get; set; } = string.Empty;
+
+    public int TotalCandidates { get; set; }
+
+    public List<ExamCountItem> ExamCounts { get; set; } = new();
+}
+
+//Exam set statistic
+public class ExamCountItem
+{
+    public string ExamId { get; set; } = string.Empty;
+
+    public string ExamName { get; set; } = string.Empty;
+
+    public int Count { get; set; }
 }
