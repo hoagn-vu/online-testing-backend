@@ -49,4 +49,22 @@ public class StatisticsController : ControllerBase
             return NotFound(new { message = ex.Message });
         }
     }
+
+    [HttpGet("organize-exams/exam-stats")]
+    public async Task<ActionResult<ExamQuestionStatsResponse>> GetQuestionStats(string organizeExamId, string examId)
+    {
+        try
+        {
+            var data = await _statisticsService.GetExamQuestionStatsAsync(organizeExamId, examId);
+            return Ok(data);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

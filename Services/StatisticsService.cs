@@ -194,4 +194,57 @@ public class StatisticsService
             ExamCounts = examSet.Distinct().Select(id => examCountMap[id]).ToList()
         };
     }
+
+    public async Task<ExamQuestionStatsResponse> GetExamQuestionStatsAsync(string organizeExamId, string examId)
+    {
+        // 1) Lấy organizeExam và validate examId thuộc examSet
+        var organize = await _statisticsRepository.GetOrganizeExamById(organizeExamId)
+                      ?? throw new KeyNotFoundException("Organize exam not found");
+
+        if (organize.Exams == null || !organize.Exams.Contains(examId))
+            throw new InvalidOperationException("ExamId không thuộc examSet của organizeExam");
+
+        // 2) Tách ids từ sessions -> rooms -> candidateIds
+        var sessionIds = (organize.Sessions ?? new())
+            .Select(s => s.SessionId)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+
+        var roomIds = (organize.Sessions ?? new())
+            .SelectMany(s => s.RoomsInSession ?? new())
+            .Select(r => r.RoomInSessionId)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+
+        var candidateIds = (organize.Sessions ?? new())
+            .SelectMany(s => s.RoomsInSession ?? new())
+            .SelectMany(r => r.CandidateIds ?? new())
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+
+        if (candidateIds.Count == 0)
+        {
+            return new ExamQuestionStatsResponse
+            {
+                OrganizeExamId = organizeExamId,
+                ExamId = examId,
+                Questions = new()
+            };
+        }
+
+        // 3) Gọi repository chạy aggregation (pure query)
+        var questionStats = await _statisticsRepository.AggregateQuestionStatsAsync(
+            organizeExamId, examId, sessionIds, roomIds, candidateIds);
+
+        // 4) Trả về
+        return new ExamQuestionStatsResponse
+        {
+            OrganizeExamId = organizeExamId,
+            ExamId = examId,
+            Questions = questionStats
+        };
+    }
 }
