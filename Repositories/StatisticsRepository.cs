@@ -1,5 +1,6 @@
 ﻿using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Backend_online_testing.Repositories;
@@ -95,5 +96,74 @@ public class StatisticsRepository
         var docs = await _exams.Find(filter).Project<ExamsModel>(projection).ToListAsync();
 
         return docs.ToDictionary(d => d.Id, d => d.ExamName ?? "");
+    }
+
+    public async Task<List<QuestionStatDto>> AggregateQuestionStatsAsync(
+    string organizeExamId, string examId,
+    IEnumerable<string> sessionIds,
+    IEnumerable<string> roomIds,
+    IEnumerable<string> candidateIds)
+    {
+        var sessionArr = new BsonArray(sessionIds ?? Array.Empty<string>());
+        var roomArr = new BsonArray(roomIds ?? Array.Empty<string>());
+        var candidateArr = new BsonArray(candidateIds ?? Array.Empty<string>());
+
+        if (candidateArr.Count == 0)
+            return new List<QuestionStatDto>();
+
+        var pipeline = new List<BsonDocument>
+    {
+        // So khớp _id (ObjectId) với candidateIds (string) an toàn:
+        // _id -> string rồi dùng $in với mảng candidateIds
+        new("$match", new BsonDocument("$expr",
+            new BsonDocument("$in", new BsonArray
+            {
+                new BsonDocument("$toString", "$_id"),
+                candidateArr
+            })
+        )),
+
+        new("$unwind", "$takeExams"),
+
+        // examId KHÔNG null => match trực tiếp
+        new("$match", new BsonDocument
+        {
+            { "takeExams.organizeExamId", organizeExamId },
+            { "takeExams.examId",        examId },
+            { "takeExams.sessionId",     new BsonDocument("$in", sessionArr) },
+            { "takeExams.roomId",        new BsonDocument("$in", roomArr) }
+            // Nếu cần lọc thêm: { "takeExams.status", "done" }
+        }),
+
+        new("$unwind", "$takeExams.answers"),
+
+        new("$group", new BsonDocument
+        {
+            { "_id", "$takeExams.answers.questionId" },
+            { "Correct", new BsonDocument("$sum",
+                new BsonDocument("$cond", new BsonArray { "$takeExams.answers.isCorrect", 1, 0 })) },
+            { "Incorrect", new BsonDocument("$sum",
+                new BsonDocument("$cond", new BsonArray { new BsonDocument("$not", new BsonArray { "$takeExams.answers.isCorrect" }), 1, 0 })) }
+        }),
+
+        new("$project", new BsonDocument
+        {
+            { "_id", 0 },
+            { "QuestionId", "$_id" },
+            { "Correct", 1 },
+            { "Incorrect", 1 }
+        })
+    };
+
+        var docs = await _users.Aggregate<BsonDocument>(pipeline).ToListAsync();
+
+        return docs.Select(d => new QuestionStatDto
+        {
+            QuestionId = d.GetValue("QuestionId", "").AsString,
+            Correct = d.GetValue("Correct", 0).ToInt64(),
+            Incorrect = d.GetValue("Incorrect", 0).ToInt64()
+        })
+        .OrderBy(x => x.QuestionId)
+        .ToList();
     }
 }

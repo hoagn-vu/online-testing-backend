@@ -68,3 +68,18 @@ public class ExamCountItem
 
     public int Count { get; set; }
 }
+
+//Exam question statistic
+public sealed class QuestionStatDto
+{
+    public string QuestionId { get; set; } = string.Empty;
+    public long Correct { get; set; }
+    public long Incorrect { get; set; }
+}
+
+public sealed class ExamQuestionStatsResponse
+{
+    public string OrganizeExamId { get; set; } = string.Empty;
+    public string ExamId { get; set; } = string.Empty;
+    public List<QuestionStatDto> Questions { get; set; } = new();
+}
