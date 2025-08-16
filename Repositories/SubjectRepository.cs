@@ -28,6 +28,9 @@ public class SubjectRepository
     
     private static readonly SortDefinition<SubjectsModel> SubjectBaseSort =
         Builders<SubjectsModel>.Sort.Descending("_id");
+    
+    private static readonly FilterDefinition<QuestionBanksModel> QuestionBankBaseFilter =
+        Builders<QuestionBanksModel>.Filter.Ne(qb => qb.QuestionBankStatus, "deleted");
 
     //Filter by subject name
     private FilterDefinition<SubjectsModel> SubjectFilterByName(string? keyword)
@@ -113,20 +116,29 @@ public class SubjectRepository
     public async Task<List<SubjectsModel>> GetAllQuestionBanksAsync(string subjectId, string? keyword, int page, int pageSize)
     {
         var filter = SubjectFilterById(subjectId);
+        
+        var qbFilter = Builders<QuestionBanksModel>.Filter.Ne(q => q.QuestionBankStatus, "deleted");
 
         if (!string.IsNullOrEmpty(keyword))
         {
-            filter = Builders<SubjectsModel>.Filter.And(
-                filter,
-                Builders<SubjectsModel>.Filter.ElemMatch(
-                    s => s.QuestionBanks,
-                    Builders<QuestionBanksModel>.Filter.Regex(q => q.QuestionBankName, new BsonRegularExpression(keyword, "i")))
+            qbFilter = Builders<QuestionBanksModel>.Filter.And(
+                qbFilter,
+                Builders<QuestionBanksModel>.Filter.Regex(
+                    q => q.QuestionBankName, 
+                    new BsonRegularExpression(keyword, "i"))
             );
         }
-
+        
+        filter = Builders<SubjectsModel>.Filter.And(
+            filter,
+            Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qbFilter)
+        );
+        
         return await _subjects
             .Find(filter)
             .Sort(SubjectBaseSort)
+            // .Skip((page - 1) * pageSize)
+            // .Limit(pageSize)
             .ToListAsync();
     }
 
