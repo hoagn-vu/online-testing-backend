@@ -329,31 +329,44 @@ namespace Backend_online_testing.Services
 
                 for (int row = 2; row <= rowCount; row++)
                 {
-                    string userName = worksheet.Cells[row, 1].Text.Trim();
+                    string userCode = worksheet.Cells[row, 1].Text.Trim();
 
-                    var existingUser = this._users.Find(u => u.UserName == userName).FirstOrDefault();
+                    var existingUser = this._users.Find(u => u.UserCode == userCode).FirstOrDefault();
                     if (existingUser != null)
                     {
                         usersResponse.Add(new
                         {
-                            UserName = userName,
-                            FullName = worksheet.Cells[row, 3].Text.Trim(),
-                            Role = worksheet.Cells[row, 6].Text.Trim(),
+                            UserCode = userCode,
+                            FullName = worksheet.Cells[row, 2].Text.Trim(),
+                            Role = worksheet.Cells[row, 5].Text.Trim(),
                             Status = "Đã tồn tại",
                         });
                         continue;
                     }
 
+                    // Xử lý ngày sinh
+                    var dateOfBirthCell = worksheet.Cells[row, 4].Value;
+                    string dateOfBirthStr;
+
+                    if (dateOfBirthCell is double excelDate)
+                    {
+                        dateOfBirthStr = DateTime.FromOADate(excelDate).ToString("yyyy-MM-dd");
+                    }
+                    else
+                    {
+                        dateOfBirthStr = dateOfBirthCell?.ToString();
+                    }
+
                     var user = new UsersModel
                     {
-                        UserName = userName,
+                        UserName = userCode.ToLower(),
                         AccountStatus = "active",
-                        UserCode = worksheet.Cells[row, 2].Text.Trim(),
-                        FullName = worksheet.Cells[row, 3].Text.Trim(),
-                        Gender = worksheet.Cells[row, 4].Text.Trim(),
-                        DateOfBirth = worksheet.Cells[row, 5].Text.Trim(),
-                        Role = worksheet.Cells[row, 6].Text.Trim(),
-                        Password = worksheet.Cells[row, 2].Text.Trim(),
+                        UserCode = userCode,
+                        FullName = worksheet.Cells[row, 2].Text.Trim(),
+                        Gender = worksheet.Cells[row, 3].Text.Trim(),
+                        DateOfBirth = dateOfBirthStr,
+                        Role = worksheet.Cells[row, 5].Text.Trim(),
+                        Password = userCode.ToLower(),
                     };
 
                     // Find user log data
@@ -369,15 +382,15 @@ namespace Backend_online_testing.Services
                     //     LogAt = DateTime.UtcNow,
                     // });
                     //
-                    // // Add user to user list
-                    // usersList.Add(user);
-                    // usersResponse.Add(new
-                    // {
-                    //     UserName = user.UserName,
-                    //     FullName = user.FullName,
-                    //     Role = user.Role,
-                    //     Status = "Added successfully",
-                    // });
+                    // Add user to user list
+                    usersList.Add(user);
+                    usersResponse.Add(new
+                    {
+                        UserName = user.UserName,
+                        FullName = user.FullName,
+                        Role = user.Role,
+                        Status = "Added successfully",
+                    });
                 }
             }
 
