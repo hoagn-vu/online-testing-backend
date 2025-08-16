@@ -45,14 +45,14 @@ namespace Backend_online_testing.Controllers
         
         // Add on User
         [HttpPost]
-        public async Task<ActionResult<UsersModel>> AddUser(UsersModel userData, string userLogId)
+        public async Task<ActionResult<UsersModel>> AddUser(UsersModel userData)
         {
             if (userData == null)
             {
                 return this.BadRequest(new { message = "Invalid data" });
             }
 
-            var result = await this._userService.AddUser(userData, userLogId);
+            var result = await this._userService.AddUser(userData);
 
             if (result == "User is added successfully")
             {

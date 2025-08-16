@@ -85,7 +85,7 @@ public class UsersService
     }
 
     //Add new user
-    public async Task<string> AddUser(UsersModel userData, string idMadeBy)
+    public async Task<string> AddUser(UsersModel userData)
     {
         //Check enter data
         if (string.IsNullOrWhiteSpace(userData.UserName) ||
