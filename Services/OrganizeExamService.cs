@@ -159,6 +159,31 @@ public class OrganizeExamService
         return (organizeExamResponseList, totalCount);
     }
     
+    public async Task<List<OrganizeExamOptionsDto>> GetOrganizeExamOptions(string? subjectId)
+    {
+        var filter = Builders<OrganizeExamModel>.Filter.Ne(ex => ex.OrganizeExamStatus, "deleted");
+
+        if (!string.IsNullOrEmpty(subjectId))
+        {
+            filter = Builders<OrganizeExamModel>.Filter.And(
+                filter,
+                Builders<OrganizeExamModel>.Filter.Eq(ex => ex.SubjectId, subjectId));
+        }
+        
+        var organizeExams = await _organizeExamCollection
+            .Find(filter)
+            .SortByDescending(ex => ex.Id)
+            .Project(e => new OrganizeExamOptionsDto
+            {
+                Id = e.Id,
+                OrganizeExamName = e.OrganizeExamName,
+                SubjectId = e.SubjectId
+            })
+            .ToListAsync();
+        
+        return organizeExams;
+    }
+
     public async Task<(string, string?, List<SessionsDto>, long)> GetSessions(string organizeExamId, string? keyword, int page, int pageSize)
     {
         var filter = Builders<OrganizeExamModel>.Filter.And(
@@ -775,8 +800,5 @@ public class OrganizeExamService
 
         return (questionDtos, exam.Duration, exam.Sessions.FirstOrDefault()?.SessionId ?? string.Empty);
     }
-
-
-    
     
 }

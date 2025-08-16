@@ -129,6 +129,12 @@ public class OrganizeExamController : ControllerBase
         // }
         return Ok(new { Questions = questions, Duration = duration, SessionId = sessionId });
     }
-    
+
+    [HttpGet("options")]
+    public async Task<IActionResult> GetOptions([FromQuery] string? subjectId)
+    {
+        var result = await _organizeExamService.GetOrganizeExamOptions(subjectId);
+        return Ok(result);
+    }
     
 }

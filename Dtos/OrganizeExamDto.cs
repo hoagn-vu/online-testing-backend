@@ -54,3 +54,10 @@ public class OrganizeExamResponseDto
     public string? SessionId { get; set; } = string.Empty;
     public string? RoomId { get; set; } = string.Empty;
 }
+
+public class OrganizeExamOptionsDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string OrganizeExamName { get; set; } = string.Empty;
+    public string SubjectId { get; set; } = string.Empty;
+}
