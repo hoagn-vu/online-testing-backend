@@ -63,7 +63,7 @@ namespace Backend_online_testing.Controllers
         }
 
         // Update Method
-        [HttpPost("update/{id}")]
+        [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateUserById(string id, [FromBody] UsersModel updateUser)
         {
             if (updateUser == null)
