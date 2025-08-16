@@ -315,7 +315,7 @@ namespace Backend_online_testing.Services
             throw new NotImplementedException();
         }
 
-        public async Task<List<object>> UsersFileExcel(Stream fileStream, string userLogId)
+        public async Task<List<object>> UsersFileExcel(Stream fileStream)
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
@@ -366,7 +366,7 @@ namespace Backend_online_testing.Services
                         Gender = worksheet.Cells[row, 3].Text.Trim(),
                         DateOfBirth = dateOfBirthStr,
                         Role = worksheet.Cells[row, 5].Text.Trim(),
-                        Password = userCode.ToLower(),
+                        Password = BCrypt.Net.BCrypt.HashPassword(userCode.ToLower()),
                     };
 
                     // Find user log data
@@ -414,7 +414,7 @@ namespace Backend_online_testing.Services
             return usersResponse;
         }
 
-        public async Task<List<object>> GroupUser(Stream fileStream, string userLogId)
+        public async Task<List<object>> GroupUser(Stream fileStream)
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 

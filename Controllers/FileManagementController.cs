@@ -69,7 +69,7 @@
         }
 
         [HttpPost("upload-file-user")]
-        public async Task<IActionResult> UploadFileUser(IFormFile file, [FromQuery] string userLogId)
+        public async Task<IActionResult> UploadFileUser(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
@@ -80,13 +80,13 @@
             await file.CopyToAsync(stream);
             stream.Position = 0;
 
-            var users = await _fileService.UsersFileExcel(stream, userLogId);
+            var users = await _fileService.UsersFileExcel(stream);
 
             return Ok(users);
         }
 
         [HttpPost("upload-file-user-group")]
-        public async Task<IActionResult> UploadFileUserGroup(IFormFile file, [FromQuery] string userLogId)
+        public async Task<IActionResult> UploadFileUserGroup(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
@@ -97,7 +97,7 @@
             await file.CopyToAsync(stream);
             stream.Position = 0;
 
-            var result = await _fileService.GroupUser(stream, userLogId);
+            var result = await _fileService.GroupUser(stream);
             return Ok(result);
         }
     }
