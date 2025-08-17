@@ -6,6 +6,8 @@ using Backend_online_testing.Models;
 using Backend_online_testing.Repositories;
 using DocumentFormat.OpenXml.EMMA;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.VariantTypes;
+using DocumentFormat.OpenXml.Wordprocessing;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -195,5 +197,85 @@ public class UsersService
         {
             return $"MongoDB Delete Error: {ex.Message}";
         }
+    }
+
+    //Get user review
+    public async Task<ExamReviewDto> GetExamReviewAsync(string userId, string organizeExamId, string sessionId, string roomId)
+    {
+        var user = await _userRepository.FindUserAsync(userId) ?? throw new KeyNotFoundException("User not found");
+        var takeExam = (user.TakeExam ?? new List<TakeExamsModel>())
+            .FirstOrDefault(te => te.OrganizeExamId == organizeExamId &&
+                                  te.SessionId == sessionId &&
+                                  te.RoomId == roomId);
+        var answers = takeExam?.Answers ?? new List<AnswersModel>();
+        var totalScore = takeExam.TotalScore;
+        var qIds = answers.Select(a => a.QuestionId).Distinct().ToHashSet();
+        //Exam name - Exam Code
+        //var exam = await _userRepository.FindExamAsync(examId)
+        //OrganizeExam
+        var organizeExam = await _userRepository.FindOrganizeExamAsync(organizeExamId);
+        string organizeExamName = organizeExam.OrganizeExamName;
+        int duration = organizeExam.Duration;
+
+        var subjectId = organizeExam.SubjectId;
+        var questionBankId = organizeExam.QuestionBankId;
+
+        //Subject
+        var subject = await _userRepository.FindSubjectAsync(subjectId) ?? throw new KeyNotFoundException("Subject not found");
+        string subjectName = subject.SubjectName;
+        var questionBank = (subject.QuestionBanks ?? new List<QuestionBanksModel>()).FirstOrDefault(
+                qb => qb.QuestionBankId == questionBankId
+            );
+        string questionBankName = questionBank.QuestionBankName;
+
+        var qb = (subject.QuestionBanks ?? new List<QuestionBanksModel>())
+                .FirstOrDefault(x => x.QuestionBankId == questionBankId)
+             ?? throw new KeyNotFoundException("Question bank not found in subject");
+
+        var questionList = (qb.QuestionList ?? new List<QuestionModel>())
+                       .Where(q => qIds.Contains(q.QuestionId))
+                       .ToList();
+
+        var questionDict = questionList.ToDictionary(q => q.QuestionId, q => q);
+
+        var session = (organizeExam.Sessions ?? new List<SessionsModel>())
+            .FirstOrDefault(s => s.SessionId == sessionId);
+        string sessionName = session.SessionName;
+
+        var room = await _userRepository.FindRoomAsync(roomId);
+        string roomName = room.RoomName;
+
+
+        var dto = new ExamReviewDto
+        {
+            FullName = user.FullName ?? string.Empty,
+            OrganizeExamName = organizeExamName,
+            SessionName = sessionName,
+            RoomName = roomName,
+            Duration = duration,
+            SubjectName = subjectName,
+            TotalScore = totalScore,
+            QuestionBankName = questionBankName,
+            Questions = answers.Select(a =>
+            {
+                questionDict.TryGetValue(a.QuestionId, out var q);
+                return new QuestionReviewDto
+                {
+                    QuestionId = a.QuestionId,
+                    QuestionText = q?.QuestionText ?? string.Empty,
+                    Tags = q?.Tags ?? new List<string>(),
+                    Options = (q?.Options ?? new List<OptionsModel>()).Select(op => new OptionsModel
+                    {
+                        OptionId = op.OptionId,
+                        OptionText = op.OptionText ?? string.Empty,
+                        IsCorrect = op.IsCorrect
+                    }).ToList(),
+                    AnswerChosen = a.AnswerChosen ?? new List<string>(),
+                    IsUserChosenCorrect = a.IsCorrect
+                };
+            }).ToList()
+        };
+
+        return dto;
     }
 }

@@ -8,10 +8,18 @@ namespace Backend_online_testing.Repositories;
 public class UserRepository
 {
     private readonly IMongoCollection<UsersModel> _users;
+    private readonly IMongoCollection<SubjectsModel> _subjects;
+    private readonly IMongoCollection<OrganizeExamModel> _organizeExams;
+    private readonly IMongoCollection<ExamsModel> _exams;
+    private readonly IMongoCollection<RoomsModel> _rooms;
 
     public UserRepository(IMongoDatabase database)
     {
         _users = database.GetCollection<UsersModel>("users");
+        _subjects = database.GetCollection<SubjectsModel>("subjects");
+        _exams = database.GetCollection<ExamsModel>("exams");
+        _organizeExams = database.GetCollection<OrganizeExamModel>("organizeExams");
+        _rooms = database.GetCollection<RoomsModel>("rooms");
     }
 
     //Count record
@@ -107,4 +115,35 @@ public class UserRepository
         var filter = Builders<UsersModel>.Filter.Eq(u => u.Id, id);
         return await _users.DeleteOneAsync(filter);
     }
+
+    /*
+     * Get review user exam
+     */
+    public async Task<UsersModel> FindUserAsync(string userId)
+    {
+        var filter = Builders<UsersModel>.Filter.And(
+            Builders<UsersModel>.Filter.Eq(u => u.Id, userId),
+            Builders<UsersModel>.Filter.Ne(u => u.AccountStatus, "deleted")
+        );
+        return await _users.Find(filter).FirstOrDefaultAsync();
+    }
+
+    public async Task<SubjectsModel?> FindSubjectAsync(string subjectId)
+        => await _subjects.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
+
+    public async Task<QuestionBanksModel?> FindQuestionBankAsync(
+        string subjectId, string questionBankId)
+    {
+        var subject = await FindSubjectAsync(subjectId);
+        return subject?.QuestionBanks?.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
+    }
+
+    public async Task<OrganizeExamModel?> FindOrganizeExamAsync(string id)
+        => await _organizeExams.Find(o => o.Id == id).FirstOrDefaultAsync();
+
+    public async Task<RoomsModel?> FindRoomAsync(string id)
+        => await _rooms.Find(r => r.Id == id).FirstOrDefaultAsync();
+
+    public async Task<ExamsModel?> FindExamAsync(string id)
+        => await _exams.Find(e => e.Id == id).FirstOrDefaultAsync();
 }

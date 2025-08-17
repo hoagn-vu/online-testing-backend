@@ -95,5 +95,37 @@ namespace Backend_online_testing.Controllers
             return NotFound(new { message = result });
         }
 
+        [HttpGet("get-review-exam-user")]
+        public async Task<ActionResult<ExamReviewDto>> GetReviewExam( string userId, string organizeExamId, string sessionId, string roomId)
+        {
+            try
+            {
+                var dto = await _userService.GetExamReviewAsync(
+                    userId, organizeExamId, sessionId, roomId);
+                return Ok(dto); 
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new ProblemDetails
+                {
+                    Title = "Not Found",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound
+                }); 
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(StatusCodes.Status499ClientClosedRequest);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
+                {
+                    Title = "Server Error",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError
+                });
+            }
+        }
     }
 }
