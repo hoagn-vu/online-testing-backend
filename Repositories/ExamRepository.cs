@@ -80,14 +80,38 @@ public class ExamRepository
     }
 
     //Update exam
-    public async Task<UpdateResult> UpdateExamAsync(ExamDto updateExamData, string examId)
+    public async Task<UpdateResult?> UpdateExamAsync(ExamDto updateExamData, string examId)
     {
-        var update = Builders<ExamsModel>.Update
-            .Set(e => e.ExamName, updateExamData.ExamName)
-            .Set(e => e.ExamCode, updateExamData.ExamCode)
-            .Set(e => e.SubjectId, updateExamData.SubjectId)
-            .Set(e => e.ExamStatus, updateExamData.ExamStatus)
-            .Set(e => e.QuestionBankId, updateExamData.QuestionBankId);
+        var updateDef = new List<UpdateDefinition<ExamsModel>>();
+        var builder = Builders<ExamsModel>.Update;
+        
+        if (!string.IsNullOrWhiteSpace(updateExamData.ExamCode))
+            updateDef.Add(builder.Set(ex => ex.ExamCode, updateExamData.ExamCode));
+        
+        if (!string.IsNullOrWhiteSpace(updateExamData.ExamName))
+            updateDef.Add(builder.Set(ex => ex.ExamName, updateExamData.ExamName));
+                
+        if (!string.IsNullOrWhiteSpace(updateExamData.SubjectId))
+            updateDef.Add(builder.Set(ex => ex.SubjectId, updateExamData.SubjectId));
+                
+        if (!string.IsNullOrWhiteSpace(updateExamData.QuestionBankId))
+            updateDef.Add(builder.Set(ex => ex.QuestionBankId, updateExamData.QuestionBankId));
+        
+        if (!string.IsNullOrWhiteSpace(updateExamData.ExamStatus))
+            updateDef.Add(builder.Set(ex => ex.ExamStatus, updateExamData.ExamStatus));
+        
+        if (updateExamData.QuestionSets is { Count: > 0 })
+            updateDef.Add(builder.Set(x => x.QuestionSet, updateExamData.QuestionSets));
+
+        if (updateDef.Count == 0) return null;
+
+        var update = builder.Combine(updateDef);
+        // var update = Builders<ExamsModel>.Update
+        //     .Set(e => e.ExamName, updateExamData.ExamName)
+        //     .Set(e => e.ExamCode, updateExamData.ExamCode)
+        //     .Set(e => e.SubjectId, updateExamData.SubjectId)
+        //     .Set(e => e.ExamStatus, updateExamData.ExamStatus)
+        //     .Set(e => e.QuestionBankId, updateExamData.QuestionBankId);
 
         return await _exams.UpdateOneAsync(FilterById(examId), update);
     }

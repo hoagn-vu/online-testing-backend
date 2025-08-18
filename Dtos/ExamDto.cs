@@ -6,15 +6,11 @@
     public class ExamDto
     {
         public string ExamCode { get; set; } = string.Empty;
-
         public string ExamName { get; set; } = string.Empty;
-
         public string SubjectId { get; set; } = string.Empty;
-
-        public string ExamStatus { get; set; } = "available";
         public string QuestionBankId { get; set; } = string.Empty;
-
-        public List<QuestionSetsModel> QuestionSets { get; set; } = new List<QuestionSetsModel>();
+        public string ExamStatus { get; set; } = "available";
+        public List<QuestionSetsModel> QuestionSets { get; set; } = [];
     }
     
     public class ExamResponseDto {

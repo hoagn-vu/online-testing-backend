@@ -18,14 +18,15 @@
         [BsonElement("subjectId")]
         public string SubjectId { get; set; } = string.Empty;
 
+        [BsonElement("questionBankId")]
+        public string QuestionBankId { get; set; } = string.Empty;
+        
         [BsonElement("questionSet")]
         public List<QuestionSetsModel> QuestionSet { get; set; } = [];
 
         [BsonElement("examStatus")]
         public string ExamStatus { get; set; } = string.Empty;
 
-        [BsonElement("questionBankId")]
-        public string QuestionBankId { get; set; } = string.Empty;
         
         [BsonElement("organizeExamUsed")]
         public List<string>? OrganizeExamUsed { get; set; } = [];

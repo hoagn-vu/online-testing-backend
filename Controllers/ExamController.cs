@@ -82,7 +82,7 @@ namespace Backend_online_testing.Controllers
         }
 
         // Update exam
-        [HttpPost("update/{examId}")]
+        [HttpPut("{examId}")]
         public async Task<IActionResult> UpdateExam(string examId, [FromBody] ExamDto updateExamData)
         {
             if (updateExamData == null || string.IsNullOrEmpty(examId))
