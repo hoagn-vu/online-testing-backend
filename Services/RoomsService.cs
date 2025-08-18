@@ -22,7 +22,7 @@ namespace Backend_online_testing.Services
         }
 
         // Get all room
-        public async Task<(List<RoomsModel>, long)> GetRooms(string? keyword, int page, int pageSize)
+        public async Task<(List<GetRoomsDto>, long)> GetRooms(string? keyword, int page, int pageSize)
         {
             var filter = Builders<RoomsModel>.Filter.Ne(r => r.RoomStatus, "deleted");
 
@@ -77,11 +77,34 @@ namespace Backend_online_testing.Services
             if (existingRoom == null)
                 return "Room Not Found!";
 
-            var update = Builders<RoomsModel>.Update
-                .Set(r => r.RoomName, dto.RoomName)
-                .Set(r => r.RoomStatus, dto.RoomStatus)
-                .Set(r => r.RoomCapacity, dto.RoomCapacity)
-                .Set(r => r.RoomLocation, dto.RoomLocation);
+            var updateDef = new List<UpdateDefinition<RoomsModel>>();
+            var builder = Builders<RoomsModel>.Update;
+            
+            if (!string.IsNullOrWhiteSpace(dto.RoomName))
+                updateDef.Add(builder.Set(x => x.RoomName, dto.RoomName));
+                        
+            if (!string.IsNullOrWhiteSpace(dto.RoomStatus))
+                updateDef.Add(builder.Set(x => x.RoomStatus, dto.RoomStatus));
+            
+            if (dto.RoomCapacity > 0)
+                updateDef.Add(builder.Set(x => x.RoomCapacity, dto.RoomCapacity));
+            
+            if (!string.IsNullOrWhiteSpace(dto.RoomLocation))
+                updateDef.Add(builder.Set(x => x.RoomLocation, dto.RoomLocation));
+            
+            if (dto.RoomSchedule is { Count: > 0 })
+                updateDef.Add(builder.Set(x => x.RoomSchedule, dto.RoomSchedule));
+            
+            if (!updateDef.Any())
+                return "No valid fields to update";
+
+            var update = builder.Combine(updateDef);
+            // var update = Builders<RoomsModel>.Update
+            //     .Set(r => r.RoomName, dto.RoomName)
+            //     .Set(r => r.RoomStatus, dto.RoomStatus)
+            //     .Set(r => r.RoomCapacity, dto.RoomCapacity)
+            //     .Set(r => r.RoomLocation, dto.RoomLocation)
+            //     .Set(r => r.RoomSchedule, dto.RoomSchedule);
 
             var result = await _roomRepository.UpdateAsync(roomId, update);
             if (result.ModifiedCount > 0)

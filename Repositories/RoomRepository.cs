@@ -18,12 +18,23 @@ public class RoomRepository
         return await _rooms.CountDocumentsAsync(filter);
     }
 
-    public async Task<List<RoomsModel>> GetRoomsAsync(FilterDefinition<RoomsModel> filter, int skip, int limit)
+    public async Task<List<GetRoomsDto>> GetRoomsAsync(FilterDefinition<RoomsModel> filter, int skip, int limit)
     {
+        var projection = Builders<RoomsModel>.Projection
+            .Expression(rm => new GetRoomsDto
+            {
+                RoomId = rm.Id,
+                RoomName = rm.RoomName,
+                RoomStatus = rm.RoomStatus,
+                RoomLocation = rm.RoomLocation,
+                RoomCapacity = rm.RoomCapacity
+            });
+
         return await _rooms.Find(filter)
             .Skip(skip)
             .Limit(limit)
             .SortByDescending(r => r.Id)
+            .Project(projection)
             .ToListAsync();
     }
 
