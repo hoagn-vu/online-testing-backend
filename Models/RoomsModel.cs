@@ -20,5 +20,8 @@ namespace Backend_online_testing.Models
 
         [BsonElement("roomLocation")]
         public string? RoomLocation { get; set; }
+        
+        [BsonElement("sessionRoom")]
+        public List<RoomScheduleModel>? RoomSchedule { get; set; } = [];
     }
 }

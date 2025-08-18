@@ -1,6 +1,7 @@
 ﻿using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
 using Backend_online_testing.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,6 +20,8 @@ namespace Backend_online_testing.Controllers
         }
 
         // Get all room
+        // [Authorize]
+        // [Authorize(Roles = "admin")]
         [HttpGet]
         public async Task<ActionResult<RoomsModel>> GetAllRoom([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
@@ -58,6 +61,20 @@ namespace Backend_online_testing.Controllers
             return result == "Success"
                 ? Ok(new { message = "Deleted" })
                 : BadRequest(new { error = result });
+        }
+        
+        [HttpGet("{roomId}/schedules")]
+        public async Task<IActionResult> GetRoomSchedules(string roomId, [FromQuery] DateTime? start, [FromQuery] DateTime? end)
+        {
+            var request = new GetRoomSchedulesRequestDto { RoomId = roomId, Start = start, End = end };
+
+            var result = await _roomsService.GetRoomSchedulesAsync(request);
+            if (result == null)
+            {
+                return NotFound(new { message = "Room not found" });
+            }
+
+            return Ok(result);
         }
     }
 }

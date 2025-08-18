@@ -5,6 +5,15 @@ using Backend_online_testing.Dtos;
 
 namespace Backend_online_testing.Repositories;
 
+public interface IUsersRepository
+{
+    Task<List<UserDto>> GetAllUsersAsync();
+    Task<UsersModel?> GetByIdAsync(string id);
+    Task CreateUserAsync(UsersModel user);
+    Task<bool> UpdateUserAsync(string id, UsersModel user);
+    Task<bool> DeleteUserAsync(string id);
+}
+
 public class UserRepository
 {
     private readonly IMongoCollection<UsersModel> _users;
@@ -46,8 +55,10 @@ public class UserRepository
         var projection = Builders<UsersModel>.Projection.Expression(u => new UserDto
         {
             Id = u.Id,
-            Username = u.UserName,
+            UserName = u.UserName,
             FullName = u.FullName,
+            FirstName = u.FirstName,
+            LastName = u.LastName,
             Role = u.Role ?? string.Empty,
             UserCode = u.UserCode,
             Gender = u.Gender ?? string.Empty,
@@ -76,8 +87,10 @@ public class UserRepository
         var projection = Builders<UsersModel>.Projection.Expression(u => new UserDto
         {
             Id = u.Id,
-            Username = u.UserName,
+            UserName = u.UserName,
             FullName = u.FullName,
+            FirstName = u.FirstName,
+            LastName = u.LastName,
             Role = u.Role ?? string.Empty,
             UserCode = u.UserCode,
             Gender = u.Gender ?? string.Empty,

@@ -36,52 +36,16 @@ public class SubjectsService
     }
 
     // Search or Get All Question Bank Name
-    public async Task<(string, string?, List<QuestionBankDto>, long)> GetQuestionBanks(string subjectId, string? keyword, int page, int pageSize)
+    public async Task<QuestionBankPerSubjectDto?> GetQuestionBanks(string subjectId, string? keyword, int page, int pageSize)
     {
-        // var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
-        //var filter = Builders<SubjectsModel>.Filter.And(
-        //    Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
-        //    Builders<SubjectsModel>.Filter.Ne(s => s.SubjectStatus, "deleted")
-        //);
-
-        //if (!string.IsNullOrEmpty(keyword))
-        //{
-        //    filter = Builders<SubjectsModel>.Filter.And(
-        //        filter,
-        //        Builders<SubjectsModel>.Filter.ElemMatch(
-        //            s => s.QuestionBanks,
-        //            Builders<QuestionBanksModel>.Filter.Regex(q => q.QuestionBankName, new BsonRegularExpression(keyword, "i"))));
-        //}
-
-        //var subjects = await this._subjectsCollection
-        //    .Find(filter)
-        //    .ToListAsync();
-        var subjects = await _subjectRepository.GetAllQuestionBanksAsync(subjectId, keyword, page, pageSize);
-
-        var questionBanks = subjects
-        .SelectMany(s => s.QuestionBanks
-        .Where(qb =>
-            !qb.QuestionBankStatus.Equals("deleted", StringComparison.CurrentCultureIgnoreCase) &&
-            (string.IsNullOrEmpty(keyword) || qb.QuestionBankName.Contains(keyword, StringComparison.CurrentCultureIgnoreCase))
-        )
-        .Select(qb => new QuestionBankDto
-            {
-                QuestionBankId = qb.QuestionBankId,
-                QuestionBankName = qb.QuestionBankName,
-                TotalQuestions = qb.QuestionList.Count
-            }))
-        .ToList();
-
-        var totalQuestionBanks = questionBanks.Count;
-        var subjectName = subjects.FirstOrDefault()?.SubjectName;
-
-        return (subjectId, subjectName, questionBanks, totalQuestionBanks);
+        var questionBankPerSubject = await _subjectRepository.GetQuestionBanksAsync(subjectId, keyword, page, pageSize);
+        return questionBankPerSubject ?? null;
     }
 
     public async Task<List<QuestionBankOptionsDto>> GetQuestionBanksPerSubject(string subjectId)
     {
         // var filter = Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId);
-        //var filter = Builders<SubjectsModel>.Filter.And(
+        //var filter = Builders<SubjectsModel>. Filter.And(
         //    Builders<SubjectsModel>.Filter.Eq(s => s.Id, subjectId),
         //    Builders<SubjectsModel>.Filter.Ne(s => s.SubjectStatus, "deleted")
         //);

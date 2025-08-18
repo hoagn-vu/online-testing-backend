@@ -26,6 +26,11 @@ public class RoomRepository
             .SortByDescending(r => r.Id)
             .ToListAsync();
     }
+
+    public async Task<RoomsModel?> GetRoomByIdAsync(string roomId)
+    {
+        return await _rooms.Find(r => r.Id == roomId).FirstOrDefaultAsync();
+    }
     
     public async Task<List<RoomOptionsDto>> GetRoomOptionsAsync()
     {

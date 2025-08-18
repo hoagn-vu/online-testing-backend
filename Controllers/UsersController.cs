@@ -45,14 +45,14 @@ namespace Backend_online_testing.Controllers
         
         // Add on User
         [HttpPost]
-        public async Task<ActionResult<UsersModel>> AddUser(UsersModel userData)
+        public async Task<ActionResult<UsersModel>> AddUser(CreateOrUpdateUserDto userData)
         {
             if (userData == null)
             {
                 return this.BadRequest(new { message = "Invalid data" });
             }
 
-            var result = await this._userService.AddUser(userData);
+            var result = await _userService.AddUser(userData);
 
             if (result == "User is added successfully")
             {
@@ -63,22 +63,21 @@ namespace Backend_online_testing.Controllers
         }
 
         // Update Method
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateUserById(string id, [FromBody] UsersModel updateUser)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUserById([FromRoute] string id, [FromBody] CreateOrUpdateUserDto updateUser)
         {
-            if (updateUser == null)
-            {
-                return BadRequest(new { message = "Invalid user data" });
-            }
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { status = "Error", message = "UserId is required" });
 
-            string result = await _userService.UpdateUserById(id, updateUser, "");
+            var result = await _userService.UpdateUserById(id, updateUser);
 
-            return result switch
-            {
-                "Success" => Ok(new { message = "User updated successfully" }),
-                "Update user error" => NotFound(new { message = "User not found or no changes were made" }),
-                _ => StatusCode(500, new { message = "Something went wrong" }) 
-            };
+            if (result == "Success")
+                return Ok(new { status = "Success", message = "User updated successfully" });
+
+            if (result.StartsWith("Update user error"))
+                return NotFound(new { status = "Error", message = result });
+
+            return StatusCode(500, new { status = "Error", message = result });
         }
 
         [HttpDelete("delete/{id}")]

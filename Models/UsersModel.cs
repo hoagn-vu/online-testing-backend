@@ -20,6 +20,12 @@
 
         [BsonElement("fullName")]
         public required string FullName { get; set; }
+        
+        [BsonElement("firstName")]
+        public string? FirstName { get; set; } = string.Empty;
+        
+        [BsonElement("lastName")]
+        public string? LastName { get; set; } = string.Empty;
 
         [BsonElement("role")]
         public string? Role { get; set; }

@@ -27,14 +27,6 @@ public class UsersService
     //Get all User
     public async Task<(List<UserDto>, long)> GetAllUsers(string? keyword, int page, int pageSize, string? role)
     {
-        //FilterDefinition<UsersModel>? keywordFilter = null;
-        //if (!string.IsNullOrWhiteSpace(keyword))
-        //{
-        //    var regex = new BsonRegularExpression(keyword, "i");
-        //    keywordFilter = Builders<UsersModel>.Filter.Or(
-        //        Builders<UsersModel>.Filter.Regex(u => u.FullName, regex),
-        //        Builders<UsersModel>.Filter.Regex(u => u.UserCode, regex));
-        //}
         var f = Builders<UsersModel>.Filter;
         var filter = f.Empty;
 
@@ -87,33 +79,43 @@ public class UsersService
     }
 
     //Add new user
-    public async Task<string> AddUser(UsersModel userData)
+    public async Task<string> AddUser(CreateOrUpdateUserDto userData)
     {
-        //Check enter data
         if (string.IsNullOrWhiteSpace(userData.UserName) ||
             string.IsNullOrWhiteSpace(userData.Password) ||
             string.IsNullOrWhiteSpace(userData.UserCode))
             return "Invalid user data";
 
-        //Check if username exist
         var existed = await _userRepository.GetByUsernameAsync(userData.UserName);
         if (existed != null) return "UserName already exists";
 
-        if (string.IsNullOrWhiteSpace(userData.Id))
-            userData.Id = ObjectId.GenerateNewId().ToString();
+        var lastSpaceIndex = userData.FullName.LastIndexOf(' ');
 
-        userData.Password = BCrypt.Net.BCrypt.HashPassword(userData.Password);
+        var user = new UsersModel
+        {
+            UserName = userData.UserName,
+            Password = BCrypt.Net.BCrypt.HashPassword(userData.Password),
+            UserCode = userData.UserCode,
+            FullName = userData.FullName,
+            FirstName = userData.FullName[..lastSpaceIndex],
+            LastName = userData.FullName[(lastSpaceIndex + 1)..],
+            Role = userData.Role,
+            Gender = userData.Gender,
+            DateOfBirth = userData.DateOfBirth,
+            AccountStatus = !string.IsNullOrEmpty(userData.AccountStatus) ? userData.AccountStatus : "active",
+            GroupName = userData.GroupName.Count > 0 ? userData.GroupName : [],
+            Authenticate = userData.Authenticate.Count > 0 ? userData.Authenticate : []
+        };
 
-        //Add user to database
         try
         {
-            await _userRepository.InsertAsync(userData);
+            await _userRepository.InsertAsync(user);
 
             return "User is added successfully";
         }
         catch (Exception ex)
         {
-            return "Failed to create user"+ex;
+            return "Failed to create user" + ex;
         }
 
         //log handle
@@ -135,63 +137,93 @@ public class UsersService
     }
 
     //Update user by Id
-    public async Task<string> UpdateUserById(string id, UsersModel updateUser, string madeBy)
+    public async Task<string> UpdateUserById(string id, CreateOrUpdateUserDto updateUser)
     {
-        if (!string.IsNullOrWhiteSpace(updateUser.Password))
-            updateUser.Password = BCrypt.Net.BCrypt.HashPassword(updateUser.Password);
+        var updateDef = new List<UpdateDefinition<UsersModel>>();
+        var builder = Builders<UsersModel>.Update;
 
-        var update = Builders<UsersModel>.Update
-            .Set(x => x.FullName, updateUser.FullName)
-            .Set(x => x.Password, updateUser.Password)
-            .Set(x => x.Role, updateUser.Role)
-            .Set(x => x.Gender, updateUser.Gender)
-            .Set(x => x.DateOfBirth, updateUser.DateOfBirth)
-            .Set(x => x.AccountStatus, updateUser.AccountStatus)
-            .Set(x => x.GroupName, updateUser.GroupName);
+        if (!string.IsNullOrWhiteSpace(updateUser.UserName))
+            updateDef.Add(builder.Set(x => x.UserName, updateUser.UserName));
+
+        if (!string.IsNullOrWhiteSpace(updateUser.Password))
+            updateDef.Add(builder.Set(x => x.Password, BCrypt.Net.BCrypt.HashPassword(updateUser.Password)));
+
+        if (!string.IsNullOrWhiteSpace(updateUser.UserCode))
+            updateDef.Add(builder.Set(x => x.UserCode, updateUser.UserCode));
+
+        if (!string.IsNullOrWhiteSpace(updateUser.FullName))
+        {
+            var lastSpaceIndex = updateUser.FullName.LastIndexOf(' ');
+            var lastName = updateUser.FullName[..lastSpaceIndex];
+            var firstName = updateUser.FullName[(lastSpaceIndex + 1)..];
+
+            updateDef.Add(builder.Set(x => x.FullName, updateUser.FullName));
+            updateDef.Add(builder.Set(x => x.LastName, lastName));
+            updateDef.Add(builder.Set(x => x.FirstName, firstName));
+        }
+
+        if (!string.IsNullOrWhiteSpace(updateUser.Role))
+            updateDef.Add(builder.Set(x => x.Role, updateUser.Role));
+
+        if (!string.IsNullOrWhiteSpace(updateUser.Gender))
+            updateDef.Add(builder.Set(x => x.Gender, updateUser.Gender));
+
+        if (!string.IsNullOrWhiteSpace(updateUser.DateOfBirth))
+            updateDef.Add(builder.Set(x => x.DateOfBirth, updateUser.DateOfBirth));
+
+        if (!string.IsNullOrWhiteSpace(updateUser.AccountStatus))
+            updateDef.Add(builder.Set(x => x.AccountStatus, updateUser.AccountStatus));
+
+        if (updateUser.GroupName is { Count: > 0 })
+            updateDef.Add(builder.Set(x => x.GroupName, updateUser.GroupName));
+
+        if (updateUser.Authenticate is { Count: > 0 })
+            updateDef.Add(builder.Set(x => x.Authenticate, updateUser.Authenticate));
+
+        if (!updateDef.Any())
+            return "No valid fields to update";
+
+        var update = builder.Combine(updateDef);
 
         try
         {
             var result = await _userRepository.UpdateAsync(id, update);
 
             if (result.ModifiedCount > 0)
-            {
-                //Log handle
-                //await _logService.WriteAsync(new LogsModel
-                //{
-                //    MadeBy = madeBy,
-                //    LogAction = "update",
-                //    LogDetails = $"Cập nhật tài khoản {updateUser.UserName}"
-                //});
                 return "Success";
-            }
 
-            return "Update user error: No document updated (possibly not found or data unchanged)";
+            return "Update user error";
         }
         catch (Exception ex)
         {
             return $"MongoDB Update Error: {ex.Message}";
         }
     }
+    
     //Delete user by Id
     public async Task<string> DeleteUserById(string id, string madeBy)
     {
         try
         {
-            var result = await _userRepository.DeleteAsync(id);
+            // var result = await _userRepository.DeleteAsync(id);
+            var update = Builders<UsersModel>.Update.Set(x => x.AccountStatus, "deleted");
+            var result = await _userRepository.UpdateAsync(id, update);
+            
+            // if (result.DeletedCount > 0)
+            // {
+            //     //Log handle
+            //     //await _logService.WriteAsync(new LogsModel
+            //     //{
+            //     //    MadeBy = madeBy,
+            //     //    LogAction = "update",
+            //     //    LogDetails = $"Cập nhật tài khoản {updateUser.UserName}"
+            //     //});
+            //     return "Success";
+            // }
+            
+            return result.ModifiedCount > 0 ? "Success" : "Delete user error: No document delete";
 
-            if (result.DeletedCount > 0)
-            {
-                //Log handle
-                //await _logService.WriteAsync(new LogsModel
-                //{
-                //    MadeBy = madeBy,
-                //    LogAction = "update",
-                //    LogDetails = $"Cập nhật tài khoản {updateUser.UserName}"
-                //});
-                return "Success";
-            }
-
-            return "Delete user error: No document delete";
+            // return "Delete user error: No document delete";
         }
         catch (Exception ex)
         {

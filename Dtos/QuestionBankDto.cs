@@ -1,6 +1,13 @@
 ﻿namespace Backend_online_testing.Dtos
 {
-    public class QuestionBankDto
+    public class QuestionBankPerSubjectDto
+    {
+        public string SubjectId { get; set; } = string.Empty;
+        public string SubjectName { get; set; } = string.Empty;
+        public List<QuestionBanksDto> QuestionBanks { get; set; } = []; 
+    }
+    
+    public class QuestionBanksDto
     {
         public string QuestionBankId { get; set; } = string.Empty;
         public string QuestionBankName { get; set; } = string.Empty;

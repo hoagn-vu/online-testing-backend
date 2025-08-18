@@ -114,5 +114,37 @@ namespace Backend_online_testing.Services
             }
             return result.ModifiedCount > 0 ? "Success" : "Disable room error";
         }
+        
+        public async Task<RoomWithSchedulesDto?> GetRoomSchedulesAsync(GetRoomSchedulesRequestDto request)
+        {
+            var room = await _roomRepository.GetRoomByIdAsync(request.RoomId);
+            if (room == null) return null;
+
+            var schedules = room.RoomSchedule ?? new List<RoomScheduleModel>();
+
+            if (request.Start.HasValue && request.End.HasValue)
+            {
+                schedules = schedules
+                    .Where(s => s.StartAt >= request.Start.Value && s.StartAt <= request.End.Value)
+                    .ToList();
+            }
+
+            return new RoomWithSchedulesDto
+            {
+                RoomId = room.Id,
+                RoomName = room.RoomName,
+                Schedules = schedules.Select(s => new RoomScheduleDto
+                {
+                    Id = s.Id,
+                    StartAt = s.StartAt,
+                    FinishAt = s.FinishAt,
+                    OrganizeExamId = s.OrganizeExamId,
+                    SessionId = s.SessionId
+                }).ToList()
+            };
+        }
+        
+        
+        
     }
 }

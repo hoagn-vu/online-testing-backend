@@ -62,8 +62,8 @@ public class AuthService
         var projection = Builders<UsersModel>.Projection
             .Expression(u => new UserDto
             {
-                Id = u.Id.ToString(), // Chuyển đổi ObjectId thành string
-                Username = u.UserName,
+                Id = u.Id.ToString(),
+                UserName = u.UserName,
                 FullName = u.FullName,
                 Role = u.Role ?? string.Empty,
                 UserCode = u.UserCode,
