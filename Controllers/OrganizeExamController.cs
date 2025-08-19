@@ -85,20 +85,20 @@ public class OrganizeExamController : ControllerBase
         return result == "Cập nhật ca thi thành công" ? Ok(result) : NotFound(result);
     }
 
-    [HttpPost("{examId}/sessions/{sessionId}/rooms")]
-    public async Task<IActionResult> AddRoomToSession(string examId, string sessionId, [FromBody] RoomsInSessionRequestDto dto)
-    {
-        var result = await _organizeExamService.AddRoomToSession(examId, sessionId, dto);
-        if (result == null) return NotFound();
-        return Ok(result);
-        // var success = await _organizeExamService.AddRoomToSession(examId, sessionId, dto);
-        // if (!success)
-        // {
-        //     return BadRequest("Failed to add room to session.");
-        // }
-        // return Ok("Room added successfully.");
-        //
-    }
+    //[HttpPost("{examId}/sessions/{sessionId}/rooms")]
+    //public async Task<IActionResult> AddRoomToSession(string examId, string sessionId, [FromBody] RoomsInSessionRequestDto dto)
+    //{
+    //    var result = await _organizeExamService.AddRoomToSession(examId, sessionId, dto);
+    //    if (result == null) return NotFound();
+    //    return Ok(result);
+    //    // var success = await _organizeExamService.AddRoomToSession(examId, sessionId, dto);
+    //    // if (!success)
+    //    // {
+    //    //     return BadRequest("Failed to add room to session.");
+    //    // }
+    //    // return Ok("Room added successfully.");
+    //    //
+    //}
 
     [HttpPost("{examId}/sessions/{sessionId}/rooms/{roomId}/candidates")]
     public async Task<IActionResult> AddCandidateToRoom(string examId, string sessionId, string roomId, [FromBody] CandidatesInSessionRoomRequestDto dto)
@@ -129,6 +129,26 @@ public class OrganizeExamController : ControllerBase
         // }
         return Ok(new { Questions = questions, Duration = duration, SessionId = sessionId });
     }
-    
-    
+
+    [HttpPost("{organizeExamId}/sessions/{sessionId}/rooms")]
+    public async Task<IActionResult> AddRoomToSession(
+        string organizeExamId, string sessionId, [FromBody] AddRoomToSessionRequest request)
+    {
+        const string DupMsg = "One or more rooms already exist in this session. Operation aborted.";
+        try
+        {
+            await _organizeExamService.AddRoomsToSession_StrictAsync(organizeExamId, sessionId, request);
+            return Ok(new { message = "Added rooms & allocated candidates successfully." });
+        }
+        catch (InvalidOperationException ex) when (string.Equals(ex.Message, DupMsg, StringComparison.Ordinal))
+        {
+            // Trả đúng 1 dòng text, status 409 (không stack trace)
+            return new ContentResult
+            {
+                StatusCode = StatusCodes.Status409Conflict,
+                Content = DupMsg,
+                ContentType = "text/plain; charset=utf-8"
+            };
+        }
+    }
 }
