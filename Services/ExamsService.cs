@@ -289,8 +289,8 @@ public class ExamsService
         await this._examsCollection.InsertManyAsync(exampleExams);
     }
     
-    public async Task<List<ExamOptionsDTO>> GetExamOptionsAsync(string? subjectId)
+    public async Task<List<ExamOptionsDTO>> GetExamOptionsAsync(string? subjectId, string? questionBankId)
     {
-        return await _examsRepository.GetExamOptionsAsync(subjectId);
+        return await _examsRepository.GetExamOptionsAsync(subjectId, questionBankId);
     }
 }

@@ -150,7 +150,7 @@ public class ExamRepository
         return await _exams.UpdateOneAsync(filter, delete);
     }
     
-    public async Task<List<ExamOptionsDTO>> GetExamOptionsAsync(string? subjectId)
+    public async Task<List<ExamOptionsDTO>> GetExamOptionsAsync(string? subjectId, string? questionBankId)
     {
         var filters = new List<FilterDefinition<ExamsModel>>
         {
@@ -160,6 +160,11 @@ public class ExamRepository
         if (!string.IsNullOrEmpty(subjectId))
         {
             filters.Add(Builders<ExamsModel>.Filter.Eq(r => r.SubjectId, subjectId));
+        }
+
+        if (!string.IsNullOrEmpty(questionBankId))
+        {
+            filters.Add(Builders<ExamsModel>.Filter.Eq(r => r.QuestionBankId, questionBankId));
         }
 
         var filter = Builders<ExamsModel>.Filter.And(filters);

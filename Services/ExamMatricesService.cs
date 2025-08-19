@@ -330,7 +330,8 @@ namespace Backend_online_testing.Services
                 .Project(mt => new MatrixOptionsDto
                 {
                     Id = mt.Id,
-                    MatrixName = mt.MatrixName
+                    MatrixName = mt.MatrixName,
+                    SubjectId = mt.SubjectId
                 })
                 .ToListAsync();
 

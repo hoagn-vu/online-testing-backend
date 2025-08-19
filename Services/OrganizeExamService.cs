@@ -395,6 +395,9 @@ public class OrganizeExamService
     
     public async Task<OrganizeExamModel> CreateOrganizeExamWithSessions(OrganizeExamRequestDto dto)
     {
+        // var subjectIdFinded = "";
+        // if (string.IsNullOrEmpty(dto.SubjectId) && !string.IsNullOrEmpty(dto))
+        
         var newExam = new OrganizeExamModel
         {
             OrganizeExamName = dto.OrganizeExamName,
