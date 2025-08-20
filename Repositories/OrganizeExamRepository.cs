@@ -68,13 +68,16 @@ public class OrganizeExamRepository
         // filter &= Builders<UsersModel>.Filter.Eq(x => x.AccountStatus, "active");
 
         var list = await _users.Find(filter)
-                               .Project(u => new { u.Id, u.FullName })
+                               .Project(u => new { u.Id, u.FirstName, u.LastName })
                                .ToListAsync();
 
-        return list.OrderBy(x => x.FullName, StringComparer.OrdinalIgnoreCase)
-                   .Select(x => x.Id)
-                   .ToList();
+        return list
+            .OrderBy(x => x.FirstName, StringComparer.OrdinalIgnoreCase) // FirstName priority
+            .ThenBy(x => x.LastName, StringComparer.OrdinalIgnoreCase)   // then, LastName
+            .Select(x => x.Id)
+            .ToList();
     }
+
 
     // Check room id
     public async Task<bool> RoomsExistInMasterAsync(IEnumerable<string> roomIds)
@@ -158,4 +161,69 @@ public class OrganizeExamRepository
         var res = await _organizeExamsRaw.UpdateOneAsync(filter, update, options);
         return res.ModifiedCount > 0;
     }
+
+    //Add take exam for candidate
+    public async Task AddTakeExamsForCandidatesAsync(
+    string organizeExamId, string sessionId, string roomId, List<string> candidateIds)
+    {
+        if (candidateIds is null || candidateIds.Count == 0) return;
+
+        var takeExam = new TakeExamsModel
+        {
+            Id = ObjectId.GenerateNewId().ToString(),
+            OrganizeExamId = organizeExamId,
+            SessionId = sessionId,
+            RoomId = roomId,
+            Status = "not_started",
+            Progress = 0,
+            ViolationCount = 0,
+            Answers = new List<AnswersModel>()
+        };
+
+        // Add user not exist
+        var baseFilter = Builders<UsersModel>.Filter.In(u => u.Id, candidateIds);
+        var notExists = Builders<UsersModel>.Filter.Not(
+            Builders<UsersModel>.Filter.ElemMatch(u => u.TakeExam,
+                te => te.OrganizeExamId == organizeExamId
+                   && te.SessionId == sessionId
+                   && te.RoomId == roomId
+            )
+        );
+        var filter = Builders<UsersModel>.Filter.And(baseFilter, notExists);
+
+        var update = Builders<UsersModel>.Update.Push(u => u.TakeExam, takeExam);
+
+        await _users.UpdateManyAsync(filter, update);
+    }
+
+    //Add track exam for supervisor
+    public async Task AddTrackExamsForSupervisorsAsync(
+    string organizeExamId, string sessionId, string roomId, List<string> supervisorIds)
+    {
+        if (supervisorIds is null || supervisorIds.Count == 0) return;
+
+        var trackExam = new TrackExamsModel
+        {
+            Id = ObjectId.GenerateNewId().ToString(),
+            OrganizeExamId = organizeExamId,
+            SessionId = sessionId,
+            RoomId = roomId
+        };
+        // Add user not exist
+        var baseFilter = Builders<UsersModel>.Filter.In(u => u.Id, supervisorIds);
+        var notExists = Builders<UsersModel>.Filter.Not(
+            Builders<UsersModel>.Filter.ElemMatch(u => u.TrackExam,
+                tr => tr.OrganizeExamId == organizeExamId
+                   && tr.SessionId == sessionId
+                   && tr.RoomId == roomId
+            )
+        );
+        var filter = Builders<UsersModel>.Filter.And(baseFilter, notExists);
+
+        var update = Builders<UsersModel>.Update.Push(u => u.TrackExam, trackExam);
+
+        await _users.UpdateManyAsync(filter, update);
+    }
+
+
 }
