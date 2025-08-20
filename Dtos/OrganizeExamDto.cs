@@ -1,4 +1,5 @@
 using Backend_online_testing.Models;
+using DocumentFormat.OpenXml.Drawing;
 
 namespace Backend_online_testing.Dtos;
 
@@ -55,6 +56,22 @@ public class OrganizeExamResponseDto
     public string? RoomId { get; set; } = string.Empty;
 }
 
+
+public class AddRoomToSessionRequest
+{
+    public List<string> GroupUserIds { get; set; } = new();
+
+    public List<RoomOrganizeExamDto> RoomIds { get; set; } = new();
+}
+
+public class RoomOrganizeExamDto
+{
+    public string RoomId { get; set; } = string.Empty;
+
+    public List<string> SupervisorIds { get; set; } = new();
+
+    public int Quantity { get; set; }
+}
 public class OrganizeExamOptionsDto
 {
     public string Id { get; set; } = string.Empty;

@@ -1,5 +1,6 @@
 using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
+using Backend_online_testing.Repositories;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -13,8 +14,9 @@ public class OrganizeExamService
     private readonly IMongoCollection<UsersModel> _usersCollection;
     private readonly IMongoCollection<ExamsModel> _examsCollection;
     private readonly IMongoCollection<ExamMatricesModel> _examMatricesCollection;
+    private readonly OrganizeExamRepository _organizeExamRepository;
 
-    public OrganizeExamService(IMongoDatabase database)
+    public OrganizeExamService(IMongoDatabase database, OrganizeExamRepository organizeExamRepository)
     {
         _organizeExamCollection = database.GetCollection<OrganizeExamModel>("organizeExams");
         _subjectsCollection = database.GetCollection<SubjectsModel>("subjects");
@@ -22,6 +24,7 @@ public class OrganizeExamService
         _usersCollection = database.GetCollection<UsersModel>("users");
         _examsCollection = database.GetCollection<ExamsModel>("exams");
         _examMatricesCollection = database.GetCollection<ExamMatricesModel>("examMatrices");
+        _organizeExamRepository = organizeExamRepository;
     }
     
     public async Task<OrganizeExamDto?> GetOrganizeExamById(string organizeExamId)
@@ -803,5 +806,67 @@ public class OrganizeExamService
 
         return (questionDtos, exam.Duration, exam.Sessions.FirstOrDefault()?.SessionId ?? string.Empty);
     }
-    
+
+    //Add room to session
+    public async Task AddRoomsToSession_StrictAsync(string organizeExamId, string sessionId, AddRoomToSessionRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(organizeExamId)) throw new ArgumentException("examId is required");
+        if (string.IsNullOrWhiteSpace(sessionId)) throw new ArgumentException("sessionId is required");
+        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (request.RoomIds is null || request.RoomIds.Count == 0)
+            throw new ArgumentException("RoomIds must not be empty");
+
+        if (request.RoomIds.Any(x => x.Quantity < 0))
+            throw new ArgumentException("Quantity must be >= 0");
+
+        var roomIds = request.RoomIds.Select(x => x.RoomId).Distinct().ToList();
+
+        if (!await _organizeExamRepository.RoomsExistInMasterAsync(roomIds))
+            throw new InvalidOperationException("Some RoomId do not exist in collection 'rooms'.");
+
+        // Validate supervisors
+        var allSupIds = request.RoomIds.SelectMany(x => x.SupervisorIds).Distinct().ToList();
+        if (allSupIds.Count > 0 && !await _organizeExamRepository.AreAllSupervisorsAsync(allSupIds))
+            throw new InvalidOperationException("Some SupervisorId are not role=supervisor.");
+
+        // Candidate pool groupUserIds
+        var rawUserIds = await _organizeExamRepository.GetUserIdsByGroupIdsAsync(request.GroupUserIds ?? new());
+        if (rawUserIds.Count == 0)
+            throw new InvalidOperationException("No candidates found in provided groupUserIds.");
+
+        // Sort by full name
+        var orderedCandidateIds = await _organizeExamRepository.GetOrderedCandidatesAsync(rawUserIds);
+
+        // Nếu có bất kỳ room nào đã tồn tại trong session -> fail
+        var anyExists = await _organizeExamRepository.AnyRoomExistsInSessionAsync(organizeExamId, sessionId, roomIds);
+        if (anyExists)
+            throw new InvalidOperationException("One or more rooms already exist in this session. Operation aborted.");
+
+        // Location by quantity
+        var q = new Queue<string>(orderedCandidateIds);
+        var roomsToAdd = new List<(string RoomId, List<string> SupervisorIds, List<string> CandidateIds, string? RoomStatus)>();
+
+        foreach (var r in request.RoomIds)
+        {
+            var cands = new List<string>();
+            var take = r.Quantity;
+            while (take > 0 && q.Count > 0)
+            {
+                cands.Add(q.Dequeue());
+                take--;
+            }
+
+            roomsToAdd.Add((
+                RoomId: r.RoomId,
+                SupervisorIds: (r.SupervisorIds ?? new()).Distinct().ToList(),
+                CandidateIds: cands,
+                RoomStatus: "active"
+            ));
+        }
+
+        // Atomic push: chỉ thành công nếu tất cả room đều chưa tồn tại
+        var ok = await _organizeExamRepository.AddRoomsIfAllAbsentAsync(organizeExamId, sessionId, roomsToAdd);
+        if (!ok)
+            throw new InvalidOperationException("Failed to add rooms (session not found or some rooms existed concurrently).");
+    }
 }
