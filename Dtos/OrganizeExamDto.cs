@@ -56,6 +56,7 @@ public class OrganizeExamResponseDto
     public string? RoomId { get; set; } = string.Empty;
 }
 
+
 public class AddRoomToSessionRequest
 {
     public List<string> GroupUserIds { get; set; } = new();
@@ -70,4 +71,10 @@ public class RoomOrganizeExamDto
     public List<string> SupervisorIds { get; set; } = new();
 
     public int Quantity { get; set; }
+}
+public class OrganizeExamOptionsDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string OrganizeExamName { get; set; } = string.Empty;
+    public string SubjectId { get; set; } = string.Empty;
 }

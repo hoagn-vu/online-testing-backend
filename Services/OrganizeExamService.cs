@@ -162,6 +162,31 @@ public class OrganizeExamService
         return (organizeExamResponseList, totalCount);
     }
     
+    public async Task<List<OrganizeExamOptionsDto>> GetOrganizeExamOptions(string? subjectId)
+    {
+        var filter = Builders<OrganizeExamModel>.Filter.Ne(ex => ex.OrganizeExamStatus, "deleted");
+
+        if (!string.IsNullOrEmpty(subjectId))
+        {
+            filter = Builders<OrganizeExamModel>.Filter.And(
+                filter,
+                Builders<OrganizeExamModel>.Filter.Eq(ex => ex.SubjectId, subjectId));
+        }
+        
+        var organizeExams = await _organizeExamCollection
+            .Find(filter)
+            .SortByDescending(ex => ex.Id)
+            .Project(e => new OrganizeExamOptionsDto
+            {
+                Id = e.Id,
+                OrganizeExamName = e.OrganizeExamName,
+                SubjectId = e.SubjectId
+            })
+            .ToListAsync();
+        
+        return organizeExams;
+    }
+
     public async Task<(string, string?, List<SessionsDto>, long)> GetSessions(string organizeExamId, string? keyword, int page, int pageSize)
     {
         var filter = Builders<OrganizeExamModel>.Filter.And(
@@ -373,6 +398,9 @@ public class OrganizeExamService
     
     public async Task<OrganizeExamModel> CreateOrganizeExamWithSessions(OrganizeExamRequestDto dto)
     {
+        // var subjectIdFinded = "";
+        // if (string.IsNullOrEmpty(dto.SubjectId) && !string.IsNullOrEmpty(dto))
+        
         var newExam = new OrganizeExamModel
         {
             OrganizeExamName = dto.OrganizeExamName,
@@ -841,5 +869,4 @@ public class OrganizeExamService
         if (!ok)
             throw new InvalidOperationException("Failed to add rooms (session not found or some rooms existed concurrently).");
     }
-
 }

@@ -25,9 +25,15 @@ public class SubjectRepository
     //Filter subject base
     private static readonly FilterDefinition<SubjectsModel> SubjectBaseFilter =
         Builders<SubjectsModel>.Filter.Ne(s => s.SubjectStatus, "deleted");
-    
+
     private static readonly SortDefinition<SubjectsModel> SubjectBaseSort =
         Builders<SubjectsModel>.Sort.Descending("_id");
+
+    private static readonly FilterDefinition<QuestionBanksModel> QuestionBankBaseFilter =
+        Builders<QuestionBanksModel>.Filter.Ne(qb => qb.QuestionBankStatus, "deleted");
+
+    private static readonly SortDefinition<QuestionBanksModel> QuestionBankBaseSort =
+        Builders<QuestionBanksModel>.Sort.Descending("_id");
 
     //Filter by subject name
     private FilterDefinition<SubjectsModel> SubjectFilterByName(string? keyword)
@@ -40,8 +46,8 @@ public class SubjectRepository
         }
 
         return builder.And(
-                SubjectBaseFilter,
-                builder.Regex(s => s.SubjectName, new BsonRegularExpression(keyword, "i"))
+            SubjectBaseFilter,
+            builder.Regex(s => s.SubjectName, new BsonRegularExpression(keyword, "i"))
         );
     }
 
@@ -76,7 +82,7 @@ public class SubjectRepository
                 Id = sub.Id,
                 SubjectName = sub.SubjectName,
                 SubjectStatus = sub.SubjectStatus,
-                TotalQuestionBanks = sub.QuestionBanks.Count
+                TotalQuestionBanks = sub.QuestionBanks.Count(qb => qb.QuestionBankStatus != "deleted")
             });
 
         return await _subjects
@@ -114,26 +120,81 @@ public class SubjectRepository
     {
         var filter = SubjectFilterById(subjectId);
 
+        var qbFilter = Builders<QuestionBanksModel>.Filter.Ne(q => q.QuestionBankStatus, "deleted");
+
         if (!string.IsNullOrEmpty(keyword))
         {
-            filter = Builders<SubjectsModel>.Filter.And(
-                filter,
-                Builders<SubjectsModel>.Filter.ElemMatch(
-                    s => s.QuestionBanks,
-                    Builders<QuestionBanksModel>.Filter.Regex(q => q.QuestionBankName, new BsonRegularExpression(keyword, "i")))
+            qbFilter = Builders<QuestionBanksModel>.Filter.And(
+                qbFilter,
+                Builders<QuestionBanksModel>.Filter.Regex(
+                    q => q.QuestionBankName,
+                    new BsonRegularExpression(keyword, "i"))
             );
         }
+
+        filter = Builders<SubjectsModel>.Filter.And(
+            filter,
+            Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qbFilter)
+        );
 
         return await _subjects
             .Find(filter)
             .Sort(SubjectBaseSort)
+            // .Skip((page - 1) * pageSize)
+            // .Limit(pageSize)
             .ToListAsync();
+    }
+
+    public async Task<QuestionBankPerSubjectDto?> GetQuestionBanksAsync(string subjectId, string? keyword, int page, int pageSize)
+    {
+        var filter = SubjectFilterById(subjectId);
+
+        var subject = await _subjects
+            .Find(filter)
+            .FirstOrDefaultAsync();
+
+        if (subject == null)
+            return null;
+
+        var questionBanks = subject.QuestionBanks
+            .Where(qb => qb.QuestionBankStatus != "deleted");
+
+        if (!string.IsNullOrEmpty(keyword))
+        {
+            questionBanks = questionBanks
+                .Where(qb => qb.QuestionBankName.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+        }
+
+        questionBanks = questionBanks
+            .OrderByDescending(qb => qb.QuestionBankId);
+
+        // Phân trang
+        // questionBanks = questionBanks
+        //     .Skip((page - 1) * pageSize)
+        //     .Take(pageSize);
+
+        var dto = new QuestionBankPerSubjectDto
+        {
+            SubjectId = subject.Id,
+            SubjectName = subject.SubjectName,
+            QuestionBanks = questionBanks.Select(qb => new QuestionBanksDto
+            {
+                QuestionBankId = qb.QuestionBankId,
+                QuestionBankName = qb.QuestionBankName,
+                TotalQuestions = qb.QuestionList?.Count ?? 0
+            }).ToList()
+        };
+
+        return dto;
     }
 
     //Get question bank in subject (using for GetQuetionBanksPerSubject)
     public async Task<List<SubjectsModel>> GetQuestionBankAsync(string subjectId)
     {
-        var filter = SubjectFilterById(subjectId);
+        var filter = Builders<SubjectsModel>.Filter.And(
+            SubjectFilterById(subjectId),
+            Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankStatus != "deleted")
+        );
 
         return await _subjects
             .Find(filter)

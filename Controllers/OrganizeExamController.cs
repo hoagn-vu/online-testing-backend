@@ -129,7 +129,6 @@ public class OrganizeExamController : ControllerBase
         // }
         return Ok(new { Questions = questions, Duration = duration, SessionId = sessionId });
     }
-
     [HttpPost("{organizeExamId}/sessions/{sessionId}/rooms")]
     public async Task<IActionResult> AddRoomToSession(
         string organizeExamId, string sessionId, [FromBody] AddRoomToSessionRequest request)
@@ -151,4 +150,12 @@ public class OrganizeExamController : ControllerBase
             };
         }
     }
+
+    [HttpGet("options")]
+    public async Task<IActionResult> GetOptions([FromQuery] string? subjectId)
+    {
+        var result = await _organizeExamService.GetOrganizeExamOptions(subjectId);
+        return Ok(result);
+    }
+   
 }

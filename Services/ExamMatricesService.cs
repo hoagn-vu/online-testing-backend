@@ -34,6 +34,7 @@ namespace Backend_online_testing.Services
             
             var examMatrices = await _examMatrixsCollection
                 .Find(filter)
+                .SortByDescending(r => r.Id)
                 .Skip((page - 1) * pageSize)
                 .Limit(pageSize)
                 .ToListAsync();
@@ -329,7 +330,8 @@ namespace Backend_online_testing.Services
                 .Project(mt => new MatrixOptionsDto
                 {
                     Id = mt.Id,
-                    MatrixName = mt.MatrixName
+                    MatrixName = mt.MatrixName,
+                    SubjectId = mt.SubjectId
                 })
                 .ToListAsync();
 

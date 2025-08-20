@@ -82,7 +82,7 @@ namespace Backend_online_testing.Controllers
         }
 
         // Update exam
-        [HttpPost("update/{examId}")]
+        [HttpPut("{examId}")]
         public async Task<IActionResult> UpdateExam(string examId, [FromBody] ExamDto updateExamData)
         {
             if (updateExamData == null || string.IsNullOrEmpty(examId))
@@ -136,9 +136,9 @@ namespace Backend_online_testing.Controllers
         }
 
         [HttpGet("options")]
-        public async Task<IActionResult> GetOptions([FromQuery] string? subjectId)
+        public async Task<IActionResult> GetOptions([FromQuery] string? subjectId, [FromQuery] string? questionBankId)
         {
-            var result = await _examsService.GetExamOptionsAsync(subjectId);
+            var result = await _examsService.GetExamOptionsAsync(subjectId, questionBankId);
             return new OkObjectResult(new { status = "Success", data = result });
         }
     }

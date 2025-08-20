@@ -25,7 +25,7 @@ public class SubjectsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetSubjects([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var (subjects, totalCount) = await this._subjectsService.GetSubjects(keyword ?? string.Empty, page, pageSize);
+        var (subjects, totalCount) = await _subjectsService.GetSubjects(keyword ?? string.Empty, page, pageSize);
 
         return Ok(new { subjects, totalCount });
     }
@@ -81,11 +81,13 @@ public class SubjectsController : ControllerBase
     }
 
     // Search by question bank name
-    [HttpGet("question-banks")]
-    public async Task<ActionResult<List<SubjectsModel>>> GetQuestionBanks([FromQuery] string subId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    [HttpGet("{subjectId}/question-banks")]
+    public async Task<ActionResult<QuestionBankPerSubjectDto?>> GetQuestionBanks([FromRoute]string subjectId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var (subjectId, subjectName, questionBanks, totalCount) = await this._subjectsService.GetQuestionBanks(subId, keyword, page, pageSize);
-        return this.Ok(new { subjectId, subjectName, questionBanks, totalCount });
+        var questionBanks = await _subjectsService.GetQuestionBanks(subjectId, keyword, page, pageSize);
+        if (questionBanks == null) return NotFound();
+        
+        return Ok(questionBanks);
     }
 
     [HttpGet("question-bank-options")]

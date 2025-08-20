@@ -20,6 +20,12 @@
 
         [BsonElement("fullName")]
         public required string FullName { get; set; }
+        
+        [BsonElement("firstName")]
+        public string? FirstName { get; set; } = string.Empty;
+        
+        [BsonElement("lastName")]
+        public string? LastName { get; set; } = string.Empty;
 
         [BsonElement("role")]
         public string? Role { get; set; }
@@ -31,22 +37,20 @@
         public string? DateOfBirth { get; set; }
 
         [BsonElement("groupName")]
-        public List<string> GroupName { get; set; } = [];
+        public List<string>? GroupName { get; set; } = [];
 
         [BsonElement("accountStatus")] 
-        public string AccountStatus { get; set; } = "active";
+        public string? AccountStatus { get; set; } = "active";
 
-        [BsonElement("authenticate")]
-        public List<string>? Authenticate { get; set; }
+        [BsonElement("authenticate")] public List<string>? Authenticate { get; set; } = [];
         
         [BsonElement("refreshToken")]
         public string? RefreshToken { get; set; }
         
         [BsonElement("tokenExpiration")]
         public DateTime? TokenExpiration { get; set; }
-        
-        [BsonElement("trackExams")]
-        public List<TrackExamsModel>? TrackExam { get; set; }
+
+        [BsonElement("trackExams")] public List<TrackExamsModel>? TrackExam { get; set; } = [];
 
         [BsonElement("takeExams")] 
         public List<TakeExamsModel>? TakeExam { get; set; } = [];
