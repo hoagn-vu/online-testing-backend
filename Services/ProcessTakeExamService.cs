@@ -52,7 +52,7 @@ public class ProcessTakeExamService
 
 
         var newStatus = room.RoomStatus == "active" ? "closed" : "active";
-        await _processTakeExamRepository.UpdateCandidateRoomStatusAsync(room.CandidateIds, newStatus);
+        await _processTakeExamRepository.UpdateCandidateRoomStatusAsync(room.CandidateIds, room.SupervisorIds , newStatus);
 
         var updated = await _processTakeExamRepository.UpdateRoomStatusAsync(organizeExamId, sessionId, roomId, newStatus);
         return updated ? newStatus : null;

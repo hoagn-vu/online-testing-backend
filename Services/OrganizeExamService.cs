@@ -425,7 +425,7 @@ public class OrganizeExamService
                     SessionName = sessionDto.SessionName,
                     StartAt = sessionDto.StartAt,
                     FinishAt = sessionDto.FinishAt,
-                    ForceEndAt = sessionDto.ForceEndAt ?? sessionDto.StartAt.AddMinutes(2 * dto.Duration),
+                    ForceEndAt = sessionDto.ForceEndAt ?? sessionDto.StartAt.AddMinutes(3 * dto.Duration),
                     SessionStatus = sessionDto.SessionStatus
                 };
 
@@ -474,7 +474,7 @@ public class OrganizeExamService
             SessionName = dto.SessionName,
             StartAt = dto.StartAt,
             FinishAt = dto.FinishAt,
-            ForceEndAt = dto.StartAt.AddMinutes(2 * organizeExamDuration),
+            ForceEndAt = dto.StartAt.AddMinutes(3 * organizeExamDuration),
             SessionStatus = dto.SessionStatus
         };
 

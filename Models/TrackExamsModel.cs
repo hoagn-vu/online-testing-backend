@@ -17,4 +17,7 @@ public class TrackExamsModel
     
     [BsonElement("roomId")]
     public string RoomId { get; set; } = string.Empty;
+    
+    [BsonElement("roomSessionStatus")]
+    public string? RoomSessionStatus { get; set; } = string.Empty;
 }

@@ -12,6 +12,14 @@ namespace Backend_online_testing.Services
     using OfficeOpenXml;
     using LicenseContext = OfficeOpenXml.LicenseContext;
 
+    public interface IFileManagementService
+    {
+        Task<string> ProcessFileTxt(StreamReader reader, string subjectId, string questionBankId);
+        Task<string> ProcessFileDocx(Stream stream, string subjectId, string questionBankId);
+        Task<List<object>> UsersFileExcel(Stream fileStream);
+        Task<List<object>> GroupUser(Stream fileStream);
+    }
+    
     public class FileManagementService : IFileManagementService
     {
         private readonly IMongoCollection<UsersModel> _users;
@@ -356,6 +364,8 @@ namespace Backend_online_testing.Services
                     {
                         dateOfBirthStr = dateOfBirthCell?.ToString();
                     }
+                    
+                    var lastSpaceIndex = worksheet.Cells[row, 2].Text.Trim().LastIndexOf(' ');
 
                     var user = new UsersModel
                     {
@@ -363,6 +373,8 @@ namespace Backend_online_testing.Services
                         AccountStatus = "active",
                         UserCode = userCode,
                         FullName = worksheet.Cells[row, 2].Text.Trim(),
+                        FirstName = worksheet.Cells[row, 2].Text.Trim()[..lastSpaceIndex],
+                        LastName = worksheet.Cells[row, 2].Text.Trim()[(lastSpaceIndex + 1)..],
                         Gender = worksheet.Cells[row, 3].Text.Trim(),
                         DateOfBirth = dateOfBirthStr,
                         Role = worksheet.Cells[row, 5].Text.Trim(),
@@ -399,7 +411,7 @@ namespace Backend_online_testing.Services
                 return usersResponse;
             }
 
-            await this._users.InsertManyAsync(usersList);
+            await _users.InsertManyAsync(usersList);
 
             // // Log admin action
             // var logData = new UserLogsModel
