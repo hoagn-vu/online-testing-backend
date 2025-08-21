@@ -16,7 +16,7 @@ public class SessionRequestDto
 {
     public string SessionName { get; set; } = string.Empty;
     public DateTime StartAt { get; set; }
-    public DateTime FinishAt { get; set; }
+    public DateTime? FinishAt { get; set; }
     public DateTime? ForceEndAt { get; set; }
     public string SessionStatus { get; set; } = "active";
 }

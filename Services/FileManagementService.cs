@@ -365,16 +365,31 @@ namespace Backend_online_testing.Services
                         dateOfBirthStr = dateOfBirthCell?.ToString();
                     }
                     
-                    var lastSpaceIndex = worksheet.Cells[row, 2].Text.Trim().LastIndexOf(' ');
-
+                    var fullName = worksheet.Cells[row, 2].Text.Trim();
+                    var lastSpaceIndex = fullName.LastIndexOf(' ');
+                    
+                    var lastName = string.Empty;
+                    var firstName = string.Empty;
+                    
+                    if (lastSpaceIndex > 0)
+                    {
+                        lastName = fullName[..lastSpaceIndex];
+                        firstName = fullName[(lastSpaceIndex + 1)..];
+                    }
+                    else
+                    {
+                        lastName = string.Empty;
+                        firstName = fullName;
+                    }
+                    
                     var user = new UsersModel
                     {
                         UserName = userCode.ToLower(),
                         AccountStatus = "active",
                         UserCode = userCode,
-                        FullName = worksheet.Cells[row, 2].Text.Trim(),
-                        LastName = worksheet.Cells[row, 2].Text.Trim()[..lastSpaceIndex],
-                        FirstName = worksheet.Cells[row, 2].Text.Trim()[(lastSpaceIndex + 1)..],
+                        FullName = fullName,
+                        LastName = lastName,
+                        FirstName = firstName,
                         Gender = worksheet.Cells[row, 3].Text.Trim(),
                         DateOfBirth = dateOfBirthStr,
                         Role = worksheet.Cells[row, 5].Text.Trim(),

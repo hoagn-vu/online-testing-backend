@@ -436,7 +436,7 @@ public class OrganizeExamService
                 {
                     SessionName = sessionDto.SessionName,
                     StartAt = sessionDto.StartAt,
-                    FinishAt = sessionDto.FinishAt,
+                    FinishAt = sessionDto.FinishAt ?? sessionDto.StartAt.AddMinutes(dto.Duration),
                     ForceEndAt = sessionDto.ForceEndAt ?? sessionDto.StartAt.AddMinutes(3 * dto.Duration),
                     SessionStatus = sessionDto.SessionStatus
                 };
@@ -485,7 +485,7 @@ public class OrganizeExamService
         {
             SessionName = dto.SessionName,
             StartAt = dto.StartAt,
-            FinishAt = dto.FinishAt,
+            FinishAt = dto.FinishAt ?? dto.StartAt.AddMinutes(organizeExamDuration),
             ForceEndAt = dto.StartAt.AddMinutes(3 * organizeExamDuration),
             SessionStatus = dto.SessionStatus
         };
@@ -495,21 +495,38 @@ public class OrganizeExamService
             e => e.Id == examId, update, new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
     }
 
+    // update 1 session
     public async Task<string> UpdateSession(string examId, string sessionId, SessionRequestDto dto)
     {
-        var filter = Builders<OrganizeExamModel>.Filter.Eq(e => e.Id, examId) &
-                     Builders<OrganizeExamModel>.Filter.ElemMatch(e => e.Sessions, s => s.SessionId == sessionId);
-        
+        // Lấy duration nhanh gọn, chỉ project field cần
+        var organizeExamDuration = await _organizeExamCollection
+            .Find(x => x.Id == examId)
+            .Project(x => x.Duration)
+            .FirstOrDefaultAsync();
+
+        if (organizeExamDuration == default)
+            return "Không tìm thấy kỳ thi";
+
+        var filter = Builders<OrganizeExamModel>.Filter.And(
+            Builders<OrganizeExamModel>.Filter.Eq(e => e.Id, examId),
+            Builders<OrganizeExamModel>.Filter.ElemMatch(e => e.Sessions, s => s.SessionId == sessionId)
+        );
+
+        var finishAt = dto.FinishAt ?? dto.StartAt.AddMinutes(organizeExamDuration);
+
         var update = Builders<OrganizeExamModel>.Update
             .Set("sessions.$.sessionName", dto.SessionName)
             .Set("sessions.$.startAt", dto.StartAt)
-            .Set("sessions.$.finishAt", dto.FinishAt)
+            .Set("sessions.$.finishAt", finishAt)
             .Set("sessions.$.sessionStatus", dto.SessionStatus);
-        
+
         var result = await _organizeExamCollection.UpdateOneAsync(filter, update);
-        
-        return result.ModifiedCount > 0 ? "Cập nhật ca thi thành công" : "Không tìm thấy ca thi";
+
+        return result.ModifiedCount > 0
+            ? "Cập nhật ca thi thành công"
+            : "Không tìm thấy ca thi";
     }
+
     
     public async Task<OrganizeExamModel?> AddRoomToSession(string examId, string sessionId, RoomsInSessionRequestDto dto)
     {
