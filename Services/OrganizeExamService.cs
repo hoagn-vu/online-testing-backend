@@ -3,6 +3,7 @@ using Backend_online_testing.Models;
 using Backend_online_testing.Repositories;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Globalization;
 
 namespace Backend_online_testing.Services;
 
@@ -349,21 +350,32 @@ public class OrganizeExamService
 
         var totalCount = allCandidates.Count;
 
-        var paginatedCandidates = allCandidates
+        // ✅ Lấy tất cả thông tin candidates
+        var candidateInfos = await _usersCollection
+            .Find(u => allCandidates.Contains(u.Id))
+            .ToListAsync();
+
+        // ✅ Sort theo FirstName trước, rồi LastName
+        candidateInfos = candidateInfos
+            .OrderBy(u => u.FirstName, StringComparer.Create(new CultureInfo("vi-VN"), ignoreCase: true))
+            .ThenBy(u => u.LastName, StringComparer.Create(new CultureInfo("vi-VN"), ignoreCase: true))
+            .ToList();
+
+        var paginatedCandidates = candidateInfos
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
 
         var candidatesResponse = new List<CandidatesInSessionRoomDto>();
 
-        foreach (var cand in paginatedCandidates)
+        foreach (var candidate in paginatedCandidates)
         {
-            var candidate = await _usersCollection.Find(u => u.Id == cand).FirstOrDefaultAsync();
+            //var candidate = await _usersCollection.Find(u => u.Id == cand).FirstOrDefaultAsync();
             var examResult = candidate.TakeExam?.Find(er => er.OrganizeExamId == organizeExamId && er.SessionId == sessionId && er.RoomId == roomId);
 
             candidatesResponse.Add(new CandidatesInSessionRoomDto
             {
-                CandidateId = cand,
+                CandidateId = candidate.Id,
                 CandidateName = candidate.FullName,
                 UserCode = candidate.UserCode,
                 Dob = candidate.DateOfBirth,
