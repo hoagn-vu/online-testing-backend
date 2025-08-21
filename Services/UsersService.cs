@@ -346,7 +346,7 @@ public class UsersService
                t.OrganizeExamId == organizeExamId &&
                t.SessionId == sessionId &&
                t.RoomId == roomId
-           );
+         );
 
         //If not exist take Exam
         if (take is null)
@@ -393,19 +393,19 @@ public class UsersService
                     Tags = q.Tags ?? new List<string>()
                 });
             }
-            else
-            {
-                merged.Add(new ResumeQuestionItem
-                {
-                    QuestionId = q.QuestionId,
-                    QuestionText = q.QuestionText,
-                    QuestionType = q.QuestionType,
-                    Options = opts,
-                    SelectedOptionIds = Array.Empty<string>(),
-                    IsCorrect = null,
-                    Tags = q.Tags ?? new List<string>()
-                });
-            }
+            //else
+            //{
+            //    merged.Add(new ResumeQuestionItem
+            //    {
+            //        QuestionId = q.QuestionId,
+            //        QuestionText = q.QuestionText,
+            //        QuestionType = q.QuestionType,
+            //        Options = opts,
+            //        SelectedOptionIds = Array.Empty<string>(),
+            //        IsCorrect = null,
+            //        Tags = q.Tags ?? new List<string>()
+            //    });
+            //}
         }
 
         var takeProgress = take.Progress;
