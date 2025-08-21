@@ -137,32 +137,38 @@ namespace Backend_online_testing.Services
                 return "Invalid data";
             }
 
-            // var updateLog = new MatrixLogsModel
-            // {
-            //    MatrixLogUserId = examMatrixData.MatrixLogUserId,
-            //    MatrixLogType = "Update exam matrix",
-            //    MatrixChangeAt = DateTime.UtcNow,
-            // };
             var filter = Builders<ExamMatricesModel>.Filter.Eq(x => x.Id, examMatrixId);
 
-            var existingExamMatrix = await this._examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
+            var existingExamMatrix = await _examMatrixsCollection.Find(filter).FirstOrDefaultAsync();
 
             if (existingExamMatrix == null)
             {
                 return "Exam matrix not found";
             }
 
-            // Update data
-            var update = Builders<ExamMatricesModel>.Update
-                .Set(x => x.MatrixName, examMatrixData.MatrixName)
-                .Set(x => x.QuestionBankId, examMatrixData.QuestionBankId)
-                .Set(x => x.MatrixTags, examMatrixData.MatrixTags)
-                .Set(x => x.MatrixStatus, examMatrixData.MatrixStatus)
-                // .Set(x => x.TotalGeneratedExams, examMatrixData.TotalGenerateExam)
-                .Set(x => x.SubjectId, examMatrixData.SubjectId)
-                .Set(x => x.ExamIds, examMatrixData.ExamId);
+            var updates = new List<UpdateDefinition<ExamMatricesModel>>();
 
-            var result = await this._examMatrixsCollection.UpdateOneAsync(filter, update);
+            if (!string.IsNullOrEmpty(examMatrixData.MatrixName))
+                updates.Add(Builders<ExamMatricesModel>.Update.Set(x => x.MatrixName, examMatrixData.MatrixName));
+
+            if (!string.IsNullOrEmpty(examMatrixData.MatrixStatus))
+                updates.Add(Builders<ExamMatricesModel>.Update.Set(x => x.MatrixStatus, examMatrixData.MatrixStatus));
+            
+            if (!string.IsNullOrEmpty(examMatrixData.SubjectId))
+                updates.Add(Builders<ExamMatricesModel>.Update.Set(x => x.SubjectId, examMatrixData.SubjectId));
+            
+            if (examMatrixData.MatrixTags != null && examMatrixData.MatrixTags.Any())
+                updates.Add(Builders<ExamMatricesModel>.Update.Set(x => x.MatrixTags, examMatrixData.MatrixTags));
+
+            if (!string.IsNullOrEmpty(examMatrixData.QuestionBankId))
+                updates.Add(Builders<ExamMatricesModel>.Update.Set(x => x.QuestionBankId, examMatrixData.QuestionBankId));
+
+            if (!updates.Any())
+                return "No valid data provided for update";
+
+            var updateDefinition = Builders<ExamMatricesModel>.Update.Combine(updates);
+
+            var result = await _examMatrixsCollection.UpdateOneAsync(filter, updateDefinition);
 
             return result.ModifiedCount > 0 ? "Exam matrix updated successfully" : "No changes were made";
         }
