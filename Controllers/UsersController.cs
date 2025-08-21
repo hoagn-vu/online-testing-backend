@@ -126,5 +126,12 @@ namespace Backend_online_testing.Controllers
                 });
             }
         }
+
+        [HttpGet("resume-exam")]
+        public async Task<ActionResult<ResumeExamResponse>> Resume(string userId, string organizeExamId, string sessionId, string roomId)
+        {
+            var result = await _userService.ResumeAsync(userId, organizeExamId, roomId, sessionId);
+            return Ok(result);
+        }
     }
 }
