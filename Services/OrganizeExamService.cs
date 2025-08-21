@@ -448,35 +448,61 @@ public class OrganizeExamService
         await _organizeExamCollection.InsertOneAsync(newExam);
         return newExam;
     }
-
-
+    
     public async Task<string> UpdateOrganizeExam(string organizeExamId, OrganizeExamRequestDto dto)
-    // public async Task<OrganizeExamModel?> UpdateOrganizeExam(string organizeExamId, OrganizeExamRequestDto dto)
     {
         try
         {
-            var update = Builders<OrganizeExamModel>.Update
-                .Set(e => e.OrganizeExamName, dto.OrganizeExamName)
-                .Set(e => e.Duration, dto.Duration)
-                .Set(e => e.TotalQuestions, dto.TotalQuestions)
-                .Set(e => e.MaxScore, dto.MaxScore)
-                .Set(e => e.SubjectId, dto.SubjectId)
-                .Set(e => e.QuestionBankId, dto.QuestionBankId)
-                .Set(e => e.ExamType, dto.ExamType)
-                .Set(e => e.MatrixId, dto.MatrixId)
-                .Set(e => e.Exams, dto.Exams)
-                .Set(e => e.OrganizeExamStatus, dto.OrganizeExamStatus);
+            var updates = new List<UpdateDefinition<OrganizeExamModel>>();
 
-            // return await _organizeExamCollection.FindOneAndUpdateAsync(
-            //     e => e.Id == organizeExamId, update, new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
-            await _organizeExamCollection.FindOneAndUpdateAsync(e => e.Id == organizeExamId, update);
+            if (!string.IsNullOrEmpty(dto.OrganizeExamName))
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.OrganizeExamName, dto.OrganizeExamName));
+
+            if (dto.Duration > 0)
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.Duration, dto.Duration));
+
+            if (dto.TotalQuestions.HasValue)
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.TotalQuestions, dto.TotalQuestions.Value));
+
+            if (dto.MaxScore.HasValue)
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.MaxScore, dto.MaxScore.Value));
+
+            if (!string.IsNullOrEmpty(dto.SubjectId))
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.SubjectId, dto.SubjectId));
+
+            if (!string.IsNullOrEmpty(dto.QuestionBankId))
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.QuestionBankId, dto.QuestionBankId));
+
+            if (!string.IsNullOrEmpty(dto.ExamType))
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.ExamType, dto.ExamType));
+
+            if (!string.IsNullOrEmpty(dto.MatrixId))
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.MatrixId, dto.MatrixId));
+
+            if (dto.Exams != null && dto.Exams.Any())
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.Exams, dto.Exams));
+
+            if (!string.IsNullOrEmpty(dto.OrganizeExamStatus))
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.OrganizeExamStatus, dto.OrganizeExamStatus));
+
+            if (!updates.Any())
+                return "Không có dữ liệu nào để cập nhật";
+
+            var updateDefinition = Builders<OrganizeExamModel>.Update.Combine(updates);
+
+            await _organizeExamCollection.UpdateOneAsync(
+                e => e.Id == organizeExamId,
+                updateDefinition
+            );
+
             return "Cập nhật kỳ thi thành công";
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            return $"Error: {e.Message}";
+            return $"Error: {ex.Message}";
         }
     }
+
         
     public async Task<OrganizeExamModel?> AddSession(string examId, SessionRequestDto dto)
     {
