@@ -821,6 +821,7 @@ public class OrganizeExamService
 
         var roomIds = request.RoomIds.Select(x => x.RoomId).Distinct().ToList();
 
+        //Validate room
         if (!await _organizeExamRepository.RoomsExistInMasterAsync(roomIds))
             throw new InvalidOperationException("Some RoomId do not exist in collection 'rooms'.");
 
@@ -834,7 +835,7 @@ public class OrganizeExamService
         if (rawUserIds.Count == 0)
             throw new InvalidOperationException("No candidates found in provided groupUserIds.");
 
-        // Sort by full name
+        // Sort candidate Id (FirstName -> LastName)
         var orderedCandidateIds = await _organizeExamRepository.GetOrderedCandidatesAsync(rawUserIds);
 
         // Nếu có bất kỳ room nào đã tồn tại trong session -> fail
@@ -868,5 +869,17 @@ public class OrganizeExamService
         var ok = await _organizeExamRepository.AddRoomsIfAllAbsentAsync(organizeExamId, sessionId, roomsToAdd);
         if (!ok)
             throw new InvalidOperationException("Failed to add rooms (session not found or some rooms existed concurrently).");
+
+        //Add user.TakeExam and user.TrackExam
+        foreach (var r in roomsToAdd)
+        {
+            // users[*].takeExams (candidate)
+            await _organizeExamRepository.AddTakeExamsForCandidatesAsync(
+                organizeExamId, sessionId, r.RoomId, r.CandidateIds);
+
+            // users[*].trackExams (supervisor)
+            await _organizeExamRepository.AddTrackExamsForSupervisorsAsync(
+                organizeExamId, sessionId, r.RoomId, r.SupervisorIds);
+        }
     }
 }
