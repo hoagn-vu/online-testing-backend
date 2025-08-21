@@ -512,7 +512,7 @@ public class OrganizeExamService
             Builders<OrganizeExamModel>.Filter.ElemMatch(e => e.Sessions, s => s.SessionId == sessionId)
         );
 
-        var finishAt = dto.FinishAt ?? dto.StartAt.AddMinutes(organizeExamDuration);
+        var finishAt = dto.StartAt.AddMinutes(organizeExamDuration);
 
         var update = Builders<OrganizeExamModel>.Update
             .Set("sessions.$.sessionName", dto.SessionName)
