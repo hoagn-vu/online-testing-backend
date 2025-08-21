@@ -2,6 +2,7 @@
 using Backend_online_testing.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Globalization;
 
 namespace Backend_online_testing.Repositories;
 
@@ -72,11 +73,15 @@ public class OrganizeExamRepository
                                .ToListAsync();
 
         return list
-            .OrderBy(x => x.FirstName, StringComparer.OrdinalIgnoreCase) // FirstName priority
-            .ThenBy(x => x.LastName, StringComparer.OrdinalIgnoreCase)   // then, LastName
+            //.OrderBy(x => x.FirstName, StringComparer.OrdinalIgnoreCase) // FirstName priority
+            //.ThenBy(x => x.LastName, StringComparer.OrdinalIgnoreCase)   // then, LastName
+            //.Select(x => x.Id)
+            //.ToList();
+            .OrderBy(x => x.FirstName, StringComparer.Create(new CultureInfo("vi-VN"), ignoreCase: true))
+            .ThenBy(x => x.LastName, StringComparer.Create(new CultureInfo("vi-VN"), ignoreCase: true))
             .Select(x => x.Id)
             .ToList();
-    }
+            }
 
 
     // Check room id
