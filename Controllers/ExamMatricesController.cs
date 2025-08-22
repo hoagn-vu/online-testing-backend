@@ -70,7 +70,7 @@ namespace Backend_online_testing.Controllers
         // }
 
         // Update exam matrix
-        [HttpPost("{examMatrixId}")]
+        [HttpPut("{examMatrixId}")]
         public async Task<IActionResult> UpdateMatrixExam(string examMatrixId, [FromBody] ExamMatrixUpdateDto examMatrixData)
         {
             var result = await this._examMatricesService.UpdateExamMatrix(examMatrixId, examMatrixData);

@@ -98,8 +98,8 @@ public class UsersService
             Password = BCrypt.Net.BCrypt.HashPassword(userData.Password),
             UserCode = userData.UserCode,
             FullName = userData.FullName,
-            FirstName = userData.FullName[..lastSpaceIndex],
-            LastName = userData.FullName[(lastSpaceIndex + 1)..],
+            LastName = userData.FullName[..lastSpaceIndex],
+            FirstName = userData.FullName[(lastSpaceIndex + 1)..],
             Role = userData.Role,
             Gender = userData.Gender,
             DateOfBirth = userData.DateOfBirth,
@@ -155,7 +155,7 @@ public class UsersService
         if (!string.IsNullOrWhiteSpace(updateUser.FullName))
         {
             var lastSpaceIndex = updateUser.FullName.LastIndexOf(' ');
-            var lastName = updateUser.FullName[..lastSpaceIndex];
+            var lastName= updateUser.FullName[..lastSpaceIndex];
             var firstName = updateUser.FullName[(lastSpaceIndex + 1)..];
 
             updateDef.Add(builder.Set(x => x.FullName, updateUser.FullName));

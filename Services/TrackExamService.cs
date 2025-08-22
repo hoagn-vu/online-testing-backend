@@ -29,8 +29,11 @@ public class TrackExamService
         }
 
         var trackExamInfos = new List<TrackExamsInfo>();
+        var activeTrackExams = user.TrackExam
+            .Where(te => te.RoomSessionStatus == "active")
+            .ToList();
 
-        foreach (var trackExam in user.TrackExam)
+        foreach (var trackExam in activeTrackExams)
         {
             var organizeExam = await _trackExamRepository.GetOrganizeExamById(trackExam.OrganizeExamId);
 

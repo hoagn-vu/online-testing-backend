@@ -140,12 +140,30 @@ public class ProcessTakeExamRepository
      * User
      */
     //Update candidate rooms status
-    public async Task UpdateCandidateRoomStatusAsync(IEnumerable<string> candidateIds, string newStatus)
+    public async Task UpdateCandidateRoomStatusAsync(
+        IEnumerable<string> candidateIds, 
+        IEnumerable<string> supervisorIds, 
+        string newStatus)
     {
-        var userFilter = Builders<UsersModel>.Filter.In(u => u.Id, candidateIds);
-        var userUpdate = Builders<UsersModel>.Update.Set("takeExams.$[].status", newStatus);
-        await _usersCollection.UpdateManyAsync(userFilter, userUpdate);
+        if (candidateIds != null && candidateIds.Any())
+        {
+            var candidateFilter = Builders<UsersModel>.Filter.In(u => u.Id, candidateIds);
+            var candidateUpdate = Builders<UsersModel>.Update
+                .Set("takeExams.$[].status", newStatus);
+
+            await _usersCollection.UpdateManyAsync(candidateFilter, candidateUpdate);
+        }
+
+        if (supervisorIds != null && supervisorIds.Any())
+        {
+            var supervisorFilter = Builders<UsersModel>.Filter.In(u => u.Id, supervisorIds);
+            var supervisorUpdate = Builders<UsersModel>.Update
+                .Set("trackExams.$[].status", newStatus);
+
+            await _usersCollection.UpdateManyAsync(supervisorFilter, supervisorUpdate);
+        }
     }
+
     //Get by user id
     public async Task<UsersModel?> GetByUserIdAsync(string userId)
     {

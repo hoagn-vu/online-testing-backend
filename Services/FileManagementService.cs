@@ -13,6 +13,14 @@ namespace Backend_online_testing.Services
     using LicenseContext = OfficeOpenXml.LicenseContext;
     using System.Reflection;
 
+    public interface IFileManagementService
+    {
+        Task<string> ProcessFileTxt(StreamReader reader, string subjectId, string questionBankId);
+        Task<string> ProcessFileDocx(Stream stream, string subjectId, string questionBankId);
+        Task<List<object>> UsersFileExcel(Stream fileStream);
+        Task<List<object>> GroupUser(Stream fileStream);
+    }
+    
     public class FileManagementService : IFileManagementService
     {
         private readonly IMongoCollection<UsersModel> _users;
@@ -430,7 +438,24 @@ namespace Backend_online_testing.Services
                         lastName = string.Empty;
                         firstName = fullName;
                     }
-
+                    
+                    var fullName = worksheet.Cells[row, 2].Text.Trim();
+                    var lastSpaceIndex = fullName.LastIndexOf(' ');
+                    
+                    var lastName = string.Empty;
+                    var firstName = string.Empty;
+                    
+                    if (lastSpaceIndex > 0)
+                    {
+                        lastName = fullName[..lastSpaceIndex];
+                        firstName = fullName[(lastSpaceIndex + 1)..];
+                    }
+                    else
+                    {
+                        lastName = string.Empty;
+                        firstName = fullName;
+                    }
+                    
                     var user = new UsersModel
                     {
                         UserName = userCode.ToLower(),
@@ -476,7 +501,7 @@ namespace Backend_online_testing.Services
                 return usersResponse;
             }
 
-            await this._users.InsertManyAsync(usersList);
+            await _users.InsertManyAsync(usersList);
 
             // // Log admin action
             // var logData = new UserLogsModel

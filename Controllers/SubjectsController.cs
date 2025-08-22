@@ -284,9 +284,9 @@ public class SubjectsController : ControllerBase
     }
 
     [HttpGet("questions/tags-classification")]
-    public async Task<ActionResult<List<TagsClassification>>> GetTagsClassification([FromQuery] string subjectId, [FromQuery] string questionBankId)
+    public async Task<ActionResult<List<TagsClassification>>> GetTagsClassification([FromQuery] string subjectId, [FromQuery] string questionBankId, [FromQuery] string type)
     {
-        var result = await _subjectsService.GetTagsClassificationAsync(subjectId, questionBankId);
+        var result = await _subjectsService.GetTagsClassificationAsync(subjectId, questionBankId, type);
         return Ok(result);
     }
 }

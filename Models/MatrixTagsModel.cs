@@ -6,10 +6,10 @@
     public class MatrixTagsModel
     {
         [BsonElement("chapter")]
-        public string Chapter { get; set; } = string.Empty;        
+        public string? Chapter { get; set; } = string.Empty;        
         
         [BsonElement("level")]
-        public string Level { get; set; } = string.Empty;
+        public string? Level { get; set; } = string.Empty;
 
         [BsonElement("questionCount")]
         public int QuestionCount { get; set; }

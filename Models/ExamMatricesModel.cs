@@ -14,6 +14,9 @@
 
         [BsonElement("matrixStatus")]
         public string MatrixStatus { get; set; } = "available";
+        
+        [BsonElement("matrixType")]
+        public string MatrixType { get; set; } = "both";
 
         [BsonElement("subjectId")]
         public string SubjectId { get; set; } = string.Empty;
