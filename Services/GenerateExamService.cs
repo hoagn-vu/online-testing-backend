@@ -47,7 +47,7 @@ namespace Backend_online_testing.Services
                 var answers = selectedQuestions.Select(q => new AnswersModel
                 {
                     QuestionId = q.QuestionId,
-                    Score = null,
+                    Score = organizeExam.MaxScore / organizeExam.TotalQuestions,
                     AnswerChosen = new List<string>(),
                     IsCorrect = false
                 }).ToList();
