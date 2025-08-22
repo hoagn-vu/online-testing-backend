@@ -439,34 +439,78 @@ public class SubjectsService
     }
 
     // Classification tag for create matrix
-    public async Task<List<TagsClassification>> GetTagsClassificationAsync(string subjectId, string questionBankId)
+    public async Task<List<TagsClassification>> GetTagsClassificationAsync(
+        string subjectId, 
+        string questionBankId, 
+        string type = "both")
     {
-        //var subject = await _subjectsCollection.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
         var subject = await _subjectRepository.GetSubjectByIdAsync(subjectId);
         if (subject == null) return [];
 
         var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
         if (questionBank == null) return [];
 
-        var tagsDictionary = new Dictionary<(string Chapter, string Level), int>();
-
-        foreach (var question in questionBank.QuestionList)
+        // Trường hợp both: giữ nguyên logic cũ
+        if (type.Equals("both", StringComparison.OrdinalIgnoreCase))
         {
-            if (question.Tags is { Count: >= 2 })
+            var tagsDictionary = new Dictionary<(string Chapter, string Level), int>();
+
+            foreach (var question in questionBank.QuestionList)
             {
-                var key = (question.Tags[0], question.Tags[1]);
-                if (!tagsDictionary.TryAdd(key, 1))
+                if (question.Tags is { Count: >= 2 })
                 {
-                    tagsDictionary[key]++;
+                    var key = (Chapter: question.Tags[0], Level: question.Tags[1]);
+                    if (!tagsDictionary.TryAdd(key, 1))
+                    {
+                        tagsDictionary[key]++;
+                    }
                 }
             }
+
+            return tagsDictionary.Select(kvp => new TagsClassification
+            {
+                Chapter = kvp.Key.Chapter,
+                Level = kvp.Key.Level,
+                Total = kvp.Value
+            }).ToList();
         }
 
-        return tagsDictionary.Select(kvp => new TagsClassification
+        // Trường hợp level: chỉ lấy level duy nhất
+        if (type.Equals("level", StringComparison.OrdinalIgnoreCase))
         {
-            Chapter = kvp.Key.Chapter,
-            Level = kvp.Key.Level,
-            Total = kvp.Value
-        }).ToList();
+            var levels = questionBank.QuestionList
+                .Where(q => q.Tags is { Count: >= 2 })
+                .Select(q => q.Tags[1]) // Level nằm ở vị trí [1]
+                .Distinct()
+                .Select(l => new TagsClassification
+                {
+                    Chapter = string.Empty,
+                    Level = l,
+                    Total = questionBank.QuestionList.Count(q => q.Tags is { Count: >= 2 } && q.Tags[1] == l)
+                })
+                .ToList();
+
+            return levels;
+        }
+
+        // Trường hợp chapter: chỉ lấy chapter duy nhất
+        if (type.Equals("chapter", StringComparison.OrdinalIgnoreCase))
+        {
+            var chapters = questionBank.QuestionList
+                .Where(q => q.Tags is { Count: >= 2 })
+                .Select(q => q.Tags[0]) // Chapter nằm ở vị trí [0]
+                .Distinct()
+                .Select(c => new TagsClassification
+                {
+                    Chapter = c,
+                    Level = string.Empty,
+                    Total = questionBank.QuestionList.Count(q => q.Tags is { Count: >= 2 } && q.Tags[0] == c)
+                })
+                .ToList();
+
+            return chapters;
+        }
+
+        return [];
     }
 }

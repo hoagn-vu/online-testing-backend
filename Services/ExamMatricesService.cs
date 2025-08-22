@@ -55,6 +55,7 @@ namespace Backend_online_testing.Services
                     MatrixTags = matrix.MatrixTags,
                     TotalGeneratedExams = matrix.ExamIds.Count,
                     ExamIds = matrix.ExamIds,
+                    MatrixType = matrix.MatrixType,
                 });
             }
 
@@ -78,11 +79,11 @@ namespace Backend_online_testing.Services
                 SubjectId = matrixData.SubjectId,
                 QuestionBankId = matrixData.QuestionBankId,
                 MatrixTags = matrixData.MatrixTags,
+                MatrixType = matrixData.MatrixType
             };
 
             try
             {
-                
                 await _examMatrixsCollection.InsertOneAsync(newExamMatrix);
                 return "Tạo ma trận thành công";
             }

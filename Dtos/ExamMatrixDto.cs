@@ -13,6 +13,7 @@ namespace Backend_online_testing.Dtos
         public List<MatrixTagsModel> MatrixTags { get; set; } = [];
         public int TotalGeneratedExams { get; set; }
         public List<string> ExamIds { get; set; } = [];
+        public string MatrixType { get; set; } = string.Empty;
     }
 
     public class ExamMatrixRequestDto
@@ -20,6 +21,7 @@ namespace Backend_online_testing.Dtos
         public string MatrixName { get; set; } = string.Empty;
         public string SubjectId { get; set; } = string.Empty;
         public string QuestionBankId { get; set; } = string.Empty;
+        public string MatrixType { get; set; } = string.Empty;
         public List<MatrixTagsModel> MatrixTags { get; set; } = [];
     }
     
