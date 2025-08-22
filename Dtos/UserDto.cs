@@ -36,3 +36,56 @@ public class UserOptionsDto
     public string UserCode { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
 }
+
+public class ResumeExamResponse
+{
+    public string UserId { get; set; } = string.Empty;
+
+    public string FullName { get; set; } = string.Empty;
+
+    public string UserCode { get; set; } = string.Empty;
+
+    public string OrganizeExamId { get; set; } = string.Empty;
+
+    public string OrganizeExamName { get; set; } = string.Empty;
+
+    public string SessionId { get; set; } = string.Empty;
+
+    public string RoomId { get; set; } = string.Empty;
+
+    public string RoomName { get; set; } = string.Empty;
+
+    public string SubjectId { get; set; } = string.Empty;
+
+    public string SubjectName { get; set; } = string.Empty;
+
+    public string QuestionBankId { get; set; } = string.Empty;
+
+    public string Status { get; set; } = string.Empty;
+
+    public int Progress { get; set; } 
+
+    public int TotalQuestions { get; set; }
+
+    public List<ResumeQuestionItem> Questions { get; set; } = new();
+}
+
+public class ResumeQuestionItem
+{
+    public string QuestionId { get; set; } = string.Empty;
+
+    public string QuestionText { get; set; } = string.Empty;
+
+    public string QuestionType { get; set; } = string.Empty;
+    public IReadOnlyList<QuestionOptionItem> Options { get; set; } = Array.Empty<QuestionOptionItem>();
+    public IReadOnlyList<string> SelectedOptionIds { get; set; } = Array.Empty<string>(); 
+    public bool IsAnswered => SelectedOptionIds.Count > 0;
+    public bool? IsCorrect { get; set; } 
+    public IReadOnlyList<string> Tags { get; set; } = Array.Empty<string>();
+}
+
+public class QuestionOptionItem
+{
+    public string OptionId { get; set; } = default!;
+    public string OptionText { get; set; } = default!;
+}

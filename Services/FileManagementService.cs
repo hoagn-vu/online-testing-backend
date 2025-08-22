@@ -11,6 +11,7 @@ namespace Backend_online_testing.Services
     using MongoDB.Driver;
     using OfficeOpenXml;
     using LicenseContext = OfficeOpenXml.LicenseContext;
+    using System.Reflection;
 
     public interface IFileManagementService
     {
@@ -337,16 +338,72 @@ namespace Backend_online_testing.Services
 
                 for (int row = 2; row <= rowCount; row++)
                 {
+                    string userName = worksheet.Cells[row, 1].Text.Trim();
                     string userCode = worksheet.Cells[row, 1].Text.Trim();
+                    string fullName = worksheet.Cells[row, 2].Text.Trim();
+                    string gender_raw = worksheet.Cells[row, 3].Text.Trim();
+                    string role_raw = worksheet.Cells[row, 5].Text.Trim();
+
+                    var missing = new List<string>();
+                    if (string.IsNullOrWhiteSpace(userCode)) missing.Add("UserCode");
+                    if (string.IsNullOrWhiteSpace(fullName)) missing.Add("FullName");
+                    if (string.IsNullOrWhiteSpace(userName)) missing.Add("UserName");
+                    if (string.IsNullOrWhiteSpace(role_raw)) missing.Add("Role");
+
+                    if (missing.Count > 0)
+                    {
+                        usersResponse.Add(new
+                        {
+                            Line = row,
+                            Status = $"Thiếu dữ liệu bắt buộc: {string.Join(", ", missing)}"
+                        });
+                        continue;
+                    }
+
+                    string gender = string.Empty;
+
+                    if (!string.IsNullOrWhiteSpace(gender_raw))
+                    {
+                        switch (gender_raw.ToLower())
+                        {
+                            case "nam":
+                                gender = "male"; break;
+                            case "nữ":
+                                gender = "female"; break;
+                            default:
+                                gender = "N/A"; break;
+                        }
+                    }
+
+                    //Role
+                    string role = string.Empty;
+
+                    if (!string.IsNullOrWhiteSpace(role_raw))
+                    {
+                        switch (role_raw.ToLower())
+                        {
+                            case "thí sinh":
+                                role = "candidate"; break;
+                            case "giảng viên":
+                                role = "teacher"; break;
+                            case "giám thị":
+                                role = "supervisor"; break;
+                            case "cán bộ":
+                                role = "staff"; break;
+                            default:
+                                role = "N/A"; break;
+                        }
+                    }
 
                     var existingUser = this._users.Find(u => u.UserCode == userCode).FirstOrDefault();
                     if (existingUser != null)
                     {
                         usersResponse.Add(new
                         {
+                            Line = row,
                             UserCode = userCode,
-                            FullName = worksheet.Cells[row, 2].Text.Trim(),
-                            Role = worksheet.Cells[row, 5].Text.Trim(),
+                            FullName = fullName,
+                            Role = role_raw,
                             Status = "Đã tồn tại",
                         });
                         continue;
@@ -362,7 +419,24 @@ namespace Backend_online_testing.Services
                     }
                     else
                     {
-                        dateOfBirthStr = dateOfBirthCell?.ToString();
+                        dateOfBirthStr = dateOfBirthCell?.ToString() ?? "";
+                    }
+
+                    //First name and last name
+                    var lastSpaceIndex = fullName.LastIndexOf(' ');
+
+                    var lastName = string.Empty;
+                    var firstName = string.Empty;
+
+                    if (lastSpaceIndex > 0)
+                    {
+                        lastName = fullName[..lastSpaceIndex];
+                        firstName = fullName[(lastSpaceIndex + 1)..];
+                    }
+                    else
+                    {
+                        lastName = string.Empty;
+                        firstName = fullName;
                     }
                     
                     var fullName = worksheet.Cells[row, 2].Text.Trim();
@@ -390,9 +464,9 @@ namespace Backend_online_testing.Services
                         FullName = fullName,
                         LastName = lastName,
                         FirstName = firstName,
-                        Gender = worksheet.Cells[row, 3].Text.Trim(),
+                        Gender = gender,
                         DateOfBirth = dateOfBirthStr,
-                        Role = worksheet.Cells[row, 5].Text.Trim(),
+                        Role = role,
                         Password = BCrypt.Net.BCrypt.HashPassword(userCode.ToLower()),
                     };
 
@@ -413,9 +487,10 @@ namespace Backend_online_testing.Services
                     usersList.Add(user);
                     usersResponse.Add(new
                     {
+                        Line = row,
                         UserName = user.UserName,
                         FullName = user.FullName,
-                        Role = user.Role,
+                        Role = role_raw,
                         Status = "Added successfully",
                     });
                 }
@@ -460,7 +535,7 @@ namespace Backend_online_testing.Services
                     var existingUser = this._users.Find(u => u.UserName == userName).FirstOrDefault();
 
                     // If user is not existing in group
-                    if (existingUser != null)
+                    if (existingUser != null && existingUser.GroupName != null)
                     {
                         if (!existingUser.GroupName.Contains(groupName))
                         {

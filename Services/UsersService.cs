@@ -4,6 +4,7 @@ using System.Runtime.InteropServices.JavaScript;
 using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
 using Backend_online_testing.Repositories;
+using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.EMMA;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.VariantTypes;
@@ -309,5 +310,123 @@ public class UsersService
         };
 
         return dto;
+    }
+
+    public async Task<ResumeExamResponse> ResumeAsync(string userId, string organizeExamId, string roomId, string sessionId)
+    {
+        var user = await _userRepository.FindUserAsync(userId)
+            ?? throw new InvalidOperationException("User not found or deleted.");
+
+        var organizeExam = await _userRepository.FindOrganizeExamAsync(organizeExamId)
+            ?? throw new InvalidOperationException("OrganizeExam not found.");
+
+        var subjectId = organizeExam.SubjectId
+            ?? throw new InvalidOperationException("OrganizeExam missing SubjectId.");
+
+        var questionBankId = organizeExam.QuestionBankId
+            ?? throw new InvalidOperationException("OrganizeExam missing QuestionBankId.");
+
+        var subejct = await _userRepository.FindSubjectAsync(subjectId);
+
+        var room = await _userRepository.FindRoomAsync(roomId);
+
+        var qb = await _userRepository.FindQuestionBankAsync(subjectId, questionBankId)
+            ?? throw new InvalidOperationException("QuestionBank not found in Subject.");
+
+        var questionList = qb.QuestionList ?? new List<QuestionModel>();
+
+        var fullName = user.FullName ?? "";
+        var userCode = user.UserCode ?? "";
+        var organizeExamName = organizeExam.OrganizeExamName ?? "";
+        var subjectName = subejct.SubjectName ?? "";
+        var roomName = room.RoomName ?? "";
+
+        user.TakeExam ??= new List<TakeExamsModel>();
+        var take = user.TakeExam.FirstOrDefault(t =>
+               t.OrganizeExamId == organizeExamId &&
+               t.SessionId == sessionId &&
+               t.RoomId == roomId
+         );
+
+        //If not exist take Exam
+        if (take is null)
+        {
+            take = new TakeExamsModel
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                OrganizeExamId = organizeExamId,
+                SessionId = sessionId,
+                RoomId = roomId,
+                Status = "in_progress",
+                StartAt = DateTime.UtcNow,
+                Progress = 0,
+                Answers = new List<AnswersModel>()
+            };
+
+            // push 
+            var updatePush = Builders<UsersModel>.Update.Push(u => u.TakeExam, take);
+            await _userRepository.UpdateAsync(user.Id, updatePush);
+        }
+
+        //Map answers according to QuestionId
+        var answerByQid = take.Answers?.ToDictionary(a => a.QuestionId, a => a)
+                          ?? new Dictionary<string, AnswersModel>();
+
+        //Merge question
+        var merged = new List<ResumeQuestionItem>();
+        foreach (var q in questionList)
+        {
+            var opts = (q.Options ?? new List<OptionsModel>())
+                .Select(o => new QuestionOptionItem { OptionId = o.OptionId, OptionText = o.OptionText })
+                .ToList();
+
+            if (answerByQid.TryGetValue(q.QuestionId, out var ans))
+            {
+                merged.Add(new ResumeQuestionItem
+                {
+                    QuestionId = q.QuestionId,
+                    QuestionText = q.QuestionText,
+                    QuestionType = q.QuestionType,
+                    Options = opts,
+                    SelectedOptionIds = ans.AnswerChosen,
+                    IsCorrect = ans.IsCorrect,
+                    Tags = q.Tags ?? new List<string>()
+                });
+            }
+            //else
+            //{
+            //    merged.Add(new ResumeQuestionItem
+            //    {
+            //        QuestionId = q.QuestionId,
+            //        QuestionText = q.QuestionText,
+            //        QuestionType = q.QuestionType,
+            //        Options = opts,
+            //        SelectedOptionIds = Array.Empty<string>(),
+            //        IsCorrect = null,
+            //        Tags = q.Tags ?? new List<string>()
+            //    });
+            //}
+        }
+
+        var takeProgress = take.Progress;
+
+        return new ResumeExamResponse
+        {
+            UserId = userId,
+            FullName = fullName,
+            UserCode = userCode,
+            OrganizeExamId = organizeExamId,
+            OrganizeExamName = organizeExamName,
+            SessionId = sessionId,
+            RoomId = roomId,
+            RoomName = roomName,
+            SubjectId = subjectId,
+            SubjectName = subjectName,
+            QuestionBankId = questionBankId,
+            Status = take.Status,
+            Progress = takeProgress,
+            TotalQuestions = merged.Count,
+            Questions = merged
+        };
     }
 }
