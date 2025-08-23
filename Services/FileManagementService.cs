@@ -439,23 +439,6 @@ namespace Backend_online_testing.Services
                         firstName = fullName;
                     }
                     
-                    var fullName = worksheet.Cells[row, 2].Text.Trim();
-                    var lastSpaceIndex = fullName.LastIndexOf(' ');
-                    
-                    var lastName = string.Empty;
-                    var firstName = string.Empty;
-                    
-                    if (lastSpaceIndex > 0)
-                    {
-                        lastName = fullName[..lastSpaceIndex];
-                        firstName = fullName[(lastSpaceIndex + 1)..];
-                    }
-                    else
-                    {
-                        lastName = string.Empty;
-                        firstName = fullName;
-                    }
-                    
                     var user = new UsersModel
                     {
                         UserName = userCode.ToLower(),
