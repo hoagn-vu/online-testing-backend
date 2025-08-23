@@ -32,11 +32,11 @@ namespace Backend_online_testing.Services
                     t.SessionId == request.SessionId &&
                     t.RoomId == request.RoomId);
 
-            if (takeExam == null)
-            {
-                return ("error-take-exam", null);
-            }
+            if (takeExam == null) return ("error-take-exam", null);
+            
+            if (takeExam.Status == "done") return ("exam-done", null);
 
+             // Trường hợp 0: da co du lieu lam bai
             if (takeExam is { Status: "in_exam", Answers.Count: > 0 })
             {
                 var subject = await _generateExamRepository.GetSubjectByIdAsync(organizeExam.SubjectId);
@@ -314,8 +314,7 @@ namespace Backend_online_testing.Services
             }
 
             return ("error-exam-type", null);
-
-            return ("error-take-exam", null);
+            
         }
     }
 }

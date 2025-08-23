@@ -23,8 +23,8 @@ public interface IUsersService
     Task<string> DeleteUserById(string id, string madeBy);
     Task<ExamReviewDto> GetExamReviewAsync(string userId, string organizeExamId, string sessionId, string roomId);
     Task<ResumeExamResponse> ResumeAsync(string userId, string organizeExamId, string roomId, string sessionId);
-    Task<string> BulkChangePasswordAsync(BulkChangePasswordRequestDto request);
-    Task<string> ChangePasswordAsync(string userId, ChangePasswordRequestDto request);
+    Task<(string, string)> BulkChangePasswordAsync(BulkChangePasswordRequestDto request);
+    Task<(string, string)> ChangePasswordAsync(string userId, ChangePasswordRequestDto request);
 }
 
 public class UsersService : IUsersService
@@ -443,11 +443,11 @@ public class UsersService : IUsersService
         };
     }
     
-    public async Task<string> BulkChangePasswordAsync(BulkChangePasswordRequestDto request)
+    public async Task<(string, string)> BulkChangePasswordAsync(BulkChangePasswordRequestDto request)
     {
         var users = await _userRepository.GetUsersByIdsAsync(request.UserIds);
 
-        if (users == null || !users.Any()) return "No users found";
+        if (users == null || !users.Any()) return ("error-user", "No users found");
 
         string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
@@ -456,23 +456,23 @@ public class UsersService : IUsersService
             await _userRepository.UpdateUserPasswordAsync(user.Id, hashedPassword);
         }
 
-        return "Password changed for candidates successfully";
+        return ("success", "Password changed for candidates successfully");
     }
 
-    public async Task<string> ChangePasswordAsync(string userId, ChangePasswordRequestDto request)
+    public async Task<(string, string)> ChangePasswordAsync(string userId, ChangePasswordRequestDto request)
     {
         var user = await _userRepository.GetUserById(userId);
-        if (user == null) return "User not found";
+        if (user == null) return ("error-user", "User not found");
 
         if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password))
-            return "Old password is incorrect";
+            return ("op-incorrect", "Old password is incorrect");
 
         if (request.NewPassword != request.ConfirmNewPassword)
-            return "New password and confirmation do not match";
+            return ("np-incorrect", "New password and confirm new password are not the same");
 
         string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         await _userRepository.UpdateUserPasswordAsync(user.Id, hashedPassword);
 
-        return "Password changed successfully";
+        return ("success", "Password changed successfully");
     }
 }

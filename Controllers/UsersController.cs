@@ -144,8 +144,8 @@ namespace Backend_online_testing.Controllers
         [HttpPost("{userId}/change-password")]
         public async Task<IActionResult> ChangePassword([FromRoute] string userId, [FromBody] ChangePasswordRequestDto request)
         {
-            var result = await _userService.ChangePasswordAsync(userId, request);
-            return Ok(new { message = result });
+            var (code, result) = await _userService.ChangePasswordAsync(userId, request);
+            return Ok(new { code = code, message = result });
         }
     }
 }

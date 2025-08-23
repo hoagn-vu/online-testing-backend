@@ -19,6 +19,7 @@ namespace Backend_online_testing.Controllers
         public async Task<IActionResult> GenerateExam([FromBody] GenerateExamRequestDto request)
         {
             var (status, response) = await _examService.GenerateExamAsync(request);
+                
             return status switch
             {
                 "error-organize-exam" => BadRequest(new
@@ -36,7 +37,8 @@ namespace Backend_online_testing.Controllers
                 "error-user" => BadRequest(new { code = status, message = "Không tìm thấy dữ liệu người dùng" }),
                 "error-take-exam" => BadRequest(new { code = status, message = "Không tìm thấy dữ liệu làm bài thi" }),
                 "error-exam-type" => BadRequest(new { code = status, message = "Lỗi lấy dữ liệu loại bài thi" }),
-                _ => Ok(response)
+                "exam-done" => Ok(new { code = status, message = "Bài thi đã hoàn thành" }),
+                "success" => Ok(new {code = status, data = response})
             };
         }
     }
