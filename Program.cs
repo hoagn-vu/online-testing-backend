@@ -26,8 +26,8 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 });
 
 builder.Services.AddSingleton<AuthService>();
-builder.Services.AddScoped<UsersService>();
-builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<RoomsService>();
 builder.Services.AddScoped<RoomRepository>();;
 builder.Services.AddScoped<ExamsService>();

@@ -89,3 +89,16 @@ public class QuestionOptionItem
     public string OptionId { get; set; } = default!;
     public string OptionText { get; set; } = default!;
 }
+
+public class BulkChangePasswordRequestDto
+{
+    public List<string> UserIds { get; set; } = new();
+    public required string NewPassword { get; set; }
+}
+
+public class ChangePasswordRequestDto
+{
+    public required string OldPassword { get; set; }
+    public required string NewPassword { get; set; }
+    public required string ConfirmNewPassword { get; set; }
+}

@@ -5,16 +5,27 @@ using Backend_online_testing.Dtos;
 
 namespace Backend_online_testing.Repositories;
 
-public interface IUsersRepository
+public interface IUserRepository
 {
-    Task<List<UserDto>> GetAllUsersAsync();
-    Task<UsersModel?> GetByIdAsync(string id);
-    Task CreateUserAsync(UsersModel user);
-    Task<bool> UpdateUserAsync(string id, UsersModel user);
-    Task<bool> DeleteUserAsync(string id);
+    Task<long> CountAsync(FilterDefinition<UsersModel> filter);
+    Task<List<UserDto>> GetUsersAsync(FilterDefinition<UsersModel>? filter, int skip, int limit);
+    Task<UserDto> GetUserByIdAsync(string userId);
+    Task<UsersModel?> GetByUsernameAsync(string username);
+    Task InsertAsync(UsersModel user);
+    Task<UpdateResult> UpdateAsync(string id, UpdateDefinition<UsersModel> update);
+    Task<DeleteResult> DeleteAsync(string id);
+    Task<UsersModel> FindUserAsync(string userId);
+    Task<SubjectsModel?> FindSubjectAsync(string subjectId);
+    Task<QuestionBanksModel?> FindQuestionBankAsync(string subjectId, string questionBankId);
+    Task<OrganizeExamModel?> FindOrganizeExamAsync(string id);
+    Task<RoomsModel?> FindRoomAsync(string id);
+    Task<ExamsModel?> FindExamAsync(string id);
+    Task<UsersModel?> GetUserById(string userId);
+    Task<List<UsersModel>> GetUsersByIdsAsync(List<string> userIds);
+    Task UpdateUserPasswordAsync(string userId, string hashedPassword);
 }
 
-public class UserRepository
+public class UserRepository : IUserRepository
 {
     private readonly IMongoCollection<UsersModel> _users;
     private readonly IMongoCollection<SubjectsModel> _subjects;
@@ -77,10 +88,10 @@ public class UserRepository
     }
 
     //Get user by id
-    public async Task<UserDto> GetUserByIdAsync(string id)
+    public async Task<UserDto> GetUserByIdAsync(string userId)
     {
         var filter = Builders<UsersModel>.Filter.And(
-            Builders<UsersModel>.Filter.Eq(u => u.Id, id),
+            Builders<UsersModel>.Filter.Eq(u => u.Id, userId),
             Builders<UsersModel>.Filter.Ne(u => u.AccountStatus, "deleted")
         );
 
@@ -159,4 +170,21 @@ public class UserRepository
 
     public async Task<ExamsModel?> FindExamAsync(string id)
         => await _exams.Find(e => e.Id == id).FirstOrDefaultAsync();
+    
+    public async Task<UsersModel?> GetUserById(string userId)
+    {
+        return await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+    }
+    public async Task<List<UsersModel>> GetUsersByIdsAsync(List<string> userIds)
+    {
+        var filter = Builders<UsersModel>.Filter.In(u => u.Id, userIds);
+        return await _users.Find(filter).ToListAsync();
+    }
+
+    public async Task UpdateUserPasswordAsync(string userId, string hashedPassword)
+    {
+        var filter = Builders<UsersModel>.Filter.Eq(u => u.Id, userId);
+        var update = Builders<UsersModel>.Update.Set(u => u.Password, hashedPassword);
+        await _users.UpdateOneAsync(filter, update);
+    }
 }

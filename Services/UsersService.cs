@@ -1,5 +1,4 @@
-﻿#pragma warning disable
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.JavaScript;
 using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
@@ -14,12 +13,26 @@ using MongoDB.Driver;
 
 namespace Backend_online_testing.Services;
 
-public class UsersService
+public interface IUsersService
 {
-    private readonly UserRepository _userRepository;
+    Task<(List<UserDto>, long)> GetAllUsers(string? keyword, int page, int pageSize, string? role);
+    Task<UserDto?> GetUserByIdAsync(string id);
+    Task<List<UserOptionsDto>> GetUsersByRole(string role);
+    Task<string> AddUser(CreateOrUpdateUserDto userData);
+    Task<string> UpdateUserById(string id, CreateOrUpdateUserDto updateUser);
+    Task<string> DeleteUserById(string id, string madeBy);
+    Task<ExamReviewDto> GetExamReviewAsync(string userId, string organizeExamId, string sessionId, string roomId);
+    Task<ResumeExamResponse> ResumeAsync(string userId, string organizeExamId, string roomId, string sessionId);
+    Task<string> BulkChangePasswordAsync(BulkChangePasswordRequestDto request);
+    Task<string> ChangePasswordAsync(string userId, ChangePasswordRequestDto request);
+}
+
+public class UsersService : IUsersService
+{
+    private readonly IUserRepository _userRepository;
     private readonly LogService _logService;
 
-    public UsersService(UserRepository userRepository, LogService logService)
+    public UsersService(IUserRepository userRepository, LogService logService)
     {
         _userRepository = userRepository;
         _logService = logService;
@@ -428,5 +441,38 @@ public class UsersService
             TotalQuestions = merged.Count,
             Questions = merged
         };
+    }
+    
+    public async Task<string> BulkChangePasswordAsync(BulkChangePasswordRequestDto request)
+    {
+        var users = await _userRepository.GetUsersByIdsAsync(request.UserIds);
+
+        if (users == null || !users.Any()) return "No users found";
+
+        string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+        foreach (var user in users.Where(u => u.Role == "candidate"))
+        {
+            await _userRepository.UpdateUserPasswordAsync(user.Id, hashedPassword);
+        }
+
+        return "Password changed for candidates successfully";
+    }
+
+    public async Task<string> ChangePasswordAsync(string userId, ChangePasswordRequestDto request)
+    {
+        var user = await _userRepository.GetUserById(userId);
+        if (user == null) return "User not found";
+
+        if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password))
+            return "Old password is incorrect";
+
+        if (request.NewPassword != request.ConfirmNewPassword)
+            return "New password and confirmation do not match";
+
+        string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        await _userRepository.UpdateUserPasswordAsync(user.Id, hashedPassword);
+
+        return "Password changed successfully";
     }
 }
