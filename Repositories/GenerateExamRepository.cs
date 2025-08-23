@@ -11,6 +11,7 @@ namespace Backend_online_testing.Repositories
         Task<UsersModel?> GetUserByIdAsync(string userId);
         Task UpdateUserTakeExamAsync(string userId, TakeExamsModel updatedTakeExam);
         Task<ExamsModel?> GetExamByIdAsync(string examId);
+        Task<ExamMatricesModel?> GetExamMatrixByIdAsync(string matrixId);
     }
 
     public class GenerateExamRepository : IGenerateExamRepository
@@ -19,6 +20,7 @@ namespace Backend_online_testing.Repositories
         private readonly IMongoCollection<SubjectsModel> _subjectCollection;
         private readonly IMongoCollection<UsersModel> _userCollection;
         private readonly IMongoCollection<ExamsModel> _examCollection;
+        private readonly IMongoCollection<ExamMatricesModel> _examMatricesCollection;
 
         public GenerateExamRepository(IMongoDatabase database)
         {
@@ -26,6 +28,7 @@ namespace Backend_online_testing.Repositories
             _subjectCollection = database.GetCollection<SubjectsModel>("subjects");
             _userCollection = database.GetCollection<UsersModel>("users");
             _examCollection = database.GetCollection<ExamsModel>("exams");
+            _examMatricesCollection = database.GetCollection<ExamMatricesModel>("examMatrices");
         }
 
         public async Task<OrganizeExamModel?> GetOrganizeExamByIdAsync(string organizeExamId)
@@ -78,5 +81,7 @@ namespace Backend_online_testing.Repositories
         public async Task<ExamsModel?> GetExamByIdAsync(string examId)
             => await _examCollection.Find(e => e.Id == examId).FirstOrDefaultAsync();
         
+        public async Task<ExamMatricesModel?> GetExamMatrixByIdAsync(string matrixId)
+            => await _examMatricesCollection.Find(e => e.Id == matrixId).FirstOrDefaultAsync();
     }
 }

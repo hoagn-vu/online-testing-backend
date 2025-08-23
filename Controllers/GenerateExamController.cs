@@ -31,6 +31,7 @@ namespace Backend_online_testing.Controllers
                     code = status, message = "Không tìm thấy dữ liệu ngân hàng câu hỏi"
                 }),
                 "error-exam-set" => BadRequest(new { code = status, message = "Không tìm thấy danh sách đề thi" }),
+                "error-exam-matrix" => BadRequest(new { code = status, message = "Không tìm thấy ma trận đề thi" }),
                 "error-get-exam" => BadRequest(new { code = status, message = "Lỗi lấy dữ liệu đề thi" }),
                 "error-user" => BadRequest(new { code = status, message = "Không tìm thấy dữ liệu người dùng" }),
                 "error-take-exam" => BadRequest(new { code = status, message = "Không tìm thấy dữ liệu làm bài thi" }),

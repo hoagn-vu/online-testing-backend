@@ -27,6 +27,9 @@
         [BsonElement("examStatus")]
         public string ExamStatus { get; set; } = string.Empty;
         
+        [BsonElement("matrixId")]
+        public string? MatrixId { get; set; } = string.Empty;
+        
         [BsonElement("organizeExamUsed")]
         public List<string>? OrganizeExamUsed { get; set; } = [];
     }
