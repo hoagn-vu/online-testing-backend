@@ -16,7 +16,7 @@ namespace Backend_online_testing.Controllers
     {
         private readonly IUsersService _userService;
 
-        public UsersController(UsersService userService)
+        public UsersController(IUsersService userService)
         {
             this._userService = userService;
         }
