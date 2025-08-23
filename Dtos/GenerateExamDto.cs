@@ -38,6 +38,7 @@ namespace Backend_online_testing.Dtos
     {
         public string OptionId { get; set; } = string.Empty;
         public string OptionText { get; set; } = string.Empty;
+        public bool? IsChosen { get; set; } = false;
     }
 
 }

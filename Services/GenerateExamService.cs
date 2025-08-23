@@ -22,6 +22,64 @@ namespace Backend_online_testing.Services
         {
             var organizeExam = await _generateExamRepository.GetOrganizeExamByIdAsync(request.OrganizeExamId);
             if (organizeExam == null) return ("error-organize-exam", null);
+            
+            var user = await _generateExamRepository.GetUserByIdAsync(request.UserId);
+            if (user == null) return ("error-user", null);
+
+            var takeExam = user.TakeExam
+                ?.FirstOrDefault(t =>
+                    t.OrganizeExamId == request.OrganizeExamId &&
+                    t.SessionId == request.SessionId &&
+                    t.RoomId == request.RoomId);
+
+            if (takeExam == null)
+            {
+                return ("error-take-exam", null);
+            }
+
+            if (takeExam is { Status: "in_exam", Answers.Count: > 0 })
+            {
+                var subject = await _generateExamRepository.GetSubjectByIdAsync(organizeExam.SubjectId);
+                if (subject == null) return ("error-subject", null);
+
+                var questionBank = subject.QuestionBanks
+                    .FirstOrDefault(qb => qb.QuestionBankId == organizeExam.QuestionBankId);
+                if (questionBank == null) return ("error-question-bank", null);
+
+                var questionDict = questionBank.QuestionList.ToDictionary(q => q.QuestionId, q => q);
+
+                var questionDtos = takeExam.Answers
+                    .Where(ans => questionDict.ContainsKey(ans.QuestionId))
+                    .Select(ans =>
+                    {
+                        var q = questionDict[ans.QuestionId];
+                        return new GenerateExamQuestionResponseDto
+                        {
+                            QuestionId = q.QuestionId,
+                            QuestionType = q.QuestionType,
+                            QuestionText = q.QuestionText,
+                            ImgLinks = q.ImgLinks ?? new List<string>(),
+                            IsRandomOrder = q.IsRandomOrder,
+                            Options = q.Options.Select(o => new GenerateExamOptionResponseDto
+                            {
+                                OptionId = o.OptionId,
+                                OptionText = o.OptionText,
+                                IsChosen = ans.AnswerChosen.Contains(o.OptionId)
+                            }).ToList()
+                        };
+                    }).ToList();
+
+                return ("success", new GenerateExamResponseDto
+                {
+                    ExamName = organizeExam.OrganizeExamName,
+                    Duration = takeExam is { StartAt: not null, FinishedAt: not null }
+                        ? organizeExam.Duration - (int)(takeExam.FinishedAt.Value - takeExam.StartAt.Value).TotalSeconds
+                        : organizeExam.Duration,
+                    TotalQuestions = questionDtos.Count,
+                    MaxScore = organizeExam.MaxScore ?? 10,
+                    Questions = questionDtos
+                });
+            }
 
             // Trường hợp 1: auto
             if (organizeExam.ExamType == "auto")
@@ -53,17 +111,6 @@ namespace Backend_online_testing.Services
                 }).ToList();
 
                 // Update user TakeExam
-                var user = await _generateExamRepository.GetUserByIdAsync(request.UserId);
-                if (user == null) return ("error-user", null);
-
-                var takeExam = user.TakeExam
-                    ?.FirstOrDefault(t =>
-                        t.OrganizeExamId == request.OrganizeExamId &&
-                        t.SessionId == request.SessionId &&
-                        t.RoomId == request.RoomId);
-
-                if (takeExam == null) return ("error-take-exam", null);
-
                 takeExam.StartAt = DateTime.UtcNow;
                 takeExam.Status = "in_exam";
                 takeExam.Answers = answers;
@@ -81,10 +128,11 @@ namespace Backend_online_testing.Services
                     Options = q.Options.Select(o => new GenerateExamOptionResponseDto
                     {
                         OptionId = o.OptionId,
-                        OptionText = o.OptionText
+                        OptionText = o.OptionText,
+                        IsChosen = false
                     }).ToList()
                 }).ToList();
-                
+                    
                 return ("success", new GenerateExamResponseDto
                 {
                     ExamName = organizeExam.OrganizeExamName,
@@ -108,7 +156,7 @@ namespace Backend_online_testing.Services
 
                 var subject = await _generateExamRepository.GetSubjectByIdAsync(exam.SubjectId);
                 if (subject == null) return ("error-subject", null);
-                
+                    
                 var questionBank = subject.QuestionBanks
                     .FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
                 if (questionBank == null) return ("error-question-bank", null);
@@ -125,23 +173,13 @@ namespace Backend_online_testing.Services
                 }).ToList();
 
                 // Update user TakeExam
-                var user = await _generateExamRepository.GetUserByIdAsync(request.UserId);
-                if (user == null) return ("error-user", null);
-
-                var takeExam = user.TakeExam
-                    ?.FirstOrDefault(t =>
-                        t.OrganizeExamId == request.OrganizeExamId &&
-                        t.SessionId == request.SessionId &&
-                        t.RoomId == request.RoomId);
-                if (takeExam == null) return ("error-take-exam", null);
-
                 takeExam.ExamId = exam.Id;
                 takeExam.StartAt = DateTime.UtcNow;
                 takeExam.Status = "in_exam";
                 takeExam.Answers = answers;
 
                 await _generateExamRepository.UpdateUserTakeExamAsync(request.UserId, takeExam);
-                
+                    
                 // Chuẩn hóa question response từ QuestionBank
                 var questionDtos = exam.QuestionSet
                     .Where(qs => questionDict.ContainsKey(qs.QuestionId))
@@ -158,7 +196,8 @@ namespace Backend_online_testing.Services
                             Options = q.Options.Select(o => new GenerateExamOptionResponseDto
                             {
                                 OptionId = o.OptionId,
-                                OptionText = o.OptionText
+                                OptionText = o.OptionText,
+                                IsChosen = false
                             }).ToList()
                         };
                     }).ToList();
@@ -242,17 +281,6 @@ namespace Backend_online_testing.Services
                 }
 
                 // Update user TakeExam
-                var user = await _generateExamRepository.GetUserByIdAsync(request.UserId);
-                if (user == null) return ("error-user", null);
-
-                var takeExam = user.TakeExam
-                    ?.FirstOrDefault(t =>
-                        t.OrganizeExamId == request.OrganizeExamId &&
-                        t.SessionId == request.SessionId &&
-                        t.RoomId == request.RoomId);
-
-                if (takeExam == null) return ("error-take-exam", null);
-
                 takeExam.StartAt = DateTime.UtcNow;
                 takeExam.Status = "in_exam";
                 takeExam.Answers = answers;
@@ -270,7 +298,8 @@ namespace Backend_online_testing.Services
                     Options = q.Options.Select(o => new GenerateExamOptionResponseDto
                     {
                         OptionId = o.OptionId,
-                        OptionText = o.OptionText
+                        OptionText = o.OptionText,
+                        IsChosen = false
                     }).ToList()
                 }).ToList();
 
@@ -285,9 +314,8 @@ namespace Backend_online_testing.Services
             }
 
             return ("error-exam-type", null);
+
+            return ("error-take-exam", null);
         }
-        
-        
-        
     }
 }
