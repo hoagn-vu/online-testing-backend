@@ -17,6 +17,7 @@ namespace Backend_online_testing.Dtos
 
     public class GenerateExamResponseDto
     {
+        public string TakeExamId { get; set; } = string.Empty;
         public string ExamName { get; set; } = string.Empty;
         public int Duration { get; set; }
         public int TotalQuestions { get; set; }

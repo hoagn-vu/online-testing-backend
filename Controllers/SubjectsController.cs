@@ -136,6 +136,13 @@ public class SubjectsController : ControllerBase
     {
         var (subjectId, subjectName, questionBankId, questionBankName, allChapter, allLevel, questions, totalCount) = await _subjectsService.GetQuestions(subId, qbId, keyword, page, pageSize);
         return Ok(new { subjectId, subjectName, questionBankId, questionBankName, allChapter, allLevel, questions, totalCount });
+    }    
+    
+    [HttpGet("questions-by-id")]
+    public async Task<ActionResult<List<SubjectsModel>>> GetQuestions(string subId, string qbId, string qId)
+    {
+        var response = await _subjectsService.GetQuestion(subId, qbId, qId);
+        return Ok(response);
     }
 
     // Add question list

@@ -35,6 +35,7 @@ namespace Backend_online_testing.Services
             if (takeExam == null) return ("error-take-exam", null);
             
             if (takeExam.Status == "done") return ("exam-done", null);
+            if (takeExam.Status == "terminate") return ("terminate", null);
 
              // Trường hợp 0: da co du lieu lam bai
             if (takeExam is { Status: "in_exam", Answers.Count: > 0 })
@@ -71,6 +72,7 @@ namespace Backend_online_testing.Services
 
                 return ("success", new GenerateExamResponseDto
                 {
+                    TakeExamId = takeExam.Id,
                     ExamName = organizeExam.OrganizeExamName,
                     Duration = takeExam is { StartAt: not null, FinishedAt: not null }
                         ? organizeExam.Duration - (int)(takeExam.FinishedAt.Value - takeExam.StartAt.Value).TotalSeconds

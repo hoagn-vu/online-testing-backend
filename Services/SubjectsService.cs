@@ -103,6 +103,23 @@ public class SubjectsService
 
         return (subject.Id, subject.SubjectName, questionBank.QuestionBankId, questionBank.QuestionBankName, questionBank.AllChapter, questionBank.AllLevel, paginatedQuestions, totalCount);
     }
+    
+    // Get question by id
+    public async Task<QuestionModel?> GetQuestion(string subjectId, string questionBankId, string questionId)
+    {
+        var subject = await _subjectRepository.GetSubjectByIdAsync(subjectId);
+
+        var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == questionBankId);
+
+        if (questionBank == null)
+        {
+            throw new Exception("Question bank not found.");
+        }
+
+        var filteredQuestions = questionBank.QuestionList.Where(q => q.QuestionId == questionId).ToList();
+        
+        return filteredQuestions.FirstOrDefault();
+    }
 
     // Add subject
     public async Task<string> AddSubject(string subjectName)

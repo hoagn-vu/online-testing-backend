@@ -55,6 +55,8 @@ builder.Services.AddScoped<StatisticsRepository>();
 builder.Services.AddSingleton<S3Service>();
 builder.Services.AddScoped<IGenerateExamService, GenerateExamService>();
 builder.Services.AddScoped<IGenerateExamRepository, GenerateExamRepository>();
+builder.Services.AddScoped<ISubmitAnswerService, SubmitAnswerService>();
+builder.Services.AddScoped<ISubmitAnswerRepository, SubmitAnswerRepository>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

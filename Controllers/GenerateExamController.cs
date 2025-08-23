@@ -38,6 +38,7 @@ namespace Backend_online_testing.Controllers
                 "error-take-exam" => BadRequest(new { code = status, message = "Không tìm thấy dữ liệu làm bài thi" }),
                 "error-exam-type" => BadRequest(new { code = status, message = "Lỗi lấy dữ liệu loại bài thi" }),
                 "exam-done" => Ok(new { code = status, message = "Bài thi đã hoàn thành" }),
+                "terminate" => Ok(new { code = status, message = "Bài thi bị hủy" }),
                 "success" => Ok(new {code = status, data = response})
             };
         }

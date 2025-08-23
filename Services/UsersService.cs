@@ -248,11 +248,15 @@ public class UsersService : IUsersService
     //Get user review
     public async Task<ExamReviewDto> GetExamReviewAsync(string userId, string organizeExamId, string sessionId, string roomId)
     {
-        var user = await _userRepository.FindUserAsync(userId) ?? throw new KeyNotFoundException("User not found");
+        var user = await _userRepository.FindUserAsync(userId) ?? throw new KeyNotFoundException("Không tìm thấy dữ liệu người dùng");
         var takeExam = (user.TakeExam ?? new List<TakeExamsModel>())
             .FirstOrDefault(te => te.OrganizeExamId == organizeExamId &&
                                   te.SessionId == sessionId &&
                                   te.RoomId == roomId);
+        
+        if (takeExam is null) throw new KeyNotFoundException("Không tìm thấy dữ liệu bài làm");
+        if (takeExam.Status != "done") throw new InvalidOperationException("Bài thi chưa được hoàn thành");
+        
         var answers = takeExam?.Answers ?? new List<AnswersModel>();
         var totalScore = takeExam.TotalScore;
         var qIds = answers.Select(a => a.QuestionId).Distinct().ToHashSet();
