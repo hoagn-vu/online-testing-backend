@@ -122,9 +122,17 @@ public class StatisticsService
 
                     var status = await _statisticsRepository.GetTakeExamStatusAsync(
                         candId, organizeExam.Id, sessionId, roomId);
-
-                    if (string.Equals(status, "terminate", StringComparison.OrdinalIgnoreCase))
-                        dto.TotalCandidateTerminated++;
+                    if(status != null) {
+                        switch (status.ToLowerInvariant())
+                        {
+                            case "terminate":
+                                dto.TotalCandidateTerminated++;
+                                break;
+                            case "not_started":
+                                dto.TotalCandidateNotParticipated++;
+                                break;
+                        }
+                    }
                 }
             }
         }

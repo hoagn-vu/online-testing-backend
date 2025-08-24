@@ -43,9 +43,14 @@ public class ScoreDistributionDto
 public class ParticipationViolationDto
 {
     public string OrganizeExamId { get; set; } = default!;
+
     public string OrganizeExamName { get; set; } = default!;
+
     public int TotalCandidates { get; set; }
+
     public int TotalCandidateTerminated { get; set; }
+
+    public int TotalCandidateNotParticipated { get; set; }
 }
 
 public class ExamSetStatisticDto
