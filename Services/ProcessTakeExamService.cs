@@ -28,17 +28,39 @@ public class ProcessTakeExamService
         _processTakeExamRepository = processTakeExamRepository;
     }
 
-    public async Task<string?> ToggleSessionStatus(string organizeExamId, string sessionId)
+    public async Task<(string status, string? newStatus)> ToggleSessionStatus(string organizeExamId, string sessionId)
     {
-        var session = (await _processTakeExamRepository.GetSessionAsync(organizeExamId, sessionId))?
-            .Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        var sessionModel = await _processTakeExamRepository.GetSessionAsync(organizeExamId, sessionId);
+        if (sessionModel == null)
+            return ("not-found-organize-exam-or-session", null);
 
-        if (session == null) return null;
-        
+        var session = sessionModel.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        if (session == null)
+            return ("session-not-found", null);
+
         var newStatus = session.SessionStatus == "active" ? "closed" : "active";
-        var update = await _processTakeExamRepository.UpdateSessionStatusAsync(organizeExamId, sessionId, newStatus);
-        return update ? newStatus : null;
+
+        var updateSession = await _processTakeExamRepository.UpdateSessionStatusAsync(organizeExamId, sessionId, newStatus);
+        if (!updateSession)
+            return ("update-session-failed", null);
+
+        var supervisorIds = session.RoomsInSession
+            .SelectMany(r => r.SupervisorIds)
+            .Distinct()
+            .ToList();
+
+        if (supervisorIds.Count > 0)
+        {
+            var updateUsers = await _processTakeExamRepository.UpdateUsersTrackExamsStatusAsync(
+                supervisorIds, organizeExamId, sessionId, newStatus);
+
+            if (!updateUsers)
+                return ("update-users-track-exam-failed", newStatus);
+        }
+
+        return ("success", newStatus);
     }
+
 
     public async Task<string?> ToggleRoomStatus(string organizeExamId, string sessionId, string roomId)
     {
@@ -520,9 +542,9 @@ public class ProcessTakeExamService
 
     public async Task<(string, string)> CheckCanContinue(string userId, string takeExamId)
     {
-        var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
+        var user = await _processTakeExamRepository.GetByUserIdAndUpdateFinishTimeAsync(userId, takeExamId);
 
-        if (user == null || user.TakeExam == null) return ("", "");
+        if (user?.TakeExam == null) return ("", "");
 
         var takeExam = user.TakeExam.FirstOrDefault(te => te.Id == takeExamId);
 
@@ -540,7 +562,8 @@ public class ProcessTakeExamService
         var takeExam = user.TakeExam.FirstOrDefault(te => te.Id == takeExamId);
 
         if (takeExam == null) return ("error-texam", null);
-        if (takeExam.Status != "done") return ("error-status", null);
+        
+        // if (takeExam.Status != "done" || takeExam.Status != "terminate") return ("error-status", null);
         
         var totalQuestions = takeExam.Answers.Count;
         var correctAnswers = takeExam.Answers.Count(a => a.IsCorrect);
@@ -549,18 +572,43 @@ public class ProcessTakeExamService
         var violationCount = takeExam.ViolationCount;
 
         var organizeExam = _organizeExamCollection.Find(o => o.Id == takeExam.OrganizeExamId).FirstOrDefaultAsync();
+        var subjectName = _subjectsCollection.Find(s => s.Id == organizeExam.Result.SubjectId).FirstOrDefaultAsync();
 
-        return ("success", new ExamResultDto
+        if (takeExam.Status == "terminate")
         {
-            OrganizeExamName = organizeExam.Result.OrganizeExamName,
-            CandidateName = user.FullName,
-            CandidateCode = user.UserCode,
-            TotalQuestions = totalQuestions,
-            CorrectAnswers = correctAnswers,
-            TotalScore = totalScore,
-            FinishedAt = finishedAt,
-            ViolationCount = violationCount
-        });
+            return ("terminated", new ExamResultDto
+            {
+                OrganizeExamName = organizeExam.Result.OrganizeExamName,
+                CandidateName = user.FullName,
+                SubjectName = subjectName.Result.SubjectName,
+                CandidateCode = user.UserCode,
+                TotalQuestions = totalQuestions,
+                CorrectAnswers = correctAnswers,
+                TotalScore = totalScore,
+                FinishedAt = finishedAt,
+                UnrecognizedReason = takeExam.UnrecognizedReason,
+                ViolationCount = violationCount
+            });
+        }
+        
+        if (takeExam.Status == "done")
+        {
+            return ("done", new ExamResultDto
+            {
+                OrganizeExamName = organizeExam.Result.OrganizeExamName,
+                CandidateName = user.FullName,
+                SubjectName = subjectName.Result.SubjectName,
+                CandidateCode = user.UserCode,
+                TotalQuestions = totalQuestions,
+                CorrectAnswers = correctAnswers,
+                TotalScore = totalScore,
+                FinishedAt = finishedAt,
+                UnrecognizedReason = takeExam.UnrecognizedReason,
+                ViolationCount = violationCount
+            });
+        }
+        
+        return ("error-status", null);
     }
     
     public async Task<List<ExamHistoryDto>> GetUserExamHistory(string userId)

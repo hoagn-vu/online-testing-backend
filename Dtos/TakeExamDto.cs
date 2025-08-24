@@ -83,16 +83,17 @@ public class TrackCandidateDto
 public class CandidateDetailsDto
 {
     public string OrganizeExamId { get; set; } = string.Empty;
-
+    public string OrganizeExamName { get; set; } = string.Empty;
     public string SessionId { get; set; } = string.Empty;
-
+    public string SessionName { get; set; } = string.Empty;
     public string RoomId { get; set; } = string.Empty;
-
+    public string RoomName { get; set; } = string.Empty;
     public List<CandidateInfoDto> Candidates { get; set; } = new List<CandidateInfoDto>();
 }
 
 public class CandidateInfoDto
 {
+    public string UserId { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
 
     public DateTime? StartAt { get; set; }
@@ -108,6 +109,10 @@ public class CandidateInfoDto
     public int Progress { get; set; }
 
     public int TotalQuestions { get; set; }
+    
+    public double? TotalScore { get; set; }
+    
+    public int ViolationCount { get; set; }
 }
 
 public class ReportDto

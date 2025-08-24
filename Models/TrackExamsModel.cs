@@ -19,5 +19,5 @@ public class TrackExamsModel
     public string RoomId { get; set; } = string.Empty;
     
     [BsonElement("roomSessionStatus")]
-    public string? RoomSessionStatus { get; set; } = string.Empty;
+    public string? RoomSessionStatus { get; set; } = "closed";
 }

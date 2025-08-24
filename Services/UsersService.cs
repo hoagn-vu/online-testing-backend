@@ -25,6 +25,7 @@ public interface IUsersService
     Task<ResumeExamResponse> ResumeAsync(string userId, string organizeExamId, string roomId, string sessionId);
     Task<(string, string)> BulkChangePasswordAsync(BulkChangePasswordRequestDto request);
     Task<(string, string)> ChangePasswordAsync(string userId, ChangePasswordRequestDto request);
+    Task<(string status, string? message)> UpdateTakeExamAsync(UpdateTakeExamRequestDto request);
 }
 
 public class UsersService : IUsersService
@@ -478,5 +479,51 @@ public class UsersService : IUsersService
         await _userRepository.UpdateUserPasswordAsync(user.Id, hashedPassword);
 
         return ("success", "Password changed successfully");
+    }
+    
+    public async Task<(string status, string? message)> UpdateTakeExamAsync(UpdateTakeExamRequestDto request)
+    {
+        var user = await _userRepository.GetUserById(request.UserId);
+        if (user == null)
+            return ("user-not-found", "Không tìm thấy user");
+
+        var takeExam = user.TakeExam?
+            .FirstOrDefault(te =>
+                te.OrganizeExamId == request.OrganizeExamId &&
+                te.SessionId == request.SessionId &&
+                te.RoomId == request.RoomId);
+
+        if (takeExam == null)
+            return ("take-exam-not-found", "Không tìm thấy thông tin thi");
+
+        switch (request.Type.ToLower())
+        {
+            case "terminate":
+                takeExam.UnrecognizedReason = !string.IsNullOrEmpty(request.Status) ? request.Status : "N/A"; 
+                takeExam.FinishedAt = DateTime.UtcNow;
+                takeExam.Status = "terminate";
+                break;
+            case "reopen":
+                takeExam.Status = string.IsNullOrEmpty(request.Status) ? "in_exam" : request.Status;
+                break;
+            case "restart":
+                takeExam.Answers = [];
+                takeExam.StartAt = null;
+                takeExam.FinishedAt = null;
+                takeExam.TotalScore = 0.0;
+                takeExam.Status = "not_started";
+                takeExam.Progress = 0;
+                takeExam.UnrecognizedReason = null;
+                takeExam.ViolationCount = 0;
+                takeExam.TakeTime += 1;
+                break;
+
+            default:
+                return ("invalid-type", "Type không hợp lệ (reopen/restart)");
+        }
+
+        await _userRepository.UpdateUserAsync(user);
+
+        return ("success", "Cập nhật thành công");
     }
 }

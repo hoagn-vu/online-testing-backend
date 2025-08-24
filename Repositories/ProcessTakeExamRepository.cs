@@ -39,13 +39,44 @@ public class ProcessTakeExamRepository
      */
 
     // Get session by id
-    public async Task<OrganizeExamModel?> GetSessionAsync(string organizeExamId,string sessionId)
+    public async Task<OrganizeExamModel?> GetSessionAsync(string organizeExamId, string sessionId)
     {
         var filter = Builders<OrganizeExamModel>.Filter.And(
-                FilterByOrganizeExamId(organizeExamId),
-                Builders<OrganizeExamModel>.Filter.ElemMatch(x=>x.Id, sessionId));
+            Builders<OrganizeExamModel>.Filter.Eq(x => x.Id, organizeExamId),
+            Builders<OrganizeExamModel>.Filter.ElemMatch(x => x.Sessions, s => s.SessionId == sessionId)
+        );
 
         return await _organizeExamCollection.Find(filter).FirstOrDefaultAsync();
+    }
+    
+    public async Task<bool> UpdateUsersTrackExamsStatusAsync(List<string> userIds, string organizeExamId, string sessionId, string newStatus)
+    {
+        var filter = Builders<UsersModel>.Filter.And(
+            Builders<UsersModel>.Filter.In(u => u.Id, userIds),
+            Builders<UsersModel>.Filter.ElemMatch(u => u.TrackExam, t => 
+                t.OrganizeExamId == organizeExamId && t.SessionId == sessionId)
+        );
+
+        // var update = Builders<UsersModel>.Update
+        //     .Set("trackExams.$.roomSessionStatus", newStatus);
+        //
+        // var result = await _usersCollection.UpdateManyAsync(filter, update);
+        var update = Builders<UsersModel>.Update
+            .Set("trackExams.$[elem].roomSessionStatus", newStatus);
+
+        var options = new UpdateOptions
+        {
+            ArrayFilters = new List<ArrayFilterDefinition>
+            {
+                new BsonDocumentArrayFilterDefinition<BsonDocument>(
+                    new BsonDocument("elem.organizeExamId", organizeExamId)
+                        .Add("elem.sessionId", sessionId))
+            }
+        };
+
+        var result = await _usersCollection.UpdateManyAsync(filter, update, options);
+ 
+        return result.ModifiedCount > 0;
     }
 
     // Update session status
@@ -62,6 +93,7 @@ public class ProcessTakeExamRepository
         var result = await _organizeExamCollection.UpdateOneAsync(filter, update);
         return result.ModifiedCount > 0;
     }
+
     //Increate Violation Count
     public async Task<bool> IncreaseViolationCountRepository(string userId, string takeExamId)
     {
@@ -169,6 +201,19 @@ public class ProcessTakeExamRepository
     {
         return await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
     }
+    
+    public async Task<UsersModel?> GetByUserIdAndUpdateFinishTimeAsync(string userId, string takeExamId)
+    {
+        var filter = Builders<UsersModel>.Filter.And(
+            Builders<UsersModel>.Filter.Eq(u => u.Id, userId),
+            Builders<UsersModel>.Filter.ElemMatch(u => u.TakeExam, te => te.Id == takeExamId)
+        );
+        
+        var update = Builders<UsersModel>.Update.Set("takeExams.$.finishedAt", DateTime.UtcNow);
+        var result = await _usersCollection.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0 ? await _usersCollection.Find(filter).FirstOrDefaultAsync() : null;
+    }
+    
     //Get candidate by multiple ids
     public async Task<List<UsersModel>> GetCandidatesByIdsAsync(List<string> candidateIds)
     {

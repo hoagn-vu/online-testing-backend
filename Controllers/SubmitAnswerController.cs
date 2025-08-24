@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend_online_testing.Controllers
 {
     [ApiController]
-    [Route("api/sumbit-answer")]
+    [Route("api/submit-answer")]
     public class SubmitAnswerController : ControllerBase
     {
         private readonly ISubmitAnswerService _service;

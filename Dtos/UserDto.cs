@@ -102,3 +102,13 @@ public class ChangePasswordRequestDto
     public required string NewPassword { get; set; }
     public required string ConfirmNewPassword { get; set; }
 }
+
+public class UpdateTakeExamRequestDto
+{
+    public string UserId { get; set; } = string.Empty;
+    public string OrganizeExamId { get; set; } = string.Empty;
+    public string SessionId { get; set; } = string.Empty;
+    public string RoomId { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty; // reopen | restart
+    public string? Status { get; set; }
+}

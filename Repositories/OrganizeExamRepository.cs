@@ -29,6 +29,21 @@ public class OrganizeExamRepository
         _groupUser = database.GetCollection<GroupUserModel>("groupUser");
     }
 
+    public async Task<UsersModel?> GetUserByIdAsync(string userId)
+    {
+        return await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
+    }
+
+    public async Task<OrganizeExamModel?> GetOrganizeExamByIdAsync(string organizeExamId)
+    {
+        return await _organizeExams.Find(o => o.Id == organizeExamId).FirstOrDefaultAsync();
+    }
+
+    public async Task<RoomsModel?> GetRoomByIdAsync(string roomId)
+    {
+        return await _rooms.Find(r => r.Id == roomId).FirstOrDefaultAsync();
+    }
+
     // Get list user id from list group user
     public async Task<List<string>> GetUserIdsByGroupIdsAsync(List<string> groupIds)
     {
@@ -203,7 +218,7 @@ public class OrganizeExamRepository
 
     //Add track exam for supervisor
     public async Task AddTrackExamsForSupervisorsAsync(
-    string organizeExamId, string sessionId, string roomId, List<string> supervisorIds)
+    string organizeExamId, string sessionId, string roomId, List<string> supervisorIds, string? roomStatus = "closed")
     {
         if (supervisorIds is null || supervisorIds.Count == 0) return;
 
@@ -212,7 +227,8 @@ public class OrganizeExamRepository
             Id = ObjectId.GenerateNewId().ToString(),
             OrganizeExamId = organizeExamId,
             SessionId = sessionId,
-            RoomId = roomId
+            RoomId = roomId,
+            RoomSessionStatus = roomStatus
         };
         // Add user not exist
         var baseFilter = Builders<UsersModel>.Filter.In(u => u.Id, supervisorIds);

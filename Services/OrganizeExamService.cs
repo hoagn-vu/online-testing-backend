@@ -287,7 +287,7 @@ public class OrganizeExamService
                 .Select(user => new SupervisorsInRoomModel
                 {
                     SupervisorId = user.Id,
-                    SupervisorName = user.UserName,
+                    SupervisorName = user.FullName,
                     UserCode = user.UserCode
                 })
                 .ToList();
@@ -721,25 +721,65 @@ public class OrganizeExamService
 
     public async Task<List<OrganizeExamResponseDto>> GetExamsByCandidateId(string candidateId)
     {
-        var filter = Builders<OrganizeExamModel>.Filter.ElemMatch(
-            o => o.Sessions,
-            session => session.RoomsInSession.Any(room => room.CandidateIds.Any(c => c == candidateId))
-        );
+        var user = await _organizeExamRepository.GetUserByIdAsync(candidateId);
+        if (user == null || user.TakeExam == null) return new List<OrganizeExamResponseDto>();
 
-        var exams = await _organizeExamCollection.Find(filter).ToListAsync();
-        return exams.Select(exam => new OrganizeExamResponseDto
+        var notStartedExams = user.TakeExam.Where(t => t.Status == "not_started").ToList();
+        var response = new List<OrganizeExamResponseDto>();
+
+        foreach (var takeExam in notStartedExams)
         {
-            Id = exam.Id,
-            OrganizeExamName = exam.OrganizeExamName,
-            Duration = exam.Duration,
-            TotalQuestions = exam.TotalQuestions,
-            MaxScore = exam.MaxScore,
-            SubjectId = exam.SubjectId,
-            QuestionBankId = exam.QuestionBankId,
-            ExamType = exam.ExamType,
-            SessionId = exam.Sessions.FirstOrDefault()?.SessionId,
-            RoomId = exam.Sessions.FirstOrDefault()?.RoomsInSession.FirstOrDefault()?.RoomInSessionId
-        }).ToList();
+            var organizeExam = await _organizeExamRepository.GetOrganizeExamByIdAsync(takeExam.OrganizeExamId);
+            if (organizeExam == null) continue;
+
+            var session = organizeExam.Sessions.FirstOrDefault(s => s.SessionId == takeExam.SessionId);
+            var roomName = string.Empty;
+
+            if (!string.IsNullOrEmpty(takeExam.RoomId))
+            {
+                var room = await _organizeExamRepository.GetRoomByIdAsync(takeExam.RoomId);
+                roomName = room?.RoomName ?? string.Empty;
+            }
+
+            response.Add(new OrganizeExamResponseDto
+            {
+                Id = organizeExam.Id,
+                OrganizeExamName = organizeExam.OrganizeExamName,
+                Duration = organizeExam.Duration,
+                TotalQuestions = organizeExam.TotalQuestions,
+                MaxScore = organizeExam.MaxScore,
+                SubjectId = organizeExam.SubjectId,
+                QuestionBankId = organizeExam.QuestionBankId,
+                ExamType = organizeExam.ExamType,
+                SessionId = session?.SessionId,
+                SessionName = session?.SessionName ?? string.Empty,
+                RoomId = takeExam.RoomId,
+                RoomName = roomName,
+                UserTakeExamId = takeExam.Id
+            });
+        }
+
+        return response;
+        // var filter = Builders<OrganizeExamModel>.Filter.ElemMatch(
+        //     o => o.Sessions,
+        //     session => session.RoomsInSession.Any(room => room.CandidateIds.Any(c => c == candidateId))
+        // );
+        //
+        // var exams = await _organizeExamCollection.Find(filter).ToListAsync();
+        // return exams.Select(exam => new OrganizeExamResponseDto
+        // {
+        //     Id = exam.Id,
+        //     OrganizeExamName = exam.OrganizeExamName,
+        //     Duration = exam.Duration,
+        //     TotalQuestions = exam.TotalQuestions,
+        //     MaxScore = exam.MaxScore,
+        //     SubjectId = exam.SubjectId,
+        //     QuestionBankId = exam.QuestionBankId,
+        //     ExamType = exam.ExamType,
+        //     SessionId = exam.Sessions.FirstOrDefault()?.SessionId,
+        //     RoomId = exam.Sessions.FirstOrDefault()?.RoomsInSession.FirstOrDefault()?.RoomInSessionId,
+        //     UserTakeExamId = _usersCollection.
+        // }).ToList();
     }
     
     public async Task<(List<QuestionResponseDto>, int, string)> GetQuestionsByExamId(string organizeExamId)
@@ -916,7 +956,7 @@ public class OrganizeExamService
                 RoomId: r.RoomId,
                 SupervisorIds: (r.SupervisorIds ?? new()).Distinct().ToList(),
                 CandidateIds: cands,
-                RoomStatus: "active"
+                RoomStatus: "closed"
             ));
         }
 
@@ -934,7 +974,7 @@ public class OrganizeExamService
 
             // users[*].trackExams (supervisor)
             await _organizeExamRepository.AddTrackExamsForSupervisorsAsync(
-                organizeExamId, sessionId, r.RoomId, r.SupervisorIds);
+                organizeExamId, sessionId, r.RoomId, r.SupervisorIds, "closed");
         }
     }
 }

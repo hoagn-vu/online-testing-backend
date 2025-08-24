@@ -28,5 +28,5 @@ public class SessionsModel
     public List<SessionRoomsModel> RoomsInSession { get; set; } = [];
     
     [BsonElement("sessionStatus")]
-    public string SessionStatus { get; set; } = "active";
+    public string SessionStatus { get; set; } = "closed";
 }

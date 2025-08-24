@@ -137,15 +137,32 @@ namespace Backend_online_testing.Controllers
         [HttpPost("bulk-change-password")]
         public async Task<IActionResult> BulkChangePassword([FromBody] BulkChangePasswordRequestDto request)
         {
-            var result = await _userService.BulkChangePasswordAsync(request);
-            return Ok(new { message = result });
+            var (code, result) = await _userService.BulkChangePasswordAsync(request);
+            return Ok(new { status = code, message = result });
         }
 
         [HttpPost("{userId}/change-password")]
         public async Task<IActionResult> ChangePassword([FromRoute] string userId, [FromBody] ChangePasswordRequestDto request)
         {
             var (code, result) = await _userService.ChangePasswordAsync(userId, request);
-            return Ok(new { code = code, message = result });
+            return Ok(new { status = code, message = result });
         }
+        
+        [HttpPut("update-take-exam")]
+        public async Task<IActionResult> UpdateTakeExam([FromBody] UpdateTakeExamRequestDto request)
+        {
+            var (status, message) = await _userService.UpdateTakeExamAsync(request);
+
+            return status switch
+            {
+                "success" => Ok(new { code = status, message }),
+                "user-not-found" => NotFound(new { code = status, message }),
+                "take-exam-not-found" => NotFound(new { code = status, message }),
+                "invalid-status" => BadRequest(new { code = status, message }),
+                "invalid-type" => BadRequest(new { code = status, message }),
+                _ => StatusCode(500, new { code = "update-take-exam-failed", message = "Có lỗi xảy ra" })
+            };
+        }
+        
     }
 }

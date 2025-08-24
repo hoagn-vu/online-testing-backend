@@ -41,12 +41,14 @@ public class UpdateTakeExamStatusRequest
 public class ExamResultDto
 {
     public string OrganizeExamName { get; set; } = string.Empty;
+    public string SubjectName { get; set; } = string.Empty;
     public string CandidateName { get; set; } = string.Empty;
     public string CandidateCode { get; set; } = string.Empty;
     public int TotalQuestions { get; set; }
     public int CorrectAnswers { get; set; }
     public double TotalScore { get; set; }
     public DateTime? FinishedAt { get; set; }
+    public string? UnrecognizedReason { get; set; }
     public int ViolationCount { get; set; }
 }
 
