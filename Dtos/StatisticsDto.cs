@@ -1,4 +1,6 @@
-﻿namespace Backend_online_testing.Dtos;
+﻿using System.Security.Cryptography.Pkcs;
+
+namespace Backend_online_testing.Dtos;
 
 public class StatisticsDto
 {
@@ -82,4 +84,54 @@ public sealed class ExamQuestionStatsResponse
     public string OrganizeExamId { get; set; } = string.Empty;
     public string ExamId { get; set; } = string.Empty;
     public List<QuestionStatDto> Questions { get; set; } = new();
+}
+
+/*
+ * DTO random exam statistic
+ */
+public class OptionItemDto
+{
+    public string OptionId { get; set; } = string.Empty;
+
+    public string OptionText { get; set; } = string.Empty;
+
+    public bool IsCorrect { get; set; }
+
+    public long SelectedCount { get; set; }
+}
+
+public class QuestionItemDto
+{
+    public string QuestionId { get; set; } = string.Empty;
+
+    public string QuestionType {  get; set; } = string.Empty;
+
+    public string QuestionText { get; set; } = string.Empty;
+
+    public List<string> tags { get; set; } = new();
+
+    public List<OptionItemDto> Options { get; set; } = new();
+
+    public long TotalSelections { get; set; }
+
+    public long CorrectSelections { get; set; }
+
+    public long IncorrectSelections { get; set; }
+}
+
+public class QuestionBankStatusDto
+{
+    public string OrganizeExamId { get; set; } = string.Empty;
+
+    public string SessionId { get; set; } = string.Empty;
+
+    public string RoomId { get; set; } = string.Empty;
+
+    public string SubjecId { get; set; } = string.Empty;
+
+    public string QuestionBankId { get; set; } = string.Empty;
+
+    public List<QuestionItemDto> Questions { get; set; } = new();
+
+    public long Participants { get; set; }
 }

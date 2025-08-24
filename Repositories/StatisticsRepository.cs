@@ -166,4 +166,148 @@ public class StatisticsRepository
         .OrderBy(x => x.QuestionId)
         .ToList();
     }
+
+    public List<string> CollectionCandidateIds (OrganizeExamModel organizeExam, string sessionId, string roomId)
+    {
+        var set = new HashSet<string>();
+        if (organizeExam.Sessions == null) return set.ToList();
+
+        foreach (var s in organizeExam.Sessions)
+        {
+            if (!string.IsNullOrEmpty(sessionId) && (s.SessionId ?? "") != sessionId) continue;
+            if (s.RoomsInSession == null) continue;
+
+            foreach (var r in s.RoomsInSession)
+            {
+                if (!string.IsNullOrEmpty(roomId) && (r.RoomInSessionId ?? "") != roomId) continue;
+                if (r.CandidateIds == null) continue;
+
+                foreach (var cid in r.CandidateIds)
+                    if (!string.IsNullOrWhiteSpace(cid)) set.Add(cid);
+            }
+        }
+        return set.ToList();
+    }
+
+    //Get all question in question bank
+    public async Task<List<QuestionItemDto>> GetQuestionsByOrganizeExamAsync(string subjectId, string questionBankId)
+    {
+        var subject = await _subjects.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
+        var qb = subject?.QuestionBanks?.FirstOrDefault(x => x.QuestionBankId == questionBankId);
+
+        var list = new List<QuestionItemDto>();
+        if (qb?.QuestionList == null) return list;
+
+        foreach (var q in qb.QuestionList)
+        {
+            if (string.IsNullOrWhiteSpace(q.QuestionId)) continue;
+
+            list.Add(new QuestionItemDto
+            {
+                QuestionId = q.QuestionId ?? string.Empty,
+                QuestionType = q.QuestionType ?? string.Empty,
+                QuestionText = q.QuestionText ?? string.Empty,
+                tags = q.Tags ?? new List<string>(),
+                Options = (q.Options ?? new List<OptionsModel>()).Select(o => new OptionItemDto
+                {
+                    OptionId = o.OptionId ?? string.Empty,
+                    OptionText = o.OptionText ?? string.Empty,
+                    IsCorrect = o.IsCorrect ?? false,
+                    SelectedCount = 0 
+                }).ToList()
+            });
+        }
+        return list;
+    }
+
+    public async Task<Dictionary<string, Dictionary<string, long>>> AggregateOptionCountsAsync(
+    string organizeExamId, IEnumerable<string> candidateIds, bool singleChoice = false)
+    {
+        var counts = new Dictionary<string, Dictionary<string, long>>();
+
+        var objectIds = (candidateIds ?? Array.Empty<string>())
+            .Where(s => ObjectId.TryParse(s, out _))
+            .Select(ObjectId.Parse)
+            .Distinct()
+            .ToList();
+
+        if (objectIds.Count == 0) return counts;
+
+        var pipeline = new List<BsonDocument>
+        {
+            new("$match", new BsonDocument("_id", new BsonDocument("$in", new BsonArray(objectIds)))),
+            new("$unwind", "$takeExams"),
+            new("$match", new BsonDocument("takeExams.organizeExamId", organizeExamId)),
+            // new("$match", new BsonDocument("takeExams.status", "done")), // nếu chỉ tính bài đã nộp
+
+            new("$unwind", "$takeExams.answers"),
+
+            // phát mỗi option được chọn (0 mục => bị bỏ qua)
+            new("$unwind", new BsonDocument
+            {
+                { "path", "$takeExams.answers.answerChose" },
+                { "preserveNullAndEmptyArrays", false }
+            }),
+            new("$match", new BsonDocument("takeExams.answers.answerChose", new BsonDocument("$type", "string"))),
+
+            new("$group", new BsonDocument
+            {
+                { "_id", new BsonDocument {
+                    { "QuestionId", "$takeExams.answers.questionId" },
+                    { "OptionId",   "$takeExams.answers.answerChose" }
+                }},
+                { "SelectedCount", new BsonDocument("$sum", 1) }
+            }),
+            new("$project", new BsonDocument
+            {
+                { "_id", 0 },
+                { "QuestionId", "$_id.QuestionId" },
+                { "OptionId",   "$_id.OptionId" },
+                { "SelectedCount", 1 }
+            })
+        };
+
+
+        var docs = await _users.Aggregate<BsonDocument>(pipeline).ToListAsync();
+
+        foreach (var d in docs)
+        {
+            var qid = d.GetValue("QuestionId", "").AsString;
+            var oid = d.GetValue("OptionId", "").AsString;
+            var cnt = d.GetValue("SelectedCount", 0).ToInt64();
+            if (string.IsNullOrEmpty(qid) || string.IsNullOrEmpty(oid)) continue;
+
+            if (!counts.TryGetValue(qid, out var map))
+                counts[qid] = map = new Dictionary<string, long>();
+            map[oid] = (map.TryGetValue(oid, out var cur) ? cur : 0) + cnt;
+        }
+
+        return counts;
+    }
+
+    public async Task<long> CountParticipantsAsync(string organizeExamId, IEnumerable<string> candidateIds)
+    {
+        var candArr = new BsonArray((candidateIds ?? Array.Empty<string>()).Distinct());
+        if (candArr.Count == 0) return 0L;
+
+        var pipeline = new List<BsonDocument>
+    {
+        new("$match", new BsonDocument("$expr",
+            new BsonDocument("$in", new BsonArray {
+                new BsonDocument("$toString", "$_id"),
+                candArr
+            })
+        )),
+        new("$unwind", "$takeExams"),
+        new("$match", new BsonDocument {
+            { "takeExams.organizeExamId", organizeExamId },
+            { "takeExams.status", new BsonDocument("$in", new BsonArray { "done", "terminate" }) }
+        }),
+        new("$group", new BsonDocument("_id", "$_id")),
+        new("$count", "Participants")
+    };
+
+        var cursor = await _users.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+        return cursor?.GetValue("Participants", 0).ToInt64() ?? 0L;
+    }
 }

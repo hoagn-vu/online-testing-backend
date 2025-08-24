@@ -247,4 +247,92 @@ public class StatisticsService
             Questions = questionStats
         };
     }
+
+    //Random exam statistic
+    public async Task<QuestionBankStatusDto> GetQuestionBankStatusAsync(
+        string organizeExamId,
+        string? sessionId,
+        string? roomId,
+        bool singleChoice,
+        CancellationToken ct = default)
+    {
+        // 1) Lấy organize exam
+        var organize = await _statisticsRepository.GetOrganizeExamById(organizeExamId)
+                        ?? throw new InvalidOperationException("OrganizeExam not found.");
+
+        var subjectId = organize.SubjectId
+                        ?? throw new InvalidOperationException("OrganizeExam missing SubjectId.");
+        var questionBankId = organize.QuestionBankId
+                        ?? throw new InvalidOperationException("OrganizeExam missing QuestionBankId.");
+
+        // 2) Thu thập candidateIds theo session/room
+        var candidateIds = _statisticsRepository.CollectionCandidateIds(organize, sessionId ?? "", roomId ?? "");
+
+        // 3) Lấy danh sách câu hỏi & đáp án (SelectedCount = 0 ban đầu)
+        var questions = await _statisticsRepository.GetQuestionsByOrganizeExamAsync(subjectId, questionBankId);
+        long participants = 0L;
+
+        // 4) Nếu có thí sinh, tính thống kê và merge vào Options.SelectedCount
+        if (candidateIds.Count > 0 && questions.Count > 0)
+        {
+            // 1) Thống kê lượt chọn theo option
+            var counts = await _statisticsRepository.AggregateOptionCountsAsync(organizeExamId, candidateIds, singleChoice);
+            ApplyCounts(questions, counts);
+
+            // 2) Tính tổng đúng/sai mỗi câu
+            ComputePerQuestionTotals(questions);
+
+            // 3) Đếm số thí sinh tham gia
+            participants = await _statisticsRepository.CountParticipantsAsync(organizeExamId, candidateIds);
+        }
+
+        // 5) Trả về đúng DTO mong muốn
+        return new QuestionBankStatusDto
+        {
+            OrganizeExamId = organizeExamId,
+            SessionId = sessionId ?? string.Empty,
+            RoomId = roomId ?? string.Empty,
+            SubjecId = subjectId,
+            QuestionBankId = questionBankId,
+            Questions = questions,
+            Participants = participants
+        };
+    }
+
+    private static void ApplyCounts(
+        List<QuestionItemDto> questions,
+        Dictionary<string, Dictionary<string, long>> counts)
+    {
+        foreach (var q in questions)
+        {
+            if (!counts.TryGetValue(q.QuestionId, out var optionMap))
+                continue;
+
+            foreach (var opt in q.Options)
+            {
+                if (string.IsNullOrWhiteSpace(opt.OptionId)) continue;
+                opt.SelectedCount = optionMap.TryGetValue(opt.OptionId, out var c) ? c : 0L;
+            }
+        }
+    }
+
+    private static void ComputePerQuestionTotals(List<QuestionItemDto> questions)
+    {
+        foreach (var q in questions)
+        {
+            long total = 0, correct = 0, incorrect = 0;
+
+            foreach (var opt in q.Options)
+            {
+                var c = opt.SelectedCount;
+                total += c;
+                if (opt.IsCorrect) correct += c;
+                else incorrect += c;
+            }
+
+            q.TotalSelections = total;
+            q.CorrectSelections = correct;
+            q.IncorrectSelections = incorrect;
+        }
+    }
 }
