@@ -83,6 +83,9 @@ public class TrackExamService
         }
 
         var room = session.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
+        
+        var roomName = await _trackExamRepository.GetRoomNameByIdAsync(room.RoomInSessionId) ?? "";
+        
         var candidateIds = room?.CandidateIds ?? new List<string>();
         if (!candidateIds.Any())
         {
@@ -106,7 +109,19 @@ public class TrackExamService
                 var finishAt = takeExam?.FinishedAt;
                 var progress = takeExam?.Progress ?? 0;
 
-                userDetails.Add(new CandidateInfoDto { UserName = user.UserName, UserCode = user.UserCode, FullName = user.FullName, Status = takeExamStatus, StartAt = startAt, FinishAt = finishAt, Progress = progress, TotalQuestions = totalQuestions });
+                userDetails.Add(new CandidateInfoDto
+                {
+                    UserId = user.Id,
+                    UserName = user.UserName, 
+                    UserCode = user.UserCode, 
+                    FullName = user.FullName, 
+                    Status = takeExamStatus, StartAt = startAt, 
+                    FinishAt = finishAt, 
+                    Progress = progress, 
+                    TotalQuestions = totalQuestions,
+                    TotalScore = takeExam?.TotalScore ?? 0,
+                    ViolationCount = takeExam?.ViolationCount ?? 0,
+                });
             }
         }
 
@@ -114,8 +129,11 @@ public class TrackExamService
         return new CandidateDetailsDto
         {
             OrganizeExamId = organizeExamId,
+            OrganizeExamName = organizeExam.OrganizeExamName,
             SessionId = sessionId,
+            SessionName = session.SessionName,
             RoomId = roomId,
+            RoomName = roomName,
             Candidates = userDetails
         };
     }

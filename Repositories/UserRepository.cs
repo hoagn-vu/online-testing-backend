@@ -23,6 +23,7 @@ public interface IUserRepository
     Task<UsersModel?> GetUserById(string userId);
     Task<List<UsersModel>> GetUsersByIdsAsync(List<string> userIds);
     Task UpdateUserPasswordAsync(string userId, string hashedPassword);
+    Task UpdateUserAsync(UsersModel user);
 }
 
 public class UserRepository : IUserRepository
@@ -186,5 +187,10 @@ public class UserRepository : IUserRepository
         var filter = Builders<UsersModel>.Filter.Eq(u => u.Id, userId);
         var update = Builders<UsersModel>.Update.Set(u => u.Password, hashedPassword);
         await _users.UpdateOneAsync(filter, update);
+    }
+    
+    public async Task UpdateUserAsync(UsersModel user)
+    {
+        await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
     }
 }

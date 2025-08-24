@@ -46,4 +46,6 @@ public class TakeExamsModel
     
     [BsonElement("violationCount")]
     public int ViolationCount { get; set; }
+
+    [BsonElement("takeTime")] public int TakeTime { get; set; } = 1;
 }

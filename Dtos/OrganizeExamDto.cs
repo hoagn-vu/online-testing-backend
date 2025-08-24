@@ -53,7 +53,10 @@ public class OrganizeExamResponseDto
     public string? QuestionBankId { get; set; } = string.Empty;
     public string ExamType { get; set; } = string.Empty;
     public string? SessionId { get; set; } = string.Empty;
+    public string SessionName { get; set; } = string.Empty;
     public string? RoomId { get; set; } = string.Empty;
+    public string? RoomName { get; set; } = string.Empty;
+    public string? UserTakeExamId { get; set; } = string.Empty;
 }
 
 

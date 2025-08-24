@@ -31,10 +31,14 @@ public class ProcessTakeExamController : ControllerBase
     [HttpPost("toggle-session-status")]
     public async Task<IActionResult> ToggleSessionStatus([FromBody] ToggleSessionStatusRequest request)
     {
-        var result = await _processTakeExamService.ToggleSessionStatus(request.OrganizeExamId, request.SessionId);
-        if (result is not null)
-            return Ok(new { message = result == "active" ? "Kích hoạt ca thi thành công" : "Đóng ca thi thành công" });
-        return BadRequest(new { message = "Kích hoạt ca thi thất bại" });
+        var (status, newStatus) = await _processTakeExamService.ToggleSessionStatus(request.OrganizeExamId, request.SessionId);
+        // if (result is not null)
+        //     return Ok(new { message = result == "active" ? "Kích hoạt ca thi thành công" : "Đóng ca thi thành công" });
+        // return BadRequest(new { message = "Kích hoạt ca thi thất bại" });
+        if (status != "success")
+            return BadRequest(new { code = status, message = "Toggle session failed" });
+
+        return Ok(new { code = status, newStatus });
     }
 
     [HttpPost("toggle-room-status")]
@@ -147,10 +151,12 @@ public class ProcessTakeExamController : ControllerBase
         var (status, result) = await _processTakeExamService.GetExamResult(userId, takeExamId);
         return status switch
         {
-            "error-user" => BadRequest(new { code = status, message = "Không tìm thấy dữ liệu kỳ thi phù hợp" }),
-            "error-texam" => BadRequest(new { code = status, message = "Không tìm thấy dữ liệu làm bài" }),
-            "error-status" => BadRequest(new { code = status, message = "Bài thi chưa được hoàn thành" }),
-            "success" => Ok(new { code = status, data = result })
+            "error-user" => BadRequest(new { status, message = "Không tìm thấy dữ liệu kỳ thi phù hợp" }),
+            "error-texam" => BadRequest(new { status, message = "Không tìm thấy dữ liệu làm bài" }),
+            "error-status" => BadRequest(new { status, message = "Bài thi chưa được hoàn thành" }),
+            "terminated" => Ok(new { status, data = result }),
+            "done" => Ok(new { status, data = result }),
+            _ => throw new ArgumentOutOfRangeException()
         };
     }
     
