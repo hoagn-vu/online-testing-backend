@@ -249,7 +249,7 @@ public class StatisticsRepository
             new("$match", new BsonDocument
             {
                 { "takeExams.organizeExamId", organizeExamId },
-                { "takeExams.status", "terminate" } // chỉ tính bài đã nộp
+                //{ "takeExams.status", "terminate" } // chỉ tính bài đã nộp
             }),
 
             new("$unwind", "$takeExams.answers"),
