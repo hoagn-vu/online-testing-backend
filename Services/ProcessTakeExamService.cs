@@ -37,6 +37,9 @@ public class ProcessTakeExamService
         var session = sessionModel.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
         if (session == null)
             return ("session-not-found", null);
+        
+        if (session.RoomsInSession.Any(r => r.RoomStatus == "active"))
+            return ("session-has-active-room", null);
 
         var newStatus = session.SessionStatus == "active" ? "closed" : "active";
 
@@ -62,22 +65,73 @@ public class ProcessTakeExamService
     }
 
 
-    public async Task<string?> ToggleRoomStatus(string organizeExamId, string sessionId, string roomId)
+    // public async Task<string?> ToggleRoomStatus(string organizeExamId, string sessionId, string roomId)
+    // {
+    //     var session = (await _processTakeExamRepository.GetSessionAsync(organizeExamId, sessionId))?
+    //         .Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+    //
+    //     if (session == null) return null;
+    //     
+    //     var room = session.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
+    //     if (room == null) return null;
+    //
+    //
+    //     var newStatus = room.RoomStatus == "active" ? "closed" : "active";
+    //     await _processTakeExamRepository.UpdateCandidateRoomStatusAsync(room.CandidateIds , newStatus);
+    //
+    //     var updated = await _processTakeExamRepository.UpdateRoomStatusAsync(organizeExamId, sessionId, roomId, newStatus);
+    //     return updated ? newStatus : null;
+    // }
+    public async Task<(string status, string? message)> ToggleRoomStatus(
+        string organizeExamId, string sessionId, string roomId)
     {
-        var session = (await _processTakeExamRepository.GetSessionAsync(organizeExamId, sessionId))?
-            .Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        // 1. Lấy kỳ thi
+        var organizeExam = await _processTakeExamRepository.GetOrganizeExamAsync(organizeExamId);
+        if (organizeExam == null)
+            return ("error-oe", "OrganizeExam not found");
 
-        if (session == null) return null;
+        // 2. Tìm session
+        var session = organizeExam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        if (session == null)
+            return ("error-session", "Session not found");
         
+        if (session.SessionStatus != "active") return ("error-session-status", "Session not active");
+
+        // 3. Tìm room
         var room = session.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
-        if (room == null) return null;
+        if (room == null)
+            return ("error-room", "Room not found");
 
-
+        // 4. Toggle trạng thái
         var newStatus = room.RoomStatus == "active" ? "closed" : "active";
-        await _processTakeExamRepository.UpdateCandidateRoomStatusAsync(room.CandidateIds, room.SupervisorIds , newStatus);
+        room.RoomStatus = newStatus;
 
-        var updated = await _processTakeExamRepository.UpdateRoomStatusAsync(organizeExamId, sessionId, roomId, newStatus);
-        return updated ? newStatus : null;
+        // 5. Update trạng thái cho từng user
+        foreach (var candidateId in room.CandidateIds)
+        {
+            var user = await _processTakeExamRepository.GetUserByIdAsync(candidateId);
+            if (user?.TakeExam == null) continue;
+
+            var takeExam = user.TakeExam.FirstOrDefault(te =>
+                te.OrganizeExamId == organizeExamId &&
+                te.SessionId == sessionId &&
+                te.RoomId == roomId);
+
+            if (takeExam != null)
+            {
+                takeExam.RoomStatus = newStatus;
+                await _processTakeExamRepository.UpdateUserTakeExamRoomStatusAsync(
+                    user.Id, organizeExamId, sessionId, roomId, newStatus);
+            }
+        }
+
+        // 6. Update lại trạng thái room trong OrganizeExam
+        var updated = await _processTakeExamRepository.UpdateRoomStatusAsync(
+            organizeExamId, sessionId, roomId, newStatus);
+
+        return updated
+            ? (newStatus, null)
+            : ("error-update", "Failed to update room status");
     }
 
     public async Task<List<ProcessTakeExamDto>> GetActiveExam(string userId)

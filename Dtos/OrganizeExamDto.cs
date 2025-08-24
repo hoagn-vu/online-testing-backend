@@ -38,7 +38,7 @@ public class OrganizeExamRequestDto
     public string ExamType { get; set; } = string.Empty;
     public string? MatrixId { get; set; }
     public List<string>? Exams { get; set; }
-    public string OrganizeExamStatus { get; set; } = "active";
+    public string OrganizeExamStatus { get; set; } = "closed";
     public List<SessionRequestDto>? Sessions { get; set; }
 }
 

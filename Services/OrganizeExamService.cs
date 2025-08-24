@@ -724,7 +724,7 @@ public class OrganizeExamService
         var user = await _organizeExamRepository.GetUserByIdAsync(candidateId);
         if (user == null || user.TakeExam == null) return new List<OrganizeExamResponseDto>();
 
-        var notStartedExams = user.TakeExam.Where(t => t.Status == "not_started").ToList();
+        var notStartedExams = user.TakeExam.Where(t => t is { RoomStatus: "active", Status: "not_started" } ).ToList();
         var response = new List<OrganizeExamResponseDto>();
 
         foreach (var takeExam in notStartedExams)

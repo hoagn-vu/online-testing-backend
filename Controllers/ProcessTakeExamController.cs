@@ -44,10 +44,26 @@ public class ProcessTakeExamController : ControllerBase
     [HttpPost("toggle-room-status")]
     public async Task<IActionResult> ToggleRoomStatus([FromBody] ToggleRoomStatusRequest request)
     {
-        var result = await _processTakeExamService.ToggleRoomStatus(request.OrganizeExamId, request.SessionId, request.RoomId);
-        if (result is not null)
-            return Ok(new { message = result == "active" ? "Kích hoạt phòng thi thành công" : "Đóng phòng thi thành công" });
-        return BadRequest(new { message = "Kích hoạt phòng thi thất bại" });
+        // var result = await _processTakeExamService.ToggleRoomStatus(request.OrganizeExamId, request.SessionId, request.RoomId);
+        // if (result is not null)
+        //     return Ok(new { message = result == "active" ? "Kích hoạt phòng thi thành công" : "Đóng phòng thi thành công" });
+        // return BadRequest(new { message = "Kích hoạt phòng thi thất bại" });
+        var (status, message) = await _processTakeExamService
+            .ToggleRoomStatus(request.OrganizeExamId, request.SessionId, request.RoomId);
+
+        return status switch
+        {
+            "active" or "closed" => Ok(new
+            {
+                code = "success",
+                newStatus = status
+            }),
+            _ => BadRequest(new
+            {
+                code = status,
+                message = message ?? "Failed to toggle room status"
+            })
+        };
     }
 
     // [Authorize]
