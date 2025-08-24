@@ -144,11 +144,14 @@ public class ProcessTakeExamController : ControllerBase
     [HttpGet("exam-result")]
     public async Task<IActionResult> GetExamResult(string userId, string takeExamId)
     {
-        var result = await _processTakeExamService.GetExamResult(userId, takeExamId);
-        if (result == null)
-            return NotFound("User hoặc TakeExam không tồn tại.");
-
-        return Ok(result);
+        var (status, result) = await _processTakeExamService.GetExamResult(userId, takeExamId);
+        return status switch
+        {
+            "error-user" => BadRequest(new { code = status, message = "Không tìm thấy dữ liệu kỳ thi phù hợp" }),
+            "error-texam" => BadRequest(new { code = status, message = "Không tìm thấy dữ liệu làm bài" }),
+            "error-status" => BadRequest(new { code = status, message = "Bài thi chưa được hoàn thành" }),
+            "success" => Ok(new { code = status, data = result })
+        };
     }
     
     [HttpGet("{userId}/exam-results")]

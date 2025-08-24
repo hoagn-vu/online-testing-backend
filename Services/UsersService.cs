@@ -1,5 +1,4 @@
-﻿#pragma warning disable
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.JavaScript;
 using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
@@ -14,12 +13,26 @@ using MongoDB.Driver;
 
 namespace Backend_online_testing.Services;
 
-public class UsersService
+public interface IUsersService
 {
-    private readonly UserRepository _userRepository;
+    Task<(List<UserDto>, long)> GetAllUsers(string? keyword, int page, int pageSize, string? role);
+    Task<UserDto?> GetUserByIdAsync(string id);
+    Task<List<UserOptionsDto>> GetUsersByRole(string role);
+    Task<string> AddUser(CreateOrUpdateUserDto userData);
+    Task<string> UpdateUserById(string id, CreateOrUpdateUserDto updateUser);
+    Task<string> DeleteUserById(string id, string madeBy);
+    Task<ExamReviewDto> GetExamReviewAsync(string userId, string organizeExamId, string sessionId, string roomId);
+    Task<ResumeExamResponse> ResumeAsync(string userId, string organizeExamId, string roomId, string sessionId);
+    Task<(string, string)> BulkChangePasswordAsync(BulkChangePasswordRequestDto request);
+    Task<(string, string)> ChangePasswordAsync(string userId, ChangePasswordRequestDto request);
+}
+
+public class UsersService : IUsersService
+{
+    private readonly IUserRepository _userRepository;
     private readonly LogService _logService;
 
-    public UsersService(UserRepository userRepository, LogService logService)
+    public UsersService(IUserRepository userRepository, LogService logService)
     {
         _userRepository = userRepository;
         _logService = logService;
@@ -235,11 +248,15 @@ public class UsersService
     //Get user review
     public async Task<ExamReviewDto> GetExamReviewAsync(string userId, string organizeExamId, string sessionId, string roomId)
     {
-        var user = await _userRepository.FindUserAsync(userId) ?? throw new KeyNotFoundException("User not found");
+        var user = await _userRepository.FindUserAsync(userId) ?? throw new KeyNotFoundException("Không tìm thấy dữ liệu người dùng");
         var takeExam = (user.TakeExam ?? new List<TakeExamsModel>())
             .FirstOrDefault(te => te.OrganizeExamId == organizeExamId &&
                                   te.SessionId == sessionId &&
                                   te.RoomId == roomId);
+        
+        if (takeExam is null) throw new KeyNotFoundException("Không tìm thấy dữ liệu bài làm");
+        if (takeExam.Status != "done") throw new InvalidOperationException("Bài thi chưa được hoàn thành");
+        
         var answers = takeExam?.Answers ?? new List<AnswersModel>();
         var totalScore = takeExam.TotalScore;
         var qIds = answers.Select(a => a.QuestionId).Distinct().ToHashSet();
@@ -428,5 +445,38 @@ public class UsersService
             TotalQuestions = merged.Count,
             Questions = merged
         };
+    }
+    
+    public async Task<(string, string)> BulkChangePasswordAsync(BulkChangePasswordRequestDto request)
+    {
+        var users = await _userRepository.GetUsersByIdsAsync(request.UserIds);
+
+        if (users == null || !users.Any()) return ("error-user", "No users found");
+
+        string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+        foreach (var user in users.Where(u => u.Role == "candidate"))
+        {
+            await _userRepository.UpdateUserPasswordAsync(user.Id, hashedPassword);
+        }
+
+        return ("success", "Password changed for candidates successfully");
+    }
+
+    public async Task<(string, string)> ChangePasswordAsync(string userId, ChangePasswordRequestDto request)
+    {
+        var user = await _userRepository.GetUserById(userId);
+        if (user == null) return ("error-user", "User not found");
+
+        if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password))
+            return ("op-incorrect", "Old password is incorrect");
+
+        if (request.NewPassword != request.ConfirmNewPassword)
+            return ("np-incorrect", "New password and confirm new password are not the same");
+
+        string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        await _userRepository.UpdateUserPasswordAsync(user.Id, hashedPassword);
+
+        return ("success", "Password changed successfully");
     }
 }

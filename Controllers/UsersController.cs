@@ -14,9 +14,9 @@ namespace Backend_online_testing.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly UsersService _userService;
+        private readonly IUsersService _userService;
 
-        public UsersController(UsersService userService)
+        public UsersController(IUsersService userService)
         {
             this._userService = userService;
         }
@@ -132,6 +132,20 @@ namespace Backend_online_testing.Controllers
         {
             var result = await _userService.ResumeAsync(userId, organizeExamId, roomId, sessionId);
             return Ok(result);
+        }
+        
+        [HttpPost("bulk-change-password")]
+        public async Task<IActionResult> BulkChangePassword([FromBody] BulkChangePasswordRequestDto request)
+        {
+            var result = await _userService.BulkChangePasswordAsync(request);
+            return Ok(new { message = result });
+        }
+
+        [HttpPost("{userId}/change-password")]
+        public async Task<IActionResult> ChangePassword([FromRoute] string userId, [FromBody] ChangePasswordRequestDto request)
+        {
+            var (code, result) = await _userService.ChangePasswordAsync(userId, request);
+            return Ok(new { code = code, message = result });
         }
     }
 }

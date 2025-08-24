@@ -36,7 +36,7 @@ public class TakeExamsModel
     public double TotalScore { get; set; }
 
     [BsonElement("status")]
-    public string Status { get; set; } = "closed"; // Active/Closed/NotIn/InExam/ReInExam/OutExam/Done/Terminate
+    public string Status { get; set; } = "closed"; // active/closed/not_started/in_exam/rein_exam/out_exam/done/terminate
     
     [BsonElement("unrecognizedReason")]
     public string? UnrecognizedReason { get; set; }

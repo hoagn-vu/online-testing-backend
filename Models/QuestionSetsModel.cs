@@ -5,7 +5,6 @@
 
     public class QuestionSetsModel
     {
-        //[BsonElement("questionId")]
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string QuestionId { get; set; } = string.Empty;

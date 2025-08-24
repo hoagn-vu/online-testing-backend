@@ -416,7 +416,7 @@ public class OrganizeExamService
         var newExam = new OrganizeExamModel
         {
             OrganizeExamName = dto.OrganizeExamName,
-            Duration = dto.Duration,
+            Duration = dto.Duration * 60,
             TotalQuestions = dto.TotalQuestions,
             MaxScore = dto.MaxScore,
             SubjectId = dto.SubjectId,
@@ -459,7 +459,7 @@ public class OrganizeExamService
                 updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.OrganizeExamName, dto.OrganizeExamName));
 
             if (dto.Duration > 0)
-                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.Duration, dto.Duration));
+                updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.Duration, dto.Duration * 60));
 
             if (dto.TotalQuestions.HasValue)
                 updates.Add(Builders<OrganizeExamModel>.Update.Set(e => e.TotalQuestions, dto.TotalQuestions.Value));

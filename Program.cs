@@ -26,8 +26,8 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 });
 
 builder.Services.AddSingleton<AuthService>();
-builder.Services.AddScoped<UsersService>();
-builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<RoomsService>();
 builder.Services.AddScoped<RoomRepository>();;
 builder.Services.AddScoped<ExamsService>();
@@ -53,6 +53,10 @@ builder.Services.AddScoped<ProcessTakeExamRepository>();
 builder.Services.AddScoped<StatisticsService>();
 builder.Services.AddScoped<StatisticsRepository>();
 builder.Services.AddSingleton<S3Service>();
+builder.Services.AddScoped<IGenerateExamService, GenerateExamService>();
+builder.Services.AddScoped<IGenerateExamRepository, GenerateExamRepository>();
+builder.Services.AddScoped<ISubmitAnswerService, SubmitAnswerService>();
+builder.Services.AddScoped<ISubmitAnswerRepository, SubmitAnswerRepository>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

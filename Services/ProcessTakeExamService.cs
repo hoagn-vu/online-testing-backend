@@ -531,26 +531,26 @@ public class ProcessTakeExamService
         return (takeExam.Status, takeExam.UnrecognizedReason ?? "");
     }
     
-    public async Task<ExamResultDto?> GetExamResult(string userId, string takeExamId)
+    public async Task<(string, ExamResultDto?)> GetExamResult(string userId, string takeExamId)
     {
         var user = await _processTakeExamRepository.GetByUserIdAsync(userId);
 
-        if (user == null || user.TakeExam == null)
-            return null;
+        if (user?.TakeExam == null) return ("error-user", null);
 
-        var takeExam = user.TakeExam.FirstOrDefault(te => te.OrganizeExamId == takeExamId);
+        var takeExam = user.TakeExam.FirstOrDefault(te => te.Id == takeExamId);
 
-        if (takeExam == null)
-            return null;
-
+        if (takeExam == null) return ("error-texam", null);
+        if (takeExam.Status != "done") return ("error-status", null);
+        
         var totalQuestions = takeExam.Answers.Count;
         var correctAnswers = takeExam.Answers.Count(a => a.IsCorrect);
         var totalScore = takeExam.TotalScore;
         var finishedAt = takeExam.FinishedAt;
+        var violationCount = takeExam.ViolationCount;
 
         var organizeExam = _organizeExamCollection.Find(o => o.Id == takeExam.OrganizeExamId).FirstOrDefaultAsync();
 
-        return new ExamResultDto
+        return ("success", new ExamResultDto
         {
             OrganizeExamName = organizeExam.Result.OrganizeExamName,
             CandidateName = user.FullName,
@@ -558,8 +558,9 @@ public class ProcessTakeExamService
             TotalQuestions = totalQuestions,
             CorrectAnswers = correctAnswers,
             TotalScore = totalScore,
-            FinishedAt = finishedAt
-        };
+            FinishedAt = finishedAt,
+            ViolationCount = violationCount
+        });
     }
     
     public async Task<List<ExamHistoryDto>> GetUserExamHistory(string userId)

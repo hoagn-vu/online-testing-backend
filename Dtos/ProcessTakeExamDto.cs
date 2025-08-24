@@ -47,6 +47,7 @@ public class ExamResultDto
     public int CorrectAnswers { get; set; }
     public double TotalScore { get; set; }
     public DateTime? FinishedAt { get; set; }
+    public int ViolationCount { get; set; }
 }
 
 public class ExamHistoryDto
