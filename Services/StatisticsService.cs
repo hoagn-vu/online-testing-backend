@@ -250,23 +250,24 @@ public class StatisticsService
 
     //Random exam statistic
     public async Task<QuestionBankStatusDto> GetQuestionBankStatusAsync(
-        string organizeExamId,
-        string? sessionId,
-        string? roomId,
-        bool singleChoice,
-        CancellationToken ct = default)
+        string organizeExamId)
     {
         // 1) Lấy organize exam
         var organize = await _statisticsRepository.GetOrganizeExamById(organizeExamId)
                         ?? throw new InvalidOperationException("OrganizeExam not found.");
+
+        var organizeExamName = organize.OrganizeExamName;
 
         var subjectId = organize.SubjectId
                         ?? throw new InvalidOperationException("OrganizeExam missing SubjectId.");
         var questionBankId = organize.QuestionBankId
                         ?? throw new InvalidOperationException("OrganizeExam missing QuestionBankId.");
 
+        var subjectName = await _statisticsRepository.GetSubjectNameByIdAsync(subjectId);
+
+        var questionBankName = await _statisticsRepository.GetQuestionBankNameAsync(subjectId, questionBankId);
         // 2) Thu thập candidateIds theo session/room
-        var candidateIds = _statisticsRepository.CollectionCandidateIds(organize, sessionId ?? "", roomId ?? "");
+        var candidateIds = _statisticsRepository.CollectionCandidateIds(organize);
 
         // 3) Lấy danh sách câu hỏi & đáp án (SelectedCount = 0 ban đầu)
         var questions = await _statisticsRepository.GetQuestionsByOrganizeExamAsync(subjectId, questionBankId);
@@ -276,7 +277,14 @@ public class StatisticsService
         if (candidateIds.Count > 0 && questions.Count > 0)
         {
             // 1) Thống kê lượt chọn theo option
-            var counts = await _statisticsRepository.AggregateOptionCountsAsync(organizeExamId, candidateIds, singleChoice);
+            var counts = await _statisticsRepository.AggregateOptionCountsAsync(organizeExamId, candidateIds);
+
+            if (counts.Count > 0)
+            {
+                var usedQids = new HashSet<string>(counts.Keys);
+                questions = questions.Where(q => usedQids.Contains(q.QuestionId)).ToList();
+            }
+
             ApplyCounts(questions, counts);
 
             // 2) Tính tổng đúng/sai mỗi câu
@@ -290,10 +298,11 @@ public class StatisticsService
         return new QuestionBankStatusDto
         {
             OrganizeExamId = organizeExamId,
-            SessionId = sessionId ?? string.Empty,
-            RoomId = roomId ?? string.Empty,
+            OrganizeExamName = organizeExamName,
+            SubjectName = subjectName,
             SubjecId = subjectId,
             QuestionBankId = questionBankId,
+            QuestionBankName = questionBankName,
             Questions = questions,
             Participants = participants
         };
@@ -313,6 +322,15 @@ public class StatisticsService
                 if (string.IsNullOrWhiteSpace(opt.OptionId)) continue;
                 opt.SelectedCount = optionMap.TryGetValue(opt.OptionId, out var c) ? c : 0L;
             }
+
+            if (optionMap.TryGetValue("__NONE__", out var noSel))
+            {
+                q.NoSelection = noSel;
+            }
+            else
+            {
+                q.NoSelection = 0;
+            }
         }
     }
 
@@ -329,6 +347,8 @@ public class StatisticsService
                 if (opt.IsCorrect) correct += c;
                 else incorrect += c;
             }
+
+            total += q.NoSelection;
 
             q.TotalSelections = total;
             q.CorrectSelections = correct;

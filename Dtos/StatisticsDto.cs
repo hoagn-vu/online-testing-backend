@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography.Pkcs;
-
-namespace Backend_online_testing.Dtos;
+﻿namespace Backend_online_testing.Dtos;
 
 public class StatisticsDto
 {
@@ -117,19 +115,23 @@ public class QuestionItemDto
     public long CorrectSelections { get; set; }
 
     public long IncorrectSelections { get; set; }
+
+    public long NoSelection { get; set; }
 }
 
 public class QuestionBankStatusDto
 {
     public string OrganizeExamId { get; set; } = string.Empty;
 
-    public string SessionId { get; set; } = string.Empty;
-
-    public string RoomId { get; set; } = string.Empty;
+    public string OrganizeExamName { get; set; } = string.Empty;
 
     public string SubjecId { get; set; } = string.Empty;
 
+    public string SubjectName { get; set; } = string.Empty;
+
     public string QuestionBankId { get; set; } = string.Empty;
+
+    public string QuestionBankName { get; set; } = string.Empty;
 
     public List<QuestionItemDto> Questions { get; set; } = new();
 

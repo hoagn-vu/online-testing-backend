@@ -70,13 +70,10 @@ public class StatisticsController : ControllerBase
 
     [HttpGet("organize-exam/ramdom-exam-status")]
     public async Task<ActionResult<QuestionBankStatusDto>> GetOrganizeExamStatus(
-        string organizeExamId,
-        string? sessionId,
-        string? roomId,
-        bool singleChoice = false)
+        string organizeExamId)
     {
         var dto = await _statisticsService.GetQuestionBankStatusAsync(
-            organizeExamId, sessionId, roomId, singleChoice);
+            organizeExamId);
         return Ok(dto);
     }
 }

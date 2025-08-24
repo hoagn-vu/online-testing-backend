@@ -23,10 +23,20 @@ public class StatisticsRepository
     }
 
     //Get Subject Name
-    public async Task<string?> GetSubjectNameByIdAsync(string subjectId)
+    public async Task<string> GetSubjectNameByIdAsync(string subjectId)
     {
         var subject = await _subjects.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
-        return subject?.SubjectName;
+        return subject.SubjectName;
+    }
+
+    //Get question bank name
+    public async Task<string?> GetQuestionBankNameAsync(string subjectId, string questionBankId)
+    {
+        var subject = await _subjects.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
+        if (subject == null || subject.QuestionBanks == null) return null;
+
+        var qb = subject.QuestionBanks.FirstOrDefault(q => q.QuestionBankId == questionBankId);
+        return qb?.QuestionBankName;
     }
 
     // Get Room Name
@@ -167,19 +177,17 @@ public class StatisticsRepository
         .ToList();
     }
 
-    public List<string> CollectionCandidateIds (OrganizeExamModel organizeExam, string sessionId, string roomId)
+    public List<string> CollectionCandidateIds (OrganizeExamModel organizeExam)
     {
         var set = new HashSet<string>();
         if (organizeExam.Sessions == null) return set.ToList();
 
         foreach (var s in organizeExam.Sessions)
         {
-            if (!string.IsNullOrEmpty(sessionId) && (s.SessionId ?? "") != sessionId) continue;
             if (s.RoomsInSession == null) continue;
 
             foreach (var r in s.RoomsInSession)
             {
-                if (!string.IsNullOrEmpty(roomId) && (r.RoomInSessionId ?? "") != roomId) continue;
                 if (r.CandidateIds == null) continue;
 
                 foreach (var cid in r.CandidateIds)
@@ -221,7 +229,7 @@ public class StatisticsRepository
     }
 
     public async Task<Dictionary<string, Dictionary<string, long>>> AggregateOptionCountsAsync(
-    string organizeExamId, IEnumerable<string> candidateIds, bool singleChoice = false)
+    string organizeExamId, IEnumerable<string> candidateIds)
     {
         var counts = new Dictionary<string, Dictionary<string, long>>();
 
@@ -236,28 +244,42 @@ public class StatisticsRepository
         var pipeline = new List<BsonDocument>
         {
             new("$match", new BsonDocument("_id", new BsonDocument("$in", new BsonArray(objectIds)))),
+
             new("$unwind", "$takeExams"),
-            new("$match", new BsonDocument("takeExams.organizeExamId", organizeExamId)),
-            // new("$match", new BsonDocument("takeExams.status", "done")), // nếu chỉ tính bài đã nộp
+            new("$match", new BsonDocument
+            {
+                { "takeExams.organizeExamId", organizeExamId },
+                { "takeExams.status", "terminate" } // chỉ tính bài đã nộp
+            }),
 
             new("$unwind", "$takeExams.answers"),
 
-            // phát mỗi option được chọn (0 mục => bị bỏ qua)
-            new("$unwind", new BsonDocument
+            // Nếu answerChose null/rỗng thì gán ["__NONE__"]
+            new("$set", new BsonDocument
             {
-                { "path", "$takeExams.answers.answerChose" },
-                { "preserveNullAndEmptyArrays", false }
+                { "chosen", new BsonDocument("$cond", new BsonArray {
+                    new BsonDocument("$gt", new BsonArray {
+                        new BsonDocument("$size", new BsonDocument("$ifNull", new BsonArray {
+                            "$takeExams.answers.answerChose", new BsonArray()
+                        })),
+                        0
+                    }),
+                    "$takeExams.answers.answerChose",
+                    new BsonArray { "__NONE__" }
+                })}
             }),
-            new("$match", new BsonDocument("takeExams.answers.answerChose", new BsonDocument("$type", "string"))),
+
+            new("$unwind", "$chosen"),
 
             new("$group", new BsonDocument
             {
                 { "_id", new BsonDocument {
                     { "QuestionId", "$takeExams.answers.questionId" },
-                    { "OptionId",   "$takeExams.answers.answerChose" }
+                    { "OptionId",   "$chosen" }
                 }},
                 { "SelectedCount", new BsonDocument("$sum", 1) }
             }),
+
             new("$project", new BsonDocument
             {
                 { "_id", 0 },
