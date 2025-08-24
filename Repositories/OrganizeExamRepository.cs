@@ -165,7 +165,7 @@ public class OrganizeExamRepository
                 { "roomId",        r.RoomId },
                 { "supervisorIds", new BsonArray(r.SupervisorIds ?? new()) },
                 { "candidateIds",  new BsonArray(r.CandidateIds  ?? new()) },
-                { "roomStatus",    r.RoomStatus ?? "active" }
+                { "roomStatus",    r.RoomStatus ?? "closed" }
             })
         );
 

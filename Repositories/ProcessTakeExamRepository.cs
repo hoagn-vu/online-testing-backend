@@ -174,7 +174,7 @@ public class ProcessTakeExamRepository
     //Update candidate rooms status
     public async Task UpdateCandidateRoomStatusAsync(
         IEnumerable<string> candidateIds, 
-        IEnumerable<string> supervisorIds, 
+        // IEnumerable<string> supervisorIds, 
         string newStatus)
     {
         if (candidateIds != null && candidateIds.Any())
@@ -186,14 +186,14 @@ public class ProcessTakeExamRepository
             await _usersCollection.UpdateManyAsync(candidateFilter, candidateUpdate);
         }
 
-        if (supervisorIds != null && supervisorIds.Any())
-        {
-            var supervisorFilter = Builders<UsersModel>.Filter.In(u => u.Id, supervisorIds);
-            var supervisorUpdate = Builders<UsersModel>.Update
-                .Set("trackExams.$[].status", newStatus);
-
-            await _usersCollection.UpdateManyAsync(supervisorFilter, supervisorUpdate);
-        }
+        // if (supervisorIds != null && supervisorIds.Any())
+        // {
+        //     var supervisorFilter = Builders<UsersModel>.Filter.In(u => u.Id, supervisorIds);
+        //     var supervisorUpdate = Builders<UsersModel>.Update
+        //         .Set("trackExams.$[].status", newStatus);
+        //
+        //     await _usersCollection.UpdateManyAsync(supervisorFilter, supervisorUpdate);
+        // }
     }
 
     //Get by user id
@@ -251,4 +251,38 @@ public class ProcessTakeExamRepository
     {
         return await _subjectsCollection.Find(s => s.Id == id).FirstOrDefaultAsync();
     }
+    
+    
+    
+    
+    // Lấy kỳ thi
+    public async Task<OrganizeExamModel?> GetOrganizeExamAsync(string organizeExamId)
+    {
+        return await _organizeExamCollection
+            .Find(x => x.Id == organizeExamId)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<UsersModel?> GetUserByIdAsync(string userId)
+    {
+        return await _usersCollection.Find(x => x.Id == userId).FirstOrDefaultAsync();
+    }
+
+    public async Task UpdateUserTakeExamRoomStatusAsync(
+        string userId, string organizeExamId, string sessionId, string roomId, string newStatus)
+    {
+        var filter = Builders<UsersModel>.Filter.And(
+            Builders<UsersModel>.Filter.Eq(u => u.Id, userId),
+            Builders<UsersModel>.Filter.ElemMatch(u => u.TakeExam,
+                te => te.OrganizeExamId == organizeExamId &&
+                      te.SessionId == sessionId &&
+                      te.RoomId == roomId)
+        );
+
+        var update = Builders<UsersModel>.Update
+            .Set("takeExams.$.roomStatus", newStatus);
+
+        await _usersCollection.UpdateOneAsync(filter, update);
+    }
+
 }
