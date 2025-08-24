@@ -43,9 +43,14 @@ public class ScoreDistributionDto
 public class ParticipationViolationDto
 {
     public string OrganizeExamId { get; set; } = default!;
+
     public string OrganizeExamName { get; set; } = default!;
+
     public int TotalCandidates { get; set; }
+
     public int TotalCandidateTerminated { get; set; }
+
+    public int TotalCandidateNotParticipated { get; set; }
 }
 
 public class ExamSetStatisticDto
@@ -82,4 +87,58 @@ public sealed class ExamQuestionStatsResponse
     public string OrganizeExamId { get; set; } = string.Empty;
     public string ExamId { get; set; } = string.Empty;
     public List<QuestionStatDto> Questions { get; set; } = new();
+}
+
+/*
+ * DTO random exam statistic
+ */
+public class OptionItemDto
+{
+    public string OptionId { get; set; } = string.Empty;
+
+    public string OptionText { get; set; } = string.Empty;
+
+    public bool IsCorrect { get; set; }
+
+    public long SelectedCount { get; set; }
+}
+
+public class QuestionItemDto
+{
+    public string QuestionId { get; set; } = string.Empty;
+
+    public string QuestionType {  get; set; } = string.Empty;
+
+    public string QuestionText { get; set; } = string.Empty;
+
+    public List<string> tags { get; set; } = new();
+
+    public List<OptionItemDto> Options { get; set; } = new();
+
+    public long TotalSelections { get; set; }
+
+    public long CorrectSelections { get; set; }
+
+    public long IncorrectSelections { get; set; }
+
+    public long NoSelection { get; set; }
+}
+
+public class QuestionBankStatusDto
+{
+    public string OrganizeExamId { get; set; } = string.Empty;
+
+    public string OrganizeExamName { get; set; } = string.Empty;
+
+    public string SubjecId { get; set; } = string.Empty;
+
+    public string SubjectName { get; set; } = string.Empty;
+
+    public string QuestionBankId { get; set; } = string.Empty;
+
+    public string QuestionBankName { get; set; } = string.Empty;
+
+    public List<QuestionItemDto> Questions { get; set; } = new();
+
+    public long Participants { get; set; }
 }

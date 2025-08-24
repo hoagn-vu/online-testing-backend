@@ -67,4 +67,13 @@ public class StatisticsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpGet("organize-exam/ramdom-exam-status")]
+    public async Task<ActionResult<QuestionBankStatusDto>> GetOrganizeExamStatus(
+        string organizeExamId)
+    {
+        var dto = await _statisticsService.GetQuestionBankStatusAsync(
+            organizeExamId);
+        return Ok(dto);
+    }
 }
