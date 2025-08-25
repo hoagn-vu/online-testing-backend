@@ -1,5 +1,4 @@
-﻿#pragma warning disable SA1309
-namespace Backend_online_testing.Controllers
+﻿namespace Backend_online_testing.Controllers
 {
     using Backend_online_testing.Dtos;
     using Backend_online_testing.Models;
@@ -12,9 +11,9 @@ namespace Backend_online_testing.Controllers
     [ApiController]
     public class ExamMatricesController : ControllerBase
     {
-        private readonly ExamMatricesService _examMatricesService;
+        private readonly IExamMatricesService _examMatricesService;
 
-        public ExamMatricesController(ExamMatricesService examMatricesService)
+        public ExamMatricesController(IExamMatricesService examMatricesService)
         {
             this._examMatricesService = examMatricesService;
         }
@@ -140,5 +139,46 @@ namespace Backend_online_testing.Controllers
             return Ok(result);
         }
         
+        [HttpPost("generate-exam")]
+        public async Task<IActionResult> Generate([FromBody] GenerateExamByMatrixRequestDto request)
+        {
+            var (status, result) = await _examMatricesService.GenerateExamAsync(request);
+
+            return status switch
+            {
+                "success" => Ok(result),
+
+                "exam-matrix-not-found" => NotFound(new
+                {
+                    code = status,
+                    message = "Exam matrix not found"
+                }),
+
+                "subject-not-found" => NotFound(new
+                {
+                    code = status,
+                    message = "Subject not found"
+                }),
+
+                "question-bank-not-found" => NotFound(new
+                {
+                    code = status,
+                    message = "Question bank not found"
+                }),
+
+                _ when status.StartsWith("not-enough-questions") => BadRequest(new
+                {
+                    code = "not-enough-questions",
+                    message = "Not enough questions available in the question bank to satisfy matrix requirement",
+                    details = status
+                }),
+
+                _ => BadRequest(new
+                {
+                    code = "error",
+                    message = "Unknown error occurred"
+                })
+            };
+        }
     }
 }

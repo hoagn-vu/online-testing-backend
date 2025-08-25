@@ -58,6 +58,21 @@ namespace Backend_online_testing.Dtos
         public string MatrixLogUserId { get; set; } = string.Empty;
     }
     
-    
+    public class GenerateExamByMatrixRequestDto
+    {
+        public string ExamMatrixId { get; set; } = string.Empty;
+        public int NumberGenerate { get; set; } = 1;
+    }
+
+    public class GenerateExamByMatrixResponseDto
+    {
+        public string ExamId { get; set; } = string.Empty;
+        public string ExamCode { get; set; } = string.Empty;
+        public string ExamName { get; set; } = string.Empty;
+        public string SubjectId { get; set; } = string.Empty;
+        public string QuestionBankId { get; set; } = string.Empty;
+        public List<QuestionSetsModel> QuestionSet { get; set; } = [];
+    }
+
     
 }

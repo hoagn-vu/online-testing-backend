@@ -1,22 +1,36 @@
-﻿#pragma warning disable SA1309
+﻿using Backend_online_testing.Dtos;
+using Backend_online_testing.Models;
+using Backend_online_testing.Repositories;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.Extensions.Logging.Abstractions;
+using MongoDB.Bson;
+using MongoDB.Driver;
+
 namespace Backend_online_testing.Services
 {
-    using Backend_online_testing.Dtos;
-    using Backend_online_testing.Models;
-    using DocumentFormat.OpenXml.Spreadsheet;
-    using Microsoft.Extensions.Logging.Abstractions;
-    using MongoDB.Bson;
-    using MongoDB.Driver;
+    public interface IExamMatricesService
+    {
+        Task<(List<ExamMatrixDto>, long)> GetExamMatrices(string? keyword, int page, int pageSize);
+        Task<ExamMatricesModel> GetByIdExamMatrix(string id);
+        Task<string> AddExamMatrix(ExamMatrixRequestDto matrixData);
+        Task<string> UpdateExamMatrix(string examMatrixId, ExamMatrixUpdateDto examMatrixData);
+        Task<string> DeleteExamMatrix(string examMatrixId, string matrixLogUserId);
+        Task<(string, List<MatrixOptionsDto>)> GetMatrixOptions(string subjectId, string? questionBankId);
+        Task<(string status, List<GenerateExamByMatrixResponseDto>?)> GenerateExamAsync(GenerateExamByMatrixRequestDto request);
 
-    public class ExamMatricesService
+    }
+    
+    public class ExamMatricesService : IExamMatricesService
     {
         private readonly IMongoCollection<ExamMatricesModel> _examMatrixsCollection;
         private readonly IMongoCollection<SubjectsModel> _subjectsCollection;
+        private readonly IExamMatricesRepository _repo;
 
-        public ExamMatricesService(IMongoDatabase database)
+        public ExamMatricesService(IMongoDatabase database, IExamMatricesRepository repo)
         {
             _examMatrixsCollection = database.GetCollection<ExamMatricesModel>("examMatrices");
             _subjectsCollection = database.GetCollection<SubjectsModel>("subjects");
+            _repo = repo;
         }
 
         public async Task<(List<ExamMatrixDto>, long)> GetExamMatrices(string? keyword, int page, int pageSize)
@@ -344,6 +358,143 @@ namespace Backend_online_testing.Services
 
             return ("ok", result);
         }
+        
+        public async Task<(string status, List<GenerateExamByMatrixResponseDto>?)> GenerateExamAsync(GenerateExamByMatrixRequestDto request)
+        {
+            var examMatrix = await _repo.GetExamMatrixByIdAsync(request.ExamMatrixId);
+            if (examMatrix == null)
+                return ("exam-matrix-not-found", null);
+
+            var subject = await _repo.GetSubjectByIdAsync(examMatrix.SubjectId);
+            if (subject == null)
+                return ("subject-not-found", null);
+
+            var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == examMatrix.QuestionBankId);
+            if (questionBank == null)
+                return ("question-bank-not-found", null);
+
+            var generatedExams = new List<GenerateExamByMatrixResponseDto>();
+
+            for (int i = 0; i < request.NumberGenerate; i++)
+            {
+                var exam = new ExamsModel
+                {
+                    ExamCode = $"EXAM-{DateTime.UtcNow.Ticks}-{i+1}",
+                    ExamName = $"Exam {i+1} for {examMatrix.MatrixName}",
+                    SubjectId = examMatrix.SubjectId,
+                    QuestionBankId = examMatrix.QuestionBankId,
+                    MatrixId = examMatrix.Id,
+                    ExamStatus = "pending",
+                    QuestionSet = []
+                };
+
+                if (examMatrix.MatrixType == "both")
+                {
+                    foreach (var tag in examMatrix.MatrixTags)
+                    {
+                        var pool = questionBank.QuestionList
+                            .Where(q => q.Tags != null
+                                        && q.Tags.Count >= 2
+                                        && q.Tags[0] == tag.Chapter
+                                        && q.Tags[1] == tag.Level)
+                            .ToList();
+
+                        if (pool.Count < tag.QuestionCount)
+                            return ($"not-enough-questions-both-{tag.Chapter}-{tag.Level}", null);
+
+                        var questions = pool
+                            .OrderBy(_ => Guid.NewGuid())
+                            .Take(tag.QuestionCount)
+                            .ToList();
+
+                        foreach (var q in questions)
+                        {
+                            exam.QuestionSet.Add(new QuestionSetsModel
+                            {
+                                QuestionId = q.QuestionId,
+                                QuestionScore = tag.Score / tag.QuestionCount,
+                            });
+                        }
+                    }
+                }
+                else if (examMatrix.MatrixType == "chapter")
+                {
+                    foreach (var tag in examMatrix.MatrixTags)
+                    {
+                        var pool = questionBank.QuestionList
+                            .Where(q => q.Tags != null
+                                        && q.Tags.Count >= 1
+                                        && !string.IsNullOrEmpty(q.Tags[0])
+                                        && q.Tags[0] == tag.Chapter)
+                            .ToList();
+
+                        if (pool.Count < tag.QuestionCount)
+                            return ($"not-enough-questions-chapter-{tag.Chapter}", null);
+
+                        var questions = pool
+                            .OrderBy(_ => Guid.NewGuid())
+                            .Take(tag.QuestionCount)
+                            .ToList();
+
+                        foreach (var q in questions)
+                        {
+                            exam.QuestionSet.Add(new QuestionSetsModel
+                            {
+                                QuestionId = q.QuestionId,
+                                QuestionScore = tag.Score / tag.QuestionCount,
+                            });
+                        }
+                    }
+                }
+                else if (examMatrix.MatrixType == "level")
+                {
+                    foreach (var tag in examMatrix.MatrixTags)
+                    {
+                        var pool = questionBank.QuestionList
+                            .Where(q => q.Tags != null
+                                        && q.Tags.Count >= 2
+                                        && !string.IsNullOrEmpty(q.Tags[1])
+                                        && q.Tags[1] == tag.Level)
+                            .ToList();
+
+                        if (pool.Count < tag.QuestionCount)
+                            return ($"not-enough-questions-level-{tag.Level}", null);
+
+                        var questions = pool
+                            .OrderBy(_ => Guid.NewGuid())
+                            .Take(tag.QuestionCount)
+                            .ToList();
+
+                        foreach (var q in questions)
+                        {
+                            exam.QuestionSet.Add(new QuestionSetsModel
+                            {
+                                QuestionId = q.QuestionId,
+                                QuestionScore = tag.Score / tag.QuestionCount,
+                            });
+                        }
+                    }
+                }
+
+                await _repo.InsertExamAsync(exam);
+
+                examMatrix.ExamIds.Add(exam.Id);
+                await _repo.UpdateExamMatrixAsync(examMatrix);
+
+                generatedExams.Add(new GenerateExamByMatrixResponseDto
+                {
+                    ExamId = exam.Id,
+                    ExamCode = exam.ExamCode,
+                    ExamName = exam.ExamName,
+                    SubjectId = exam.SubjectId,
+                    QuestionBankId = exam.QuestionBankId,
+                    QuestionSet = exam.QuestionSet
+                });
+            }
+
+            return ("success", generatedExams);
+        }
+
         
         
     }
