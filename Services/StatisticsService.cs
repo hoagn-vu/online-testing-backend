@@ -2,6 +2,7 @@
 using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
 using Backend_online_testing.Repositories;
+using DocumentFormat.OpenXml.EMMA;
 
 namespace Backend_online_testing.Services;
 
@@ -14,23 +15,18 @@ public class StatisticsService
         _statisticsRepository = statisticRepository;
     }
 
-    public async Task<OrganizeExamScoreStatistisDto> GetScoreHistogram10Async(string organizeExamId)
+    public async Task UpdateGradeStatisticAsync(string organizeExamId)
     {
         var organizeExam = await _statisticsRepository.GetOrganizeExamById(organizeExamId)
                   ?? throw new KeyNotFoundException("OrganizeExam not found");
 
         var subjectName = await _statisticsRepository.GetSubjectNameByIdAsync(organizeExam.SubjectId);
 
-        var dto = new OrganizeExamScoreStatistisDto
-        {
-            OrganizeExamId = organizeExam.Id,
-            OrganizeExamName = organizeExam.OrganizeExamName,
-            SubjecName = subjectName ?? ""
-
-        };
-
         var bins = new int[10];
+        int totalCandidates = 0;
         int noScoreCount = 0;
+        int withScoreCount = 0;
+
         double min = double.PositiveInfinity;
         double max = double.NegativeInfinity;
         double sum = 0.0;
@@ -49,7 +45,7 @@ public class StatisticsService
 
                 foreach (var candId in candidates)
                 {
-                    dto.TotalCandidates++;
+                    totalCandidates++;
 
                     // get user score -> takeExams following (organizeExamId, sessionId, roomId)
                     var score = await _statisticsRepository.GetTotalScoreFromTakeExamAsync(
@@ -63,6 +59,7 @@ public class StatisticsService
 
                     //Min, max, avg
                     var s = score.Value;
+                    withScoreCount++;
                     if (s < min) min = s;
                     if (s > max) max = s;
                     sum += s;
@@ -76,30 +73,46 @@ public class StatisticsService
             }
         }
 
-        // map bins -> DTO
-        dto.ScoreDistribution.Bin0_1 = bins[0];
-        dto.ScoreDistribution.Bin1_2 = bins[1];
-        dto.ScoreDistribution.Bin2_3 = bins[2];
-        dto.ScoreDistribution.Bin3_4 = bins[3];
-        dto.ScoreDistribution.Bin4_5 = bins[4];
-        dto.ScoreDistribution.Bin5_6 = bins[5];
-        dto.ScoreDistribution.Bin6_7 = bins[6];
-        dto.ScoreDistribution.Bin7_8 = bins[7];
-        dto.ScoreDistribution.Bin8_9 = bins[8];
-        dto.ScoreDistribution.Bin9_10 = bins[9];
-        dto.MinScore = dto.TotalCandidates > 0 ? min : (double?)null;
-        dto.MaxScore = dto.TotalCandidates > 0 ? max : (double?)null;
-        dto.AverageScore = dto.TotalCandidates > 0 ? Math.Round(sum / dto.TotalCandidates, 2) : (double?)null;
-      
-        return dto;
+        var model = new GradeStatisticModel
+        {
+            OrganizeExamId = organizeExam.Id,
+            OrganizeExamName = organizeExam.OrganizeExamName,
+            SubjectName = subjectName,
+            TotalCandidates = totalCandidates,
+            NoScoreCount = noScoreCount,
+            MinScore = withScoreCount > 0 ? min : (double?)null,
+            MaxScore = withScoreCount > 0 ? max : (double?)null,
+            AverageScore = withScoreCount > 0 ? Math.Round(sum / withScoreCount, 2) : (double?)null,
+            ScoreDistribution = new ScoreDistribution
+            {
+                Bin0_1 = bins[0],
+                Bin1_2 = bins[1],
+                Bin2_3 = bins[2],
+                Bin3_4 = bins[3],
+                Bin4_5 = bins[4],
+                Bin5_6 = bins[5],
+                Bin6_7 = bins[6],
+                Bin7_8 = bins[7],
+                Bin8_9 = bins[8],
+                Bin9_10 = bins[9]
+            }
+        };
+
+        await _statisticsRepository.UpsertGradeStatisticAsync(model);
     }
 
-    public async Task<ParticipationViolationDto> GetParticipationViolationAsync(string organizeExamId)
+    public Task<GradeStatisticModel?> GetGradeStatisticSnapshotAsync(string organizeExamId)
+    {
+        return _statisticsRepository.GetGradeStatisticSnapshotAsync(organizeExamId);
+    }
+
+
+    public async Task UpdateParticipationViolationAsync(string organizeExamId)
     {
         var organizeExam = await _statisticsRepository.GetOrganizeExamById(organizeExamId)
                   ?? throw new KeyNotFoundException("OrganizeExam not found");
 
-        var dto = new ParticipationViolationDto
+        var doc = new ParticipationViolationModel
         {
             OrganizeExamId = organizeExam.Id,
             OrganizeExamName = organizeExam.OrganizeExamName
@@ -118,7 +131,7 @@ public class StatisticsService
 
                 foreach (var candId in candidates)
                 {
-                    dto.TotalCandidates++;
+                    doc.TotalCandidates++;
 
                     var status = await _statisticsRepository.GetTakeExamStatusAsync(
                         candId, organizeExam.Id, sessionId, roomId);
@@ -126,10 +139,10 @@ public class StatisticsService
                         switch (status.ToLowerInvariant())
                         {
                             case "terminate":
-                                dto.TotalCandidateTerminated++;
+                                doc.TotalCandidateTerminated++;
                                 break;
                             case "not_started":
-                                dto.TotalCandidateNotParticipated++;
+                                doc.TotalCandidateNotParticipated++;
                                 break;
                         }
                     }
@@ -137,7 +150,12 @@ public class StatisticsService
             }
         }
 
-        return dto;
+        await _statisticsRepository.UpsertParticipationViolationAsync(doc);
+    }
+
+    public Task<ParticipationViolationModel?> GetParticipationViolationSnapshotAsync(string organizeExamId)
+    {
+        return _statisticsRepository.GetParticipationViolationSnapshotAsync(organizeExamId);
     }
 
     public async Task<ExamSetStatisticDto> ExamSetSatisticAsync(string organizeExamId)
@@ -257,7 +275,7 @@ public class StatisticsService
     }
 
     //Random exam statistic
-    public async Task<QuestionBankStatusDto> GetQuestionBankStatusAsync(
+    public async Task UpdateQuestionBankStatusAsync(
         string organizeExamId)
     {
         // 1) Lấy organize exam
@@ -273,7 +291,7 @@ public class StatisticsService
 
         var subjectName = await _statisticsRepository.GetSubjectNameByIdAsync(subjectId);
 
-        var questionBankName = await _statisticsRepository.GetQuestionBankNameAsync(subjectId, questionBankId);
+        var questionBankName = await _statisticsRepository.GetQuestionBankNameAsync(subjectId, questionBankId) ?? "";
         // 2) Thu thập candidateIds theo session/room
         var candidateIds = _statisticsRepository.CollectionCandidateIds(organize);
 
@@ -303,7 +321,7 @@ public class StatisticsService
         }
 
         // 5) Trả về đúng DTO mong muốn
-        return new QuestionBankStatusDto
+        var doc = new OrganizeExamStatisticModel
         {
             OrganizeExamId = organizeExamId,
             OrganizeExamName = organizeExamName,
@@ -314,10 +332,17 @@ public class StatisticsService
             Questions = questions,
             Participants = participants
         };
+
+        await _statisticsRepository.UpsertOrganizeExamStatisticAsync(doc);
+    }
+
+    public async Task<OrganizeExamStatisticModel?> GetOrganizeExamStatisticAsync(string organizeExamId)
+    {
+        return await _statisticsRepository.GetOrganizeExamStatisticAsync(organizeExamId);
     }
 
     private static void ApplyCounts(
-        List<QuestionItemDto> questions,
+        List<QuestionItem> questions,
         Dictionary<string, Dictionary<string, long>> counts)
     {
         foreach (var q in questions)
@@ -342,7 +367,7 @@ public class StatisticsService
         }
     }
 
-    private static void ComputePerQuestionTotals(List<QuestionItemDto> questions)
+    private static void ComputePerQuestionTotals(List<QuestionItem> questions)
     {
         foreach (var q in questions)
         {
