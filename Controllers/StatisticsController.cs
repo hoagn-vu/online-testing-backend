@@ -1,4 +1,5 @@
 using Backend_online_testing.Dtos;
+using Backend_online_testing.Models;
 using Backend_online_testing.Services;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.AspNetCore.Mvc;
@@ -16,24 +17,74 @@ public class StatisticsController : ControllerBase
         _statisticsService = statisticService;
     }
 
-    [HttpGet("organize-exam-by-id")]
-    public async Task<IActionResult> StatisticsOrganizeExam(string organizeExamId)
+    [HttpGet("get-update-organize-exam-grade-stats")]
+    public async Task<IActionResult> Get(string organizeExamId)
     {
-        if (string.IsNullOrWhiteSpace(organizeExamId))
-            return BadRequest("organizeExamId is required.");
-
-        var result = await _statisticsService.GetScoreHistogram10Async(organizeExamId);
-        return Ok(result);
+        var doc = await _statisticsService.GetGradeStatisticSnapshotAsync(organizeExamId);
+        if (doc is null) return NotFound(new { success = false, message = "Grade statistic not found" });
+        return Ok(new { success = true, data = doc });
     }
 
-    [HttpGet("participation-violation-by-id")]
-    public async Task<IActionResult> GetParticipationViolation(string organizeExamId)
+    [HttpPost("update-organize-exam-grade-stats")]
+    public async Task<IActionResult> Update(string organizeExamId)
     {
         if (string.IsNullOrWhiteSpace(organizeExamId))
-            return BadRequest("organizeExamId is required.");
+            return BadRequest(new { success = false, message = "organizeExamId is required" });
 
-        var result = await _statisticsService.GetParticipationViolationAsync(organizeExamId);
-        return Ok(result);
+        try
+        {
+            await _statisticsService.UpdateGradeStatisticAsync(organizeExamId);
+            return Ok(new { success = true, message = "Grade statistic updated" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet("get-participation-violation-by-id")]
+    public async Task<IActionResult> GetViolation(string organizeExamId)
+    {
+        if (string.IsNullOrWhiteSpace(organizeExamId))
+            return BadRequest(new { success = false, message = "organizeExamId is required" });
+
+        try
+        {
+            var doc = await _statisticsService.GetParticipationViolationSnapshotAsync(organizeExamId);
+            if (doc is null)
+                return NotFound(new { success = false, message = "Violation snapshot not found" });
+
+            return Ok(new { success = true, data = doc });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost("update-participation-violation-by-id")]
+    public async Task<IActionResult> UpdateViolation(string organizeExamId)
+    {
+        if (string.IsNullOrWhiteSpace(organizeExamId))
+            return BadRequest(new { success = false, message = "organizeExamId is required" });
+
+        try
+        {
+            await _statisticsService.UpdateParticipationViolationAsync(organizeExamId);
+            return Ok(new { success = true, message = "Violation snapshot updated successfully" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
     }
 
     [HttpGet("exam-set")]
@@ -68,12 +119,39 @@ public class StatisticsController : ControllerBase
         }
     }
 
-    [HttpGet("organize-exam/ramdom-exam-status")]
-    public async Task<ActionResult<QuestionBankStatusDto>> GetOrganizeExamStatus(
-        string organizeExamId)
+    [HttpPost("organize-exam/ramdom-exam-status")]
+    public async Task<IActionResult> UpdateStatistics(string organizeExamId)
     {
-        var dto = await _statisticsService.GetQuestionBankStatusAsync(
-            organizeExamId);
-        return Ok(dto);
+        if (string.IsNullOrWhiteSpace(organizeExamId))
+            return BadRequest(new { success = false, message = "organizeExamId is required" });
+
+        try
+        {
+            await _statisticsService.UpdateQuestionBankStatusAsync(organizeExamId);
+            return Ok(new { success = true, message = "Statistic updated successfully" });
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("OrganizeExam not found"))
+        {
+            return NotFound(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
     }
+
+    [HttpGet("organize-exam/ramdom-exam-status")]
+    public async Task<IActionResult> GetStatistics(string organizeExamId)
+    {
+        if (string.IsNullOrWhiteSpace(organizeExamId))
+            return BadRequest(new { success = false, message = "organizeExamId is required" });
+
+        var doc = await _statisticsService.GetOrganizeExamStatisticAsync(organizeExamId);
+        if (doc is null)
+            return NotFound(new { success = false, message = "Statistic not found" });
+
+        return Ok(new { success = true, data = doc });
+    }
+
+
 }
