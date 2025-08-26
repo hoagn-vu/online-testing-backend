@@ -108,7 +108,7 @@ app.UseCors("AllowAll");
 
 app.UseRouting();
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseAuthentication();
 
