@@ -10,6 +10,7 @@ namespace Backend_online_testing.Repositories
         Task<SubjectsModel?> GetSubjectByIdAsync(string subjectId);
         Task<UsersModel?> GetUserByIdAsync(string userId);
         Task UpdateUserTakeExamAsync(string userId, TakeExamsModel updatedTakeExam);
+        Task UpdateUserTakeExamStatusAsync(string userId, string takeExamId, string newStatus);
         Task<ExamsModel?> GetExamByIdAsync(string examId);
         Task<ExamMatricesModel?> GetExamMatrixByIdAsync(string matrixId);
     }
@@ -74,6 +75,21 @@ namespace Backend_online_testing.Repositories
                 .Set("takeExams.$.startAt", updatedTakeExam.StartAt)
                 .Set("takeExams.$.status", updatedTakeExam.Status)
                 .Set("takeExams.$.answers", updatedTakeExam.Answers);
+
+            await _userCollection.UpdateOneAsync(filter, update);
+        }
+        
+        public async Task UpdateUserTakeExamStatusAsync(string userId, string takeExamId, string newStatus)
+        {
+            var filter = Builders<UsersModel>.Filter.And(
+                Builders<UsersModel>.Filter.Eq(u => u.Id, userId),
+                Builders<UsersModel>.Filter.ElemMatch(u => u.TakeExam,
+                    t => t.Id == takeExamId
+                )
+            );
+
+            var update = Builders<UsersModel>.Update
+                .Set("takeExams.$.status", newStatus);
 
             await _userCollection.UpdateOneAsync(filter, update);
         }

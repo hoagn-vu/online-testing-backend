@@ -75,7 +75,7 @@ public class TrackExamService
             return new CandidateDetailsDto { OrganizeExamId = organizeExamId, SessionId = sessionId, RoomId = roomId };
         }
 
-        var totalQuestions = organizeExam.TotalQuestions ?? 0;
+        // var totalQuestions = organizeExam.TotalQuestions ?? 0;
         var session = organizeExam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
         if (session == null || session.RoomsInSession == null)
         {
@@ -104,7 +104,7 @@ public class TrackExamService
                     t.SessionId == sessionId &&
                     t.RoomId == roomId);
 
-                var takeExamStatus = takeExam?.Status ?? "Not Started";
+                var takeExamStatus = takeExam?.Status ?? "not_started";
                 var startAt = takeExam?.StartAt;
                 var finishAt = takeExam?.FinishedAt;
                 var progress = takeExam?.Progress ?? 0;
@@ -118,7 +118,7 @@ public class TrackExamService
                     Status = takeExamStatus, StartAt = startAt, 
                     FinishAt = finishAt, 
                     Progress = progress, 
-                    TotalQuestions = totalQuestions,
+                    TotalQuestions = takeExam?.Answers.Count ?? 0,
                     TotalScore = takeExam?.TotalScore ?? 0,
                     ViolationCount = takeExam?.ViolationCount ?? 0,
                 });
