@@ -22,7 +22,7 @@ jobs:
           pip install semgrep
 
       - name: Run semgrep
-        run: semgrep --config "p/owasp-top-ten" --lang csharp --json -o semgrep-results.json . || true
+        run: semgrep --config "p/csharp" --json -o semgrep-results.json . || true
 
       - name: Init CodeQL
         uses: github/codeql-action/init@v2
