@@ -61,4 +61,22 @@ public class ExamHistoryDto
     public string? UnrecognizedReason { get; set; }
 }
 
+public class UserExamResultDto
+{
+    public string TakeExamId { get; set; } = string.Empty;
+    public string OrganizeExamName { get; set; } = string.Empty;
+    public string SubjectName { get; set; } = string.Empty;
+    public double TotalScore { get; set; }
+    public DateTime? FinishedAt { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string? UnrecognizedReason { get; set; }
+}
+
+public class PagedResultDto<T>
+{
+    public int TotalItems { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public List<T> Items { get; set; } = [];
+}
 

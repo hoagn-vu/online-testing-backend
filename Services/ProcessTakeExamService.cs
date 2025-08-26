@@ -694,4 +694,48 @@ public class ProcessTakeExamService
 
         return results;
     }
+    
+    public async Task<PagedResultDto<UserExamResultDto>> GetUserExamResultsAsync(string userId, int page, int pageSize)
+    {
+        var takeExams = await _processTakeExamRepository.GetUserTakeExamsAsync(userId);
+
+        var filteredExams = takeExams
+            .Where(te => te.Status == "done" || te.Status == "terminate")
+            .OrderBy(te => te.Id)
+            .ToList();
+
+        var results = new List<UserExamResultDto>();
+
+        foreach (var takeExam in filteredExams)
+        {
+            var orgExam = await _processTakeExamRepository.GetOrganizeExamByIdAsync(takeExam.OrganizeExamId);
+            if (orgExam == null) continue;
+
+            var subject = await _processTakeExamRepository.GetSubjectByIdAsync(orgExam.SubjectId);
+
+            results.Add(new UserExamResultDto
+            {
+                TakeExamId = takeExam.Id,
+                OrganizeExamName = orgExam.OrganizeExamName,
+                SubjectName = subject?.SubjectName ?? string.Empty,
+                TotalScore = takeExam.TotalScore,
+                FinishedAt = takeExam.FinishedAt,
+                Status = takeExam.Status,
+                UnrecognizedReason = takeExam.UnrecognizedReason
+            });
+        }
+
+        var totalItems = results.Count;
+        var pagedItems = results.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        return new PagedResultDto<UserExamResultDto>
+        {
+            TotalItems = totalItems,
+            Page = page,
+            PageSize = pageSize,
+            Items = pagedItems
+        };
+    }
+
+    
 }

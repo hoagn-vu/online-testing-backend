@@ -183,5 +183,14 @@ public class ProcessTakeExamController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{userId}/take-exam-history")]
+    public async Task<IActionResult> GetUserExamResults(
+        string userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var result = await _processTakeExamService.GetUserExamResultsAsync(userId, page, pageSize);
+        return Ok(result);
+    }
 
 }
