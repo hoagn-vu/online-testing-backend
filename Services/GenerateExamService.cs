@@ -38,7 +38,7 @@ namespace Backend_online_testing.Services
             if (takeExam.Status == "terminate") return ("terminate", null);
 
              // Trường hợp 0: da co du lieu lam bai
-            if (takeExam is { Status: "in_exam", Answers.Count: > 0 })
+            if (takeExam is { Status: "in_exam", Answers.Count: > 0 } or { Status: "re_open", Answers.Count: > 0 })
             {
                 var subject = await _generateExamRepository.GetSubjectByIdAsync(organizeExam.SubjectId);
                 if (subject == null) return ("error-subject", null);

@@ -157,5 +157,33 @@ public class OrganizeExamController : ControllerBase
         var result = await _organizeExamService.GetOrganizeExamOptions(subjectId);
         return Ok(result);
     }
+    
+    [HttpPut("{organizeExamId}/update-status")]
+    public async Task<IActionResult> UpdateStatus([FromRoute] string organizeExamId, [FromQuery] string newStatus)
+    {
+        var (status, result) = await _organizeExamService.UpdateStatusAsync(organizeExamId, newStatus);
+
+        return status switch
+        {
+            "organize-exam-not-found" => NotFound(new { code = status, message = "Organize exam not found" }),
+            "update-failed" => BadRequest(new { code = status, message = "Update status failed" }),
+            "success" => Ok(new { code = status, new_status = result }),
+            _ => StatusCode(500, new { code = "unexpected-error", message = "Unexpected error occurred" })
+        };
+    }
+    
+    [HttpPut("{organizeExamId}/done")]
+    public async Task<IActionResult> UpdateStatus([FromRoute] string organizeExamId)
+    {
+        var (status, result) = await _organizeExamService.UpdateStatusAsync(organizeExamId, "done");
+
+        return status switch
+        {
+            "organize-exam-not-found" => NotFound(new { code = status, message = "Organize exam not found" }),
+            "update-failed" => BadRequest(new { code = status, message = "Update status failed" }),
+            "success" => Ok(new { code = status, new_status = result }),
+            _ => StatusCode(500, new { code = "unexpected-error", message = "Unexpected error occurred" })
+        };
+    }
    
 }
