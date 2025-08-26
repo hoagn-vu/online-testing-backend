@@ -284,5 +284,21 @@ public class ProcessTakeExamRepository
 
         await _usersCollection.UpdateOneAsync(filter, update);
     }
+    
+    public async Task<List<TakeExamsModel>> GetUserTakeExamsAsync(string userId)
+    {
+        var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        return user?.TakeExam ?? [];
+    }
+
+    // public async Task<OrganizeExamModel?> GetOrganizeExamByIdAsync(string id)
+    // {
+    //     return await _organizeExamCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
+    // }
+
+    // public async Task<SubjectsModel?> GetSubjectByIdAsync(string id)
+    // {
+    //     return await _subjects.Find(x => x.Id == id).FirstOrDefaultAsync();
+    // }
 
 }
