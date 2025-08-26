@@ -29,11 +29,17 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      - name: Build project
+        run: |
+          dotnet build ./Backend_online_testing.csproj --configuration Release --no-restore
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      - name: Create CodeQL database (capture)
+        run: |
+          codeql database create codeql-db --language=csharp --command "dotnet build ./Backend_online_testing.csproj --configuration Release --no-restore"
+
+      - name: Analyze DB
+        run: |
+          codeql database analyze codeql-db --format=sarif-latest --output=codeql-results.sarif
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
