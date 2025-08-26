@@ -26,6 +26,7 @@ public interface IUsersService
     Task<(string, string)> BulkChangePasswordAsync(BulkChangePasswordRequestDto request);
     Task<(string, string)> ChangePasswordAsync(string userId, ChangePasswordRequestDto request);
     Task<(string status, string? message)> UpdateTakeExamAsync(UpdateTakeExamRequestDto request);
+    Task<UpdateSessionPasswordResponseDto> UpdateSessionPasswordAsync(UpdateSessionPasswordRequestDto request);
 }
 
 public class UsersService : IUsersService
@@ -525,5 +526,43 @@ public class UsersService : IUsersService
         await _userRepository.UpdateUserAsync(user);
 
         return ("success", "Cập nhật thành công");
+    }
+    
+    public async Task<UpdateSessionPasswordResponseDto> UpdateSessionPasswordAsync(UpdateSessionPasswordRequestDto request)
+    {
+        var exam = await _userRepository.GetOrganizeExamByIdAsync(request.OrganizeExamId);
+        if (exam == null)
+            return new UpdateSessionPasswordResponseDto { Success = false, Message = "Organize exam not found" };
+
+        var session = exam.Sessions.FirstOrDefault(s => s.SessionId == request.SessionId);
+        if (session == null)
+            return new UpdateSessionPasswordResponseDto { Success = false, Message = "Session not found" };
+
+        // Lấy CandidateIds unique
+        var candidateIds = session.RoomsInSession.SelectMany(r => r.CandidateIds).Distinct().ToList();
+
+        if (!candidateIds.Any())
+            return new UpdateSessionPasswordResponseDto { Success = false, Message = "No candidates found in session" };
+
+        // Hash password cho user
+        string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+        var users = await _userRepository.GetUsersByIdsAsync(candidateIds);
+        foreach (var user in users)
+        {
+            user.Password = hashedPassword;
+        }
+
+        await _userRepository.UpdateUserPasswordsAsync(users);
+
+        // Cập nhật SessionPassword trong OrganizeExam
+        await _userRepository.UpdateSessionPasswordAsync(request.OrganizeExamId, request.SessionId, request.NewPassword);
+
+        return new UpdateSessionPasswordResponseDto
+        {
+            Success = true,
+            Message = "Password updated successfully",
+            UpdatedUserCount = users.Count
+        };
     }
 }

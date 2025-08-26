@@ -164,5 +164,14 @@ namespace Backend_online_testing.Controllers
             };
         }
         
+        [HttpPut("update-session-password")]
+        public async Task<IActionResult> UpdateSessionPassword([FromBody] UpdateSessionPasswordRequestDto request)
+        {
+            var result = await _userService.UpdateSessionPasswordAsync(request);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
     }
 }

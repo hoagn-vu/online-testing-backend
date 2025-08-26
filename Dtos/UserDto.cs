@@ -112,3 +112,17 @@ public class UpdateTakeExamRequestDto
     public string Type { get; set; } = string.Empty; // reopen | restart
     public string? Status { get; set; }
 }
+
+public class UpdateSessionPasswordRequestDto
+{
+    public string OrganizeExamId { get; set; } = string.Empty;
+    public string SessionId { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+public class UpdateSessionPasswordResponseDto
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public int UpdatedUserCount { get; set; }
+}

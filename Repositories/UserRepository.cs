@@ -24,6 +24,9 @@ public interface IUserRepository
     Task<List<UsersModel>> GetUsersByIdsAsync(List<string> userIds);
     Task UpdateUserPasswordAsync(string userId, string hashedPassword);
     Task UpdateUserAsync(UsersModel user);
+    Task<OrganizeExamModel?> GetOrganizeExamByIdAsync(string id);
+    Task UpdateSessionPasswordAsync(string organizeExamId, string sessionId, string newPassword);
+    Task UpdateUserPasswordsAsync(IEnumerable<UsersModel> users);
 }
 
 public class UserRepository : IUserRepository
@@ -192,5 +195,34 @@ public class UserRepository : IUserRepository
     public async Task UpdateUserAsync(UsersModel user)
     {
         await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
+    }
+    
+    public async Task<OrganizeExamModel?> GetOrganizeExamByIdAsync(string id)
+    {
+        return await _organizeExams.Find(x => x.Id == id).FirstOrDefaultAsync();
+    }
+
+    public async Task UpdateSessionPasswordAsync(string organizeExamId, string sessionId, string newPassword)
+    {
+        var filter = Builders<OrganizeExamModel>.Filter.And(
+            Builders<OrganizeExamModel>.Filter.Eq(x => x.Id, organizeExamId),
+            Builders<OrganizeExamModel>.Filter.ElemMatch(x => x.Sessions, s => s.SessionId == sessionId)
+        );
+
+        var update = Builders<OrganizeExamModel>.Update.Set("sessions.$.sessionPassword", newPassword);
+
+        await _organizeExams.UpdateOneAsync(filter, update);
+    }
+    
+    public async Task UpdateUserPasswordsAsync(IEnumerable<UsersModel> users)
+    {
+        var tasks = users.Select(user =>
+        {
+            var filter = Builders<UsersModel>.Filter.Eq(x => x.Id, user.Id);
+            var update = Builders<UsersModel>.Update.Set(x => x.Password, user.Password);
+            return _users.UpdateOneAsync(filter, update);
+        });
+
+        await Task.WhenAll(tasks);
     }
 }

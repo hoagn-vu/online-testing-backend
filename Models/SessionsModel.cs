@@ -24,6 +24,9 @@ public class SessionsModel
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime ForceEndAt { get; set; }
     
+    [BsonElement("sessionPassword")]
+    public string? SessionPassword { get; set; } = string.Empty;
+    
     [BsonElement("rooms")]
     public List<SessionRoomsModel> RoomsInSession { get; set; } = [];
     
