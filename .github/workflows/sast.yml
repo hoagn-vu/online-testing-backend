@@ -24,24 +24,16 @@ jobs:
       - name: Run semgrep
         run: semgrep --config "p/csharp" --json -o semgrep-results.json . || true
 
-      - name: Init CodeQL
-        uses: github/codeql-action/init@v2
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
         with:
-          languages: csharp
+          languages: ${{ matrix.language }}
 
-      - name: Build (capture for CodeQL DB)
-        run: |
-          # Use the same build command your project uses
-          dotnet restore
-          dotnet build
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
 
-      - name: Create CodeQL database (capture)
-        run: |
-          codeql database create codeql-db --language=csharp --command "dotnet build"
-
-      - name: Analyze DB -> SARIF
-        run: |
-          codeql database analyze codeql-db --format=sarif-latest --output=codeql-results.sarif
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
