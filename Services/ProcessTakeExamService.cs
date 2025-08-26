@@ -38,7 +38,9 @@ public class ProcessTakeExamService
         if (session == null)
             return ("session-not-found", null);
         
-        if (session.RoomsInSession.Any(r => r.RoomStatus == "active"))
+        if (session.RoomsInSession.Count == 0) return ("session-has-no-room", null);
+        
+        if (session.RoomsInSession.Any(r => r.RoomStatus == "active") && session.SessionStatus == "active")
             return ("session-has-active-room", null);
 
         var newStatus = session.SessionStatus == "active" ? "closed" : "active";
