@@ -124,7 +124,7 @@ public class QuestionItemDto
     public long NoSelection { get; set; }
 }
 
-public class QuestionBankStatusDto
+public class OrganizeExamStatusDto
 {
     public string OrganizeExamId { get; set; } = string.Empty;
 

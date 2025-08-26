@@ -12,6 +12,9 @@ public class StatisticsRepository
     private readonly IMongoCollection<SubjectsModel> _subjects;
     private readonly IMongoCollection<RoomsModel> _rooms;
     private readonly IMongoCollection<ExamsModel> _exams;
+    private readonly IMongoCollection<OrganizeExamStatisticModel> _organizeExamStats;
+    private readonly IMongoCollection<ParticipationViolationModel> _participationViolations;
+    private readonly IMongoCollection<GradeStatisticModel> _gradeStats;
 
     public StatisticsRepository(IMongoDatabase database)
     {
@@ -20,6 +23,9 @@ public class StatisticsRepository
         _subjects = database.GetCollection<SubjectsModel>("subjects");
         _rooms = database.GetCollection<RoomsModel>("rooms");
         _exams = database.GetCollection<ExamsModel>("exams");
+        _organizeExamStats = database.GetCollection<OrganizeExamStatisticModel>("organizeExamStatistics");
+        _participationViolations = database.GetCollection<ParticipationViolationModel>("participationViolations");
+        _gradeStats = database.GetCollection<GradeStatisticModel>("gradeStatistics");
     }
 
     //Get Subject Name
@@ -198,25 +204,25 @@ public class StatisticsRepository
     }
 
     //Get all question in question bank
-    public async Task<List<QuestionItemDto>> GetQuestionsByOrganizeExamAsync(string subjectId, string questionBankId)
+    public async Task<List<QuestionItem>> GetQuestionsByOrganizeExamAsync(string subjectId, string questionBankId)
     {
         var subject = await _subjects.Find(s => s.Id == subjectId).FirstOrDefaultAsync();
         var qb = subject?.QuestionBanks?.FirstOrDefault(x => x.QuestionBankId == questionBankId);
 
-        var list = new List<QuestionItemDto>();
+        var list = new List<QuestionItem>();
         if (qb?.QuestionList == null) return list;
 
         foreach (var q in qb.QuestionList)
         {
             if (string.IsNullOrWhiteSpace(q.QuestionId)) continue;
 
-            list.Add(new QuestionItemDto
+            list.Add(new QuestionItem
             {
                 QuestionId = q.QuestionId ?? string.Empty,
                 QuestionType = q.QuestionType ?? string.Empty,
                 QuestionText = q.QuestionText ?? string.Empty,
                 tags = q.Tags ?? new List<string>(),
-                Options = (q.Options ?? new List<OptionsModel>()).Select(o => new OptionItemDto
+                Options = (q.Options ?? new List<OptionsModel>()).Select(o => new OptionItem
                 {
                     OptionId = o.OptionId ?? string.Empty,
                     OptionText = o.OptionText ?? string.Empty,
@@ -331,5 +337,62 @@ public class StatisticsRepository
 
         var cursor = await _users.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
         return cursor?.GetValue("Participants", 0).ToInt64() ?? 0L;
+    }
+
+    public async Task UpsertOrganizeExamStatisticAsync(OrganizeExamStatisticModel doc)
+    {
+        if (string.IsNullOrWhiteSpace(doc.Id))
+            doc.Id = ObjectId.GenerateNewId().ToString();
+
+        var filter = Builders<OrganizeExamStatisticModel>.Filter
+                        .Eq(x => x.OrganizeExamId, doc.OrganizeExamId);
+
+        var options = new ReplaceOptions { IsUpsert = true };
+
+        await _organizeExamStats.ReplaceOneAsync(filter, doc, options);
+    }
+
+    public async Task<OrganizeExamStatisticModel?> GetOrganizeExamStatisticAsync(string organizeExamId)
+    {
+        return await _organizeExamStats
+            .Find(x => x.OrganizeExamId == organizeExamId)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task UpsertParticipationViolationAsync(ParticipationViolationModel doc)
+    {
+        if (string.IsNullOrWhiteSpace(doc.Id))
+            doc.Id = ObjectId.GenerateNewId().ToString();
+
+        var filter = Builders<ParticipationViolationModel>.Filter
+            .Eq(x => x.OrganizeExamId, doc.OrganizeExamId);
+
+        await _participationViolations.ReplaceOneAsync(
+            filter, doc, new ReplaceOptions { IsUpsert = true });
+    }
+
+    public async Task<ParticipationViolationModel?> GetParticipationViolationSnapshotAsync(string organizeExamId)
+    {
+        return await _participationViolations
+            .Find(x => x.OrganizeExamId == organizeExamId)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task UpsertGradeStatisticAsync(GradeStatisticModel doc)
+    {
+        if (string.IsNullOrWhiteSpace(doc.Id))
+            doc.Id = ObjectId.GenerateNewId().ToString();
+
+        var filter = Builders<GradeStatisticModel>.Filter
+            .Eq(x => x.OrganizeExamId, doc.OrganizeExamId);
+
+        await _gradeStats.ReplaceOneAsync(filter, doc, new ReplaceOptions { IsUpsert = true });
+    }
+
+    public async Task<GradeStatisticModel?> GetGradeStatisticSnapshotAsync(string organizeExamId)
+    {
+        return await _gradeStats
+            .Find(x => x.OrganizeExamId == organizeExamId)
+            .FirstOrDefaultAsync();
     }
 }
