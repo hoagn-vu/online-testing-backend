@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add configuration file
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-    .AddJsonFile("Connection.json", optional: false, reloadOnChange: true);
+    .AddJsonFile("Connection.json", optional: true, reloadOnChange: true);
 
 // Configure MongoDb
 builder.Services.AddSingleton<IMongoClient>(sp =>
@@ -94,6 +94,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpsRedirection(o => o.HttpsPort = 5001);
 
 var app = builder.Build();
 
