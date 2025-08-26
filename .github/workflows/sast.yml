@@ -31,11 +31,11 @@ jobs:
 
       - name: Build project
         run: |
-          dotnet build ./backend_online_testing.csproj --configuration Release --no-restore
+          dotnet build ./backend_online_testing.csproj --configuration Release
 
       - name: Create CodeQL database (capture)
         run: |
-          codeql database create codeql-db --language=csharp --command "dotnet build ./backend_online_testing.csproj --configuration Release --no-restore"
+          codeql database create codeql-db --language=csharp --command "dotnet build ./backend_online_testing.csproj --configuration Release"
 
       - name: Analyze DB
         run: |
