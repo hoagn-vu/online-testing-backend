@@ -258,6 +258,12 @@ public class OrganizeExamRepository
         return result.ModifiedCount > 0;
     }
     
+    public async Task<int> GetMatrixTotalQuestionAsync(string id)
+    {
+        var matrix = await _examMatrices.Find(x => x.Id == id).FirstOrDefaultAsync();
+        
+        return matrix.MatrixTags.Sum(tag => tag.QuestionCount);
+    }
     
 
 }

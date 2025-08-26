@@ -412,12 +412,18 @@ public class OrganizeExamService
     {
         // var subjectIdFinded = "";
         // if (string.IsNullOrEmpty(dto.SubjectId) && !string.IsNullOrEmpty(dto))
+        var totalQuestions = dto.TotalQuestions ?? 0;
+        
+        // if (dto.ExamType == "matrix" && !string.IsNullOrEmpty(dto.MatrixId))
+        // {
+        //     totalQuestions = _organizeExamRepository.GetMatrixTotalQuestionAsync(dto.MatrixId).Result;
+        // }
         
         var newExam = new OrganizeExamModel
         {
             OrganizeExamName = dto.OrganizeExamName,
             Duration = dto.Duration * 60,
-            TotalQuestions = dto.TotalQuestions,
+            TotalQuestions = totalQuestions,
             MaxScore = dto.MaxScore,
             SubjectId = dto.SubjectId,
             QuestionBankId = dto.QuestionBankId,
@@ -425,7 +431,7 @@ public class OrganizeExamService
             MatrixId = dto.MatrixId,
             Exams = dto.Exams,
             OrganizeExamStatus = dto.OrganizeExamStatus,
-            Sessions = new List<SessionsModel>()
+            Sessions = []
         };
 
         if (dto.Sessions is not null && dto.Sessions.Any())

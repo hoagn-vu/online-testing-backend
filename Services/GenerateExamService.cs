@@ -46,7 +46,9 @@ namespace Backend_online_testing.Services
                 var questionBank = subject.QuestionBanks
                     .FirstOrDefault(qb => qb.QuestionBankId == organizeExam.QuestionBankId);
                 if (questionBank == null) return ("error-question-bank", null);
-
+                
+                if (takeExam.Status == "re_open") await _generateExamRepository.UpdateUserTakeExamStatusAsync(request.UserId, takeExam.Id, "in_exam");
+                
                 var questionDict = questionBank.QuestionList.ToDictionary(q => q.QuestionId, q => q);
 
                 var questionDtos = takeExam.Answers
@@ -59,7 +61,7 @@ namespace Backend_online_testing.Services
                             QuestionId = q.QuestionId,
                             QuestionType = q.QuestionType,
                             QuestionText = q.QuestionText,
-                            ImgLinks = q.ImgLinks ?? new List<string>(),
+                            ImgLinks = q.ImgLinks ?? [],
                             IsRandomOrder = q.IsRandomOrder,
                             Options = q.Options.Select(o => new GenerateExamOptionResponseDto
                             {

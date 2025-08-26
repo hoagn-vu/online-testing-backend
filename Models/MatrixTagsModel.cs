@@ -1,8 +1,8 @@
-﻿namespace Backend_online_testing.Models
-{
-    using MongoDB.Bson;
-    using MongoDB.Bson.Serialization.Attributes;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
+namespace Backend_online_testing.Models
+{
     public class MatrixTagsModel
     {
         [BsonElement("chapter")]
