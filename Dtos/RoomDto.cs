@@ -39,6 +39,7 @@ namespace Backend_online_testing.Dtos
         public string Id { get; set; } = string.Empty;
         public DateTime StartAt { get; set; }
         public DateTime FinishAt { get; set; }
+        public int? TotalCandidates { get; set; }
         public string OrganizeExamId { get; set; } = string.Empty;
         public string SessionId { get; set; } = string.Empty;
     }

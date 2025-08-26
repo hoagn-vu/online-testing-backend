@@ -75,6 +75,7 @@ public class RoomOrganizeExamDto
 
     public int Quantity { get; set; }
 }
+
 public class OrganizeExamOptionsDto
 {
     public string Id { get; set; } = string.Empty;
