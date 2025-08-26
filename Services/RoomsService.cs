@@ -161,6 +161,7 @@ namespace Backend_online_testing.Services
                     Id = s.Id,
                     StartAt = s.StartAt,
                     FinishAt = s.FinishAt,
+                    TotalCandidates = s.TotalCandidates,
                     OrganizeExamId = s.OrganizeExamId,
                     SessionId = s.SessionId
                 }).ToList()

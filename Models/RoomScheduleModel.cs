@@ -17,6 +17,9 @@ namespace Backend_online_testing.Models
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime FinishAt { get; set; }
         
+        [BsonElement("totalCandidates")]
+        public int? TotalCandidates { get; set; }
+        
         [BsonElement("organizeExamId")]
         public string OrganizeExamId { get; set; } = string.Empty;
         

@@ -983,6 +983,10 @@ public class OrganizeExamService
             // users[*].trackExams (supervisor)
             await _organizeExamRepository.AddTrackExamsForSupervisorsAsync(
                 organizeExamId, sessionId, r.RoomId, r.SupervisorIds, "closed");
+            
+            // === Thêm RoomSchedule cho RoomsModel ===
+            await _organizeExamRepository.AddRoomScheduleAsync(
+                organizeExamId, sessionId, r.RoomId, r.CandidateIds.Count);
         }
     }
     

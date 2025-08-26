@@ -265,5 +265,27 @@ public class OrganizeExamRepository
         return matrix.MatrixTags.Sum(tag => tag.QuestionCount);
     }
     
+    public async Task AddRoomScheduleAsync(string organizeExamId, string sessionId, string roomId, int totalCandidates)
+    {
+        // Lấy thông tin Session từ OrganizeExam để biết StartAt / FinishAt
+        var exam = await _organizeExams.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
+        var session = exam?.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        if (session == null) throw new InvalidOperationException("Session not found for adding RoomSchedule");
+
+        var newSchedule = new RoomScheduleModel
+        {
+            StartAt = session.StartAt,
+            FinishAt = session.FinishAt,
+            TotalCandidates = totalCandidates,
+            OrganizeExamId = organizeExamId,
+            SessionId = sessionId
+        };
+
+        var filter = Builders<RoomsModel>.Filter.Eq(r => r.Id, roomId);
+        var update = Builders<RoomsModel>.Update.Push(r => r.RoomSchedule, newSchedule);
+
+        await _rooms.UpdateOneAsync(filter, update);
+    }
+
 
 }
