@@ -1,0 +1,22 @@
+name: Test SSH Connection
+
+on:
+  workflow_dispatch: 
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test SSH connection
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_SERVER }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: |
+            echo "===== TEST START ====="
+            echo "User: $(id -un)"
+            echo "UID: $(id -u)"
+            echo "Host: $(hostname)"
+            echo "===== TEST END ====="
