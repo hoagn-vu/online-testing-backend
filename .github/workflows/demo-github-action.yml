@@ -20,13 +20,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore ./Backend_online_testing.csproj
+        run: dotnet restore ./backend_online_testing.csproj
 
       - name: Build project
-        run: dotnet build ./Backend_online_testing.csproj --configuration Release --no-restore
+        run: dotnet build ./backend_online_testing.csproj --configuration Release --no-restore
 
       - name: Publish project
-        run: dotnet publish ./Backend_online_testing.csproj -c Release -o ./publish
+        run: dotnet publish ./backend_online_testing.csproj -c Release -o ./publish
 
       - name: Copy files to server
         uses: appleboy/scp-action@master
