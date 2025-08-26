@@ -99,7 +99,7 @@ builder.Services.AddHttpsRedirection(o => o.HttpsPort = 5001);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Configuration.GetValue<bool>("EnableSwagger") || app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -116,5 +116,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGet("/health", () => Results.Ok(new { ok = true, env = app.Environment.EnvironmentName, time = DateTime.UtcNow }));
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();

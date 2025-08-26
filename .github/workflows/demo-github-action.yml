@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - main
-      - stone04      
+      - stone04
   workflow_dispatch:
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -14,19 +15,35 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Rename csproj (case fix)
+        shell: bash
+        run: |
+          # Nếu file B đã tồn tại thì bỏ qua
+          if [ -f "Backend_online_testing.csproj" ]; then
+            echo "Already renamed."
+          else
+            # Đổi tên file csproj
+            mv backend_online_testing.csproj Backend_online_testing.csproj
+            # Sửa tham chiếu trong .sln (nếu có)
+            if [ -f "backend_online_testing.sln" ]; then
+              sed -i 's/backend_online_testing\.csproj/Backend_online_testing.csproj/g' backend_online_testing.sln
+            fi
+          fi
+          ls -l | grep -i '.*online_testing.*\.csproj' || true
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore ./backend_online_testing.csproj
+        run: dotnet restore ./Backend_online_testing.csproj
 
       - name: Build project
-        run: dotnet build ./backend_online_testing.csproj --configuration Release --no-restore
+        run: dotnet build ./Backend_online_testing.csproj --configuration Release --no-restore
 
       - name: Publish project
-        run: dotnet publish ./backend_online_testing.csproj -c Release -o ./publish
+        run: dotnet publish ./Backend_online_testing.csproj -c Release -o ./publish
 
       - name: Copy files to server
         uses: appleboy/scp-action@master
