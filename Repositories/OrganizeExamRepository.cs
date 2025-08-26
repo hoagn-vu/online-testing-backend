@@ -246,5 +246,18 @@ public class OrganizeExamRepository
         await _users.UpdateManyAsync(filter, update);
     }
 
+    public async Task<OrganizeExamModel?> GetByIdAsync(string id)
+    {
+        return await _organizeExams.Find(x => x.Id == id).FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> UpdateStatusAsync(string id, string status)
+    {
+        var update = Builders<OrganizeExamModel>.Update.Set(x => x.OrganizeExamStatus, status);
+        var result = await _organizeExams.UpdateOneAsync(x => x.Id == id, update);
+        return result.ModifiedCount > 0;
+    }
+    
+    
 
 }

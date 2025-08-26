@@ -16,7 +16,7 @@ public class OrganizeExamDto
     public List<ExamInOrganizeExamDto>? Exams { get; set; }
     public string? MatrixId { get; set; }
     public string? MatrixName { get; set; }
-    public string OrganizeExamStatus { get; set; } = "available";
+    public string OrganizeExamStatus { get; set; } = "active";
     public long TotalSessions { get; set; }
 }
 
@@ -38,7 +38,7 @@ public class OrganizeExamRequestDto
     public string ExamType { get; set; } = string.Empty;
     public string? MatrixId { get; set; }
     public List<string>? Exams { get; set; }
-    public string OrganizeExamStatus { get; set; } = "closed";
+    public string OrganizeExamStatus { get; set; } = "active";
     public List<SessionRequestDto>? Sessions { get; set; }
 }
 
@@ -80,4 +80,16 @@ public class OrganizeExamOptionsDto
     public string Id { get; set; } = string.Empty;
     public string OrganizeExamName { get; set; } = string.Empty;
     public string SubjectId { get; set; } = string.Empty;
+}
+
+public class UpdateOrganizeExamStatusRequestDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+}
+
+public class UpdateOrganizeExamStatusResponseDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string OrganizeExamStatus { get; set; } = string.Empty;
 }
