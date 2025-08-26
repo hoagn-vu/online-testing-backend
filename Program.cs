@@ -9,8 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add configuration file
 builder.Configuration
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddJsonFile("Connection.json", optional: true, reloadOnChange: true);
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("Connection.json", optional: false, reloadOnChange: true);
 
 // Configure MongoDb
 builder.Services.AddSingleton<IMongoClient>(sp =>
