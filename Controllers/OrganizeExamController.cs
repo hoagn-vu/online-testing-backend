@@ -59,8 +59,17 @@ public class OrganizeExamController : ControllerBase
     {
         // var result = await _organizeExamService.CreateOrganizeExam(dto);
         // return CreatedAtAction(nameof(CreateOrganizeExam), new { id = result.Id }, result);
-        var result = await _organizeExamService.CreateOrganizeExamWithSessions(dto);
-        return Ok(result);
+        // var result = await _organizeExamService.CreateOrganizeExamWithSessions(dto);
+        // return Ok(result);
+        var (status, exam) = await _organizeExamService.CreateOrganizeExamWithSessions(dto);
+
+        return status switch
+        {
+            "session-overlap" => BadRequest(new { message = "Ca thi bị chồng chéo thời gian." }),
+            "duplicate-session-time" => BadRequest(new { status, message = "Trong kỳ thi đã tồn tại ca thi có cùng StartAt và FinishAt." }),
+            "success" => Ok(new { status, data = exam }),
+            _ => StatusCode(500, new { message = "Unexpected error" })
+        };
     }
 
     [HttpPut("{organizeExamId}")]
@@ -73,9 +82,15 @@ public class OrganizeExamController : ControllerBase
     [HttpPost("{examId}/sessions")]
     public async Task<IActionResult> AddSession(string examId, [FromBody] SessionRequestDto dto)
     {
-        var result = await _organizeExamService.AddSession(examId, dto);
-        if (result == null) return NotFound();
-        return Ok(result);
+        var (status, exam) = await _organizeExamService.AddSession(examId, dto);
+        
+        return status switch
+        {
+            "exam-not-found" => NotFound(new { status, message = "Không tìm thấy kỳ thi." }),
+            "session-overlap" => BadRequest(new { status, message = "Ca thi bị chồng chéo thời gian." }),
+            "success" => Ok(new{ status, exam }),
+            _ => StatusCode(500, new { message = "Unexpected error" })
+        };
     }
     
     [HttpPut("{examId}/sessions/{sessionId}")]
@@ -129,26 +144,68 @@ public class OrganizeExamController : ControllerBase
         // }
         return Ok(new { Questions = questions, Duration = duration, SessionId = sessionId });
     }
+    
     [HttpPost("{organizeExamId}/sessions/{sessionId}/rooms")]
-    public async Task<IActionResult> AddRoomToSession(
-        string organizeExamId, string sessionId, [FromBody] AddRoomToSessionRequest request)
+    // public async Task<IActionResult> AddRoomToSession(
+    //     string organizeExamId, string sessionId, [FromBody] AddRoomToSessionRequest request)
+    // {
+    //     const string DupMsg = "One or more rooms already exist in this session. Operation aborted.";
+    //     try
+    //     {
+    //         await _organizeExamService.AddRoomsToSession_StrictAsync(organizeExamId, sessionId, request);
+    //         return Ok(new { message = "Added rooms & allocated candidates successfully." });
+    //     }
+    //     catch (InvalidOperationException ex) when (string.Equals(ex.Message, DupMsg, StringComparison.Ordinal))
+    //     {
+    //         // Trả đúng 1 dòng text, status 409 (không stack trace)
+    //         return new ContentResult
+    //         {
+    //             StatusCode = StatusCodes.Status409Conflict,
+    //             Content = DupMsg,
+    //             ContentType = "text/plain; charset=utf-8"
+    //         };
+    //     }
+    // }
+    public async Task<IActionResult> AddRoomsToSession(
+        string organizeExamId,
+        string sessionId,
+        [FromBody] AddRoomToSessionRequest request)
     {
-        const string DupMsg = "One or more rooms already exist in this session. Operation aborted.";
-        try
+        var (status, message) = await _organizeExamService.AddRoomsToSession_StrictAsync(
+            organizeExamId, sessionId, request);
+        
+        return status switch
         {
-            await _organizeExamService.AddRoomsToSession_StrictAsync(organizeExamId, sessionId, request);
-            return Ok(new { message = "Added rooms & allocated candidates successfully." });
-        }
-        catch (InvalidOperationException ex) when (string.Equals(ex.Message, DupMsg, StringComparison.Ordinal))
-        {
-            // Trả đúng 1 dòng text, status 409 (không stack trace)
-            return new ContentResult
-            {
-                StatusCode = StatusCodes.Status409Conflict,
-                Content = DupMsg,
-                ContentType = "text/plain; charset=utf-8"
-            };
-        }
+            // Missing / invalid args
+            "missing-exam-id"       => BadRequest(new { status, message }),
+            "missing-session-id"    => BadRequest(new { status, message }),
+            "missing-request-body"  => BadRequest(new { status, message }),
+            "empty-room-ids"        => BadRequest(new { status, message }),
+            "invalid-room-quantity" => BadRequest(new { status, message }),
+            "insufficient-quantity" => BadRequest(new { status, message }),
+
+            // Not found
+            "room-not-found"        => NotFound(new { status, message }),
+            "candidates-not-found"  => NotFound(new { status, message }),
+
+            // Validation / conflicts
+            "invalid-supervisor"        => Conflict(new { status, message }),
+            "room-already-in-session"   => Conflict(new { status, message }),
+            "capacity-exceeded"         => Conflict(new { status, message }),
+            "room-capacity-exceeded"    => Conflict(new { status, message }),
+            "candidate-conflict"        => Conflict(new { status, message }),
+            "supervisor-conflict"       => Conflict(new { status, message }),
+            "session-time-duplicate"    => Conflict(new { status, message }),
+
+            // Repo / system errors
+            "repository-failure"    => StatusCode(StatusCodes.Status500InternalServerError, new { status, message }),
+
+            // Success
+            "success"               => Ok(new { status, message }),
+
+            // Unknown / fallback
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new { status = "unknown", message })
+        };
     }
 
     [HttpGet("options")]

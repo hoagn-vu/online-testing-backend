@@ -408,17 +408,10 @@ public class OrganizeExamService
         return newExam;
     }
     
-    public async Task<OrganizeExamModel> CreateOrganizeExamWithSessions(OrganizeExamRequestDto dto)
+    public async Task<(string status, OrganizeExamModel? exam)> CreateOrganizeExamWithSessions(OrganizeExamRequestDto dto)
     {
-        // var subjectIdFinded = "";
-        // if (string.IsNullOrEmpty(dto.SubjectId) && !string.IsNullOrEmpty(dto))
         var totalQuestions = dto.TotalQuestions ?? 0;
-        
-        // if (dto.ExamType == "matrix" && !string.IsNullOrEmpty(dto.MatrixId))
-        // {
-        //     totalQuestions = _organizeExamRepository.GetMatrixTotalQuestionAsync(dto.MatrixId).Result;
-        // }
-        
+
         var newExam = new OrganizeExamModel
         {
             OrganizeExamName = dto.OrganizeExamName,
@@ -438,12 +431,34 @@ public class OrganizeExamService
         {
             foreach (var sessionDto in dto.Sessions)
             {
+                // // Kiểm tra trùng lặp StartAt & FinishAt
+                // var existed = newExam.Sessions.Any(s =>
+                //     s.StartAt == sessionDto.StartAt &&
+                //     s.FinishAt == sessionDto.StartAt.AddMinutes(dto.Duration));
+                //
+                // if (existed)
+                // {
+                //     return ("duplicate-session-time", null);
+                // }
+                
+                var newStart = sessionDto.StartAt;
+                var newFinish = sessionDto.FinishAt ?? sessionDto.StartAt.AddMinutes(dto.Duration);
+
+                // Kiểm tra chồng chéo
+                var overlapped = newExam.Sessions.Any(s =>
+                    s.StartAt < newFinish && newStart < s.FinishAt);
+
+                if (overlapped)
+                {
+                    return ("session-overlap", null);
+                }
+
                 var session = new SessionsModel
                 {
                     SessionName = sessionDto.SessionName,
                     StartAt = sessionDto.StartAt,
-                    FinishAt = sessionDto.FinishAt ?? sessionDto.StartAt.AddMinutes(dto.Duration),
-                    ForceEndAt = sessionDto.ForceEndAt ?? sessionDto.StartAt.AddMinutes(3 * dto.Duration),
+                    FinishAt = sessionDto.StartAt.AddMinutes(dto.Duration),
+                    ForceEndAt = sessionDto.StartAt.AddMinutes(3 * dto.Duration),
                     SessionStatus = sessionDto.SessionStatus
                 };
 
@@ -452,7 +467,7 @@ public class OrganizeExamService
         }
 
         await _organizeExamCollection.InsertOneAsync(newExam);
-        return newExam;
+        return ("success", newExam);
     }
     
     public async Task<string> UpdateOrganizeExam(string organizeExamId, OrganizeExamRequestDto dto)
@@ -510,21 +525,42 @@ public class OrganizeExamService
     }
 
         
-    public async Task<OrganizeExamModel?> AddSession(string examId, SessionRequestDto dto)
+    public async Task<(string status, OrganizeExamModel? exam)> AddSession(string examId, SessionRequestDto dto)
     {
-        var organizeExamDuration = _organizeExamCollection.Find(oe => oe.Id == examId).FirstOrDefault().Duration;
+        var exam = await _organizeExamCollection.Find(e => e.Id == examId).FirstOrDefaultAsync();
+        if (exam == null)
+            return ("exam-not-found", null);
+
+        var organizeExamDuration = exam.Duration;
+
+        var newStart = dto.StartAt;
+        var newFinish = dto.FinishAt ?? dto.StartAt.AddSeconds(organizeExamDuration);
+
+        // Kiểm tra chồng chéo với session đã có
+        var overlapped = exam.Sessions.Any(s =>
+            s.StartAt < newFinish && newStart < s.FinishAt);
+
+        if (overlapped)
+        {
+            return ("session-overlap", null);
+        }
+
         var newSession = new SessionsModel
         {
             SessionName = dto.SessionName,
-            StartAt = dto.StartAt,
-            FinishAt = dto.FinishAt ?? dto.StartAt.AddMinutes(organizeExamDuration),
-            ForceEndAt = dto.StartAt.AddMinutes(3 * organizeExamDuration),
+            StartAt = newStart,
+            FinishAt = newFinish,
+            ForceEndAt = newStart.AddSeconds(3 * organizeExamDuration),
             SessionStatus = dto.SessionStatus
         };
 
         var update = Builders<OrganizeExamModel>.Update.Push(e => e.Sessions, newSession);
-        return await _organizeExamCollection.FindOneAndUpdateAsync(
-            e => e.Id == examId, update, new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
+        var updatedExam = await _organizeExamCollection.FindOneAndUpdateAsync(
+            e => e.Id == examId,
+            update,
+            new FindOneAndUpdateOptions<OrganizeExamModel> { ReturnDocument = ReturnDocument.After });
+
+        return ("success", updatedExam);
     }
 
     // update 1 session
@@ -544,12 +580,14 @@ public class OrganizeExamService
             Builders<OrganizeExamModel>.Filter.ElemMatch(e => e.Sessions, s => s.SessionId == sessionId)
         );
 
-        var finishAt = dto.StartAt.AddMinutes(organizeExamDuration);
+        var finishAt = dto.StartAt.AddSeconds(organizeExamDuration);
+        var forceEndAt = dto.StartAt.AddSeconds(3 * organizeExamDuration);
 
         var update = Builders<OrganizeExamModel>.Update
             .Set("sessions.$.sessionName", dto.SessionName)
             .Set("sessions.$.startAt", dto.StartAt)
             .Set("sessions.$.finishAt", finishAt)
+            .Set("sessions.$.forceEndAt", forceEndAt)
             .Set("sessions.$.sessionStatus", dto.SessionStatus);
 
         var result = await _organizeExamCollection.UpdateOneAsync(filter, update);
@@ -911,42 +949,151 @@ public class OrganizeExamService
     }
 
     //Add room to session
-    public async Task AddRoomsToSession_StrictAsync(string organizeExamId, string sessionId, AddRoomToSessionRequest request)
+    // public async Task AddRoomsToSession_StrictAsync(string organizeExamId, string sessionId, AddRoomToSessionRequest request)
+    // {
+    //     if (string.IsNullOrWhiteSpace(organizeExamId)) throw new ArgumentException("examId is required");
+    //     if (string.IsNullOrWhiteSpace(sessionId)) throw new ArgumentException("sessionId is required");
+    //     if (request is null) throw new ArgumentNullException(nameof(request));
+    //     if (request.RoomIds is null || request.RoomIds.Count == 0)
+    //         throw new ArgumentException("RoomIds must not be empty");
+    //
+    //     if (request.RoomIds.Any(x => x.Quantity < 0))
+    //         throw new ArgumentException("Quantity must be >= 0");
+    //
+    //     var roomIds = request.RoomIds.Select(x => x.RoomId).Distinct().ToList();
+    //
+    //     //Validate room
+    //     if (!await _organizeExamRepository.RoomsExistInMasterAsync(roomIds))
+    //         throw new InvalidOperationException("Some RoomId do not exist in collection 'rooms'.");
+    //
+    //     // Validate supervisors
+    //     var allSupIds = request.RoomIds.SelectMany(x => x.SupervisorIds).Distinct().ToList();
+    //     if (allSupIds.Count > 0 && !await _organizeExamRepository.AreAllSupervisorsAsync(allSupIds))
+    //         throw new InvalidOperationException("Some SupervisorId are not role=supervisor.");
+    //
+    //     // Candidate pool groupUserIds
+    //     var rawUserIds = await _organizeExamRepository.GetUserIdsByGroupIdsAsync(request.GroupUserIds ?? new());
+    //     if (rawUserIds.Count == 0)
+    //         throw new InvalidOperationException("No candidates found in provided groupUserIds.");
+    //
+    //     // Sort candidate Id (FirstName -> LastName)
+    //     var orderedCandidateIds = await _organizeExamRepository.GetOrderedCandidatesAsync(rawUserIds);
+    //
+    //     // Nếu có bất kỳ room nào đã tồn tại trong session -> fail
+    //     var anyExists = await _organizeExamRepository.AnyRoomExistsInSessionAsync(organizeExamId, sessionId, roomIds);
+    //     if (anyExists)
+    //         throw new InvalidOperationException("One or more rooms already exist in this session. Operation aborted.");
+    //
+    //     // Location by quantity
+    //     var q = new Queue<string>(orderedCandidateIds);
+    //     var roomsToAdd = new List<(string RoomId, List<string> SupervisorIds, List<string> CandidateIds, string? RoomStatus)>();
+    //
+    //     foreach (var r in request.RoomIds)
+    //     {
+    //         var cands = new List<string>();
+    //         var take = r.Quantity;
+    //         while (take > 0 && q.Count > 0)
+    //         {
+    //             cands.Add(q.Dequeue());
+    //             take--;
+    //         }
+    //
+    //         roomsToAdd.Add((
+    //             RoomId: r.RoomId,
+    //             SupervisorIds: (r.SupervisorIds ?? new()).Distinct().ToList(),
+    //             CandidateIds: cands,
+    //             RoomStatus: "closed"
+    //         ));
+    //     }
+    //
+    //     // Atomic push: chỉ thành công nếu tất cả room đều chưa tồn tại
+    //     var ok = await _organizeExamRepository.AddRoomsIfAllAbsentAsync(organizeExamId, sessionId, roomsToAdd);
+    //     if (!ok)
+    //         throw new InvalidOperationException("Failed to add rooms (session not found or some rooms existed concurrently).");
+    //
+    //     //Add user.TakeExam and user.TrackExam
+    //     foreach (var r in roomsToAdd)
+    //     {
+    //         // users[*].takeExams (candidate)
+    //         await _organizeExamRepository.AddTakeExamsForCandidatesAsync(
+    //             organizeExamId, sessionId, r.RoomId, r.CandidateIds);
+    //
+    //         // users[*].trackExams (supervisor)
+    //         await _organizeExamRepository.AddTrackExamsForSupervisorsAsync(
+    //             organizeExamId, sessionId, r.RoomId, r.SupervisorIds, "closed");
+    //         
+    //         // === Thêm RoomSchedule cho RoomsModel ===
+    //         await _organizeExamRepository.AddRoomScheduleAsync(
+    //             organizeExamId, sessionId, r.RoomId, r.CandidateIds.Count);
+    //     }
+    // }
+    //
+    public async Task<(string status, string message)> AddRoomsToSession_StrictAsync(
+        string organizeExamId, string sessionId, AddRoomToSessionRequest request)
     {
-        if (string.IsNullOrWhiteSpace(organizeExamId)) throw new ArgumentException("examId is required");
-        if (string.IsNullOrWhiteSpace(sessionId)) throw new ArgumentException("sessionId is required");
-        if (request is null) throw new ArgumentNullException(nameof(request));
+        if (string.IsNullOrWhiteSpace(organizeExamId)) 
+            return ("missing-exam-id", "organizeExamId is required");
+        if (string.IsNullOrWhiteSpace(sessionId)) 
+            return ("missing-session-id", "sessionId is required");
+        if (request is null) 
+            return ("missing-request-body", "Request body is required");
         if (request.RoomIds is null || request.RoomIds.Count == 0)
-            throw new ArgumentException("RoomIds must not be empty");
+            return ("empty-room-ids", "RoomIds must not be empty");
 
         if (request.RoomIds.Any(x => x.Quantity < 0))
-            throw new ArgumentException("Quantity must be >= 0");
+            return ("invalid-room-quantity", "Quantity must be >= 0");
 
         var roomIds = request.RoomIds.Select(x => x.RoomId).Distinct().ToList();
 
-        //Validate room
         if (!await _organizeExamRepository.RoomsExistInMasterAsync(roomIds))
-            throw new InvalidOperationException("Some RoomId do not exist in collection 'rooms'.");
+            return ("room-not-found", "Some RoomId do not exist in collection 'rooms'.");
 
-        // Validate supervisors
-        var allSupIds = request.RoomIds.SelectMany(x => x.SupervisorIds).Distinct().ToList();
+        var allSupIds = request.RoomIds.SelectMany(x => x.SupervisorIds ?? new()).Distinct().ToList();
         if (allSupIds.Count > 0 && !await _organizeExamRepository.AreAllSupervisorsAsync(allSupIds))
-            throw new InvalidOperationException("Some SupervisorId are not role=supervisor.");
+            return ("invalid-supervisor", "Some SupervisorId are not role=supervisor.");
 
-        // Candidate pool groupUserIds
         var rawUserIds = await _organizeExamRepository.GetUserIdsByGroupIdsAsync(request.GroupUserIds ?? new());
         if (rawUserIds.Count == 0)
-            throw new InvalidOperationException("No candidates found in provided groupUserIds.");
+            return ("candidates-not-found", "No candidates found in provided groupUserIds.");
 
-        // Sort candidate Id (FirstName -> LastName)
         var orderedCandidateIds = await _organizeExamRepository.GetOrderedCandidatesAsync(rawUserIds);
 
-        // Nếu có bất kỳ room nào đã tồn tại trong session -> fail
         var anyExists = await _organizeExamRepository.AnyRoomExistsInSessionAsync(organizeExamId, sessionId, roomIds);
         if (anyExists)
-            throw new InvalidOperationException("One or more rooms already exist in this session. Operation aborted.");
+            return ("room-already-in-session", "One or more rooms already exist in this session.");
 
-        // Location by quantity
+        var roomInfos = await _organizeExamRepository.GetRoomsByIdsAsync(roomIds);
+        // var totalCapacity = roomInfos.Sum(r => r.RoomCapacity ?? 0);
+        // var totalRequested = request.RoomIds.Sum(r => r.Quantity);
+        var totalRequested = request.RoomIds.Sum(r => r.Quantity);
+        var totalCapacity = roomInfos.Sum(r => r.RoomCapacity ?? 0);
+        var totalCandidates = orderedCandidateIds.Count;
+
+        if (totalRequested > totalCapacity)
+            return ("capacity-exceeded", "Not enough capacity for all candidates.");
+        
+        if (totalRequested < totalCandidates)
+            return ("insufficient-quantity", $"Total requested quantity ({totalRequested}) is less than total candidates ({totalCandidates}).");
+
+        foreach (var r in request.RoomIds)
+        {
+            var roomInfo = roomInfos.FirstOrDefault(x => x.Id == r.RoomId);
+            if (roomInfo != null && r.Quantity > (roomInfo.RoomCapacity ?? 0))
+                return ("room-capacity-exceeded", $"Room {r.RoomId} capacity exceeded.");
+        }
+
+        var existingCandidateIds = await _organizeExamRepository.GetCandidateIdsInSessionAsync(organizeExamId, sessionId);
+        if (orderedCandidateIds.Intersect(existingCandidateIds).Any())
+            return ("candidate-conflict", "Some candidates already assigned in this session.");
+
+        var existingSupIds = await _organizeExamRepository.GetSupervisorIdsInSessionAsync(organizeExamId, sessionId);
+        if (allSupIds.Intersect(existingSupIds).Any())
+            return ("supervisor-conflict", "Some supervisors already assigned in this session.");
+
+        var hasDuplicateSession = await _organizeExamRepository.HasDuplicateSessionTimeAsync(organizeExamId, sessionId);
+        if (hasDuplicateSession)
+            return ("session-time-duplicate", "Another session already exists at the same time window.");
+
         var q = new Queue<string>(orderedCandidateIds);
         var roomsToAdd = new List<(string RoomId, List<string> SupervisorIds, List<string> CandidateIds, string? RoomStatus)>();
 
@@ -968,27 +1115,25 @@ public class OrganizeExamService
             ));
         }
 
-        // Atomic push: chỉ thành công nếu tất cả room đều chưa tồn tại
         var ok = await _organizeExamRepository.AddRoomsIfAllAbsentAsync(organizeExamId, sessionId, roomsToAdd);
         if (!ok)
-            throw new InvalidOperationException("Failed to add rooms (session not found or some rooms existed concurrently).");
+            return ("repository-failure", "Failed to add rooms (session not found or some rooms existed concurrently).");
 
-        //Add user.TakeExam and user.TrackExam
         foreach (var r in roomsToAdd)
         {
-            // users[*].takeExams (candidate)
-            await _organizeExamRepository.AddTakeExamsForCandidatesAsync(
-                organizeExamId, sessionId, r.RoomId, r.CandidateIds);
-
-            // users[*].trackExams (supervisor)
-            await _organizeExamRepository.AddTrackExamsForSupervisorsAsync(
-                organizeExamId, sessionId, r.RoomId, r.SupervisorIds, "closed");
-            
-            // === Thêm RoomSchedule cho RoomsModel ===
-            await _organizeExamRepository.AddRoomScheduleAsync(
-                organizeExamId, sessionId, r.RoomId, r.CandidateIds.Count);
+            await _organizeExamRepository.AddTakeExamsForCandidatesAsync(organizeExamId, sessionId, r.RoomId, r.CandidateIds);
+            await _organizeExamRepository.AddTrackExamsForSupervisorsAsync(organizeExamId, sessionId, r.RoomId, r.SupervisorIds, "closed");
+            await _organizeExamRepository.AddRoomScheduleAsync(organizeExamId, sessionId, r.RoomId, r.CandidateIds.Count);
         }
+
+        return ("success", "Rooms added successfully.");
     }
+
+
+
+    
+    
+    
     
     public async Task<(string status, string? newStatus)> UpdateStatusAsync(string id, string newStatus)
     {
