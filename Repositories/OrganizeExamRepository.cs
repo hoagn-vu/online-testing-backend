@@ -265,27 +265,166 @@ public class OrganizeExamRepository
         return matrix.MatrixTags.Sum(tag => tag.QuestionCount);
     }
     
-    public async Task AddRoomScheduleAsync(string organizeExamId, string sessionId, string roomId, int totalCandidates)
+    // public async Task AddRoomScheduleAsync(string organizeExamId, string sessionId, string roomId, int totalCandidates)
+    // {
+    //     // Lấy thông tin Session từ OrganizeExam để biết StartAt / FinishAt
+    //     var exam = await _organizeExams.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
+    //     var session = exam?.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+    //     if (session == null) throw new InvalidOperationException("Session not found for adding RoomSchedule");
+    //
+    //     var newSchedule = new RoomScheduleModel
+    //     {
+    //         StartAt = session.StartAt,
+    //         FinishAt = session.FinishAt,
+    //         TotalCandidates = totalCandidates,
+    //         OrganizeExamId = organizeExamId,
+    //         SessionId = sessionId
+    //     };
+    //
+    //     var filter = Builders<RoomsModel>.Filter.Eq(r => r.Id, roomId);
+    //     var update = Builders<RoomsModel>.Update.Push(r => r.RoomSchedule, newSchedule);
+    //
+    //     await _rooms.UpdateOneAsync(filter, update);
+    // }
+
+
+    
+    
+    
+    public async Task<bool> RoomsExistInMasterAsync(List<string> roomIds)
     {
-        // Lấy thông tin Session từ OrganizeExam để biết StartAt / FinishAt
+        var count = await _rooms.CountDocumentsAsync(r => roomIds.Contains(r.Id));
+        return count == roomIds.Count;
+    }
+
+    // public async Task<bool> AreAllSupervisorsAsync(List<string> supervisorIds)
+    // {
+    //     var count = await _users.CountDocumentsAsync(u => supervisorIds.Contains(u.Id) && u.Role == "supervisor");
+    //     return count == supervisorIds.Count;
+    // }
+
+    // public async Task<List<string>> GetUserIdsByGroupIdsAsync(List<string> groupIds)
+    // {
+    //     var users = await _users.Find(u => u.GroupName.Any(g => groupIds.Contains(g))).ToListAsync();
+    //     return users.Select(u => u.Id).ToList();
+    // }
+
+    // public async Task<List<string>> GetOrderedCandidatesAsync(List<string> userIds)
+    // {
+    //     var users = await _users.Find(u => userIds.Contains(u.Id)).ToListAsync();
+    //     return users.OrderBy(u => u.FirstName).ThenBy(u => u.LastName).Select(u => u.Id).ToList();
+    // }
+
+    public async Task<bool> AnyRoomExistsInSessionAsync(string organizeExamId, string sessionId, List<string> roomIds)
+    {
+        var exam = await _organizeExams.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
+        if (exam == null) return false;
+
+        var session = exam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        if (session == null) return false;
+
+        return session.RoomsInSession.Any(r => roomIds.Contains(r.RoomInSessionId));
+    }
+
+    public async Task<List<RoomsModel>> GetRoomsByIdsAsync(List<string> roomIds)
+    {
+        return await _rooms.Find(r => roomIds.Contains(r.Id)).ToListAsync();
+    }
+
+    public async Task<List<string>> GetCandidateIdsInSessionAsync(string organizeExamId, string sessionId)
+    {
         var exam = await _organizeExams.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
         var session = exam?.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
-        if (session == null) throw new InvalidOperationException("Session not found for adding RoomSchedule");
+        return session?.RoomsInSession.SelectMany(r => r.CandidateIds).Distinct().ToList() ?? new List<string>();
+    }
 
-        var newSchedule = new RoomScheduleModel
+    public async Task<List<string>> GetSupervisorIdsInSessionAsync(string organizeExamId, string sessionId)
+    {
+        var exam = await _organizeExams.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
+        var session = exam?.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        return session?.RoomsInSession.SelectMany(r => r.SupervisorIds).Distinct().ToList() ?? new List<string>();
+    }
+
+    public async Task<bool> HasDuplicateSessionTimeAsync(string organizeExamId, string sessionId)
+    {
+        var exam = await _organizeExams.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
+        if (exam == null) return false;
+
+        var session = exam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        if (session == null) return false;
+
+        return exam.Sessions.Any(s => s.SessionId != sessionId && s.StartAt == session.StartAt && s.FinishAt == session.FinishAt);
+    }
+
+    // public async Task<bool> AddRoomsIfAllAbsentAsync(string organizeExamId, string sessionId,
+    //     List<(string RoomId, List<string> SupervisorIds, List<string> CandidateIds, string? RoomStatus)> rooms)
+    // {
+    //     var filter = Builders<OrganizeExamModel>.Filter.And(
+    //         Builders<OrganizeExamModel>.Filter.Eq(x => x.Id, organizeExamId),
+    //         Builders<OrganizeExamModel>.Filter.ElemMatch(x => x.Sessions, s => s.SessionId == sessionId)
+    //     );
+    //
+    //     var update = Builders<OrganizeExamModel>.Update.PushEach(
+    //         "sessions.$.rooms",
+    //         rooms.Select(r => new SessionRoomsModel
+    //         {
+    //             RoomInSessionId = r.RoomId,
+    //             SupervisorIds = r.SupervisorIds,
+    //             CandidateIds = r.CandidateIds,
+    //             RoomStatus = r.RoomStatus ?? "closed"
+    //         })
+    //     );
+    //
+    //     var result = await _organizeExams.UpdateOneAsync(filter, update);
+    //     return result.ModifiedCount > 0;
+    // }
+
+    // public async Task AddTakeExamsForCandidatesAsync(string organizeExamId, string sessionId, string roomId, List<string> candidateIds)
+    // {
+    //     if (candidateIds.Count == 0) return;
+    //
+    //     var update = Builders<UsersModel>.Update.PushEach(u => u.TakeExam, candidateIds.Select(id => new TakeExamsModel
+    //     {
+    //         OrganizeExamId = organizeExamId,
+    //         SessionId = sessionId,
+    //         RoomId = roomId,
+    //         Status = "not_started",
+    //         RoomStatus = "closed"
+    //     }).ToList());
+    //
+    //     await _users.UpdateManyAsync(u => candidateIds.Contains(u.Id), update);
+    // }
+
+    // public async Task AddTrackExamsForSupervisorsAsync(string organizeExamId, string sessionId, string roomId, List<string> supervisorIds, string roomStatus)
+    // {
+    //     if (supervisorIds.Count == 0) return;
+    //
+    //     var update = Builders<UsersModel>.Update.PushEach(u => u.TrackExam, supervisorIds.Select(id => new TrackExamsModel
+    //     {
+    //         OrganizeExamId = organizeExamId,
+    //         SessionId = sessionId,
+    //         RoomId = roomId,
+    //         RoomSessionStatus = roomStatus
+    //     }).ToList());
+    //
+    //     await _users.UpdateManyAsync(u => supervisorIds.Contains(u.Id), update);
+    // }
+
+    public async Task AddRoomScheduleAsync(string organizeExamId, string sessionId, string roomId, int totalCandidates)
+    {
+        var exam = await _organizeExams.Find(x => x.Id == organizeExamId).FirstOrDefaultAsync();
+        var session = exam?.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        if (session == null) return;
+
+        var update = Builders<RoomsModel>.Update.Push(r => r.RoomSchedule, new RoomScheduleModel
         {
             StartAt = session.StartAt,
             FinishAt = session.FinishAt,
-            TotalCandidates = totalCandidates,
             OrganizeExamId = organizeExamId,
-            SessionId = sessionId
-        };
+            SessionId = sessionId,
+            TotalCandidates = totalCandidates
+        });
 
-        var filter = Builders<RoomsModel>.Filter.Eq(r => r.Id, roomId);
-        var update = Builders<RoomsModel>.Update.Push(r => r.RoomSchedule, newSchedule);
-
-        await _rooms.UpdateOneAsync(filter, update);
+        await _rooms.UpdateOneAsync(r => r.Id == roomId, update);
     }
-
-
 }

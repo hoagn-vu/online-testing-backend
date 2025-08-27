@@ -60,7 +60,7 @@ public class OrganizeExamResponseDto
 }
 
 
-public class AddRoomToSessionRequest
+public class  AddRoomToSessionRequest
 {
     public List<string> GroupUserIds { get; set; } = new();
 
