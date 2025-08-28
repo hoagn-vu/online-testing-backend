@@ -145,28 +145,47 @@ namespace Backend_online_testing.Services
 
             var schedules = room.RoomSchedule ?? new List<RoomScheduleModel>();
 
-            if (request.Start.HasValue && request.End.HasValue)
+            if (request is { Start: not null, End: not null })
             {
                 schedules = schedules
                     .Where(s => s.StartAt >= request.Start.Value && s.StartAt <= request.End.Value)
                     .ToList();
             }
 
-            return new RoomWithSchedulesDto
+            var scheduleDtos = new List<RoomScheduleDto>();
+
+            foreach (var s in schedules)
             {
-                RoomId = room.Id,
-                RoomName = room.RoomName,
-                Schedules = schedules.Select(s => new RoomScheduleDto
+                string? organizeExamName = null;
+                string? sessionName = null;
+
+                if (!string.IsNullOrEmpty(s.OrganizeExamId) && !string.IsNullOrEmpty(s.SessionId))
+                {
+                    (organizeExamName, sessionName) = await _roomRepository
+                        .GetOrganizeExamNameAndSessionName(s.OrganizeExamId, s.SessionId);
+                }
+
+                scheduleDtos.Add(new RoomScheduleDto
                 {
                     Id = s.Id,
                     StartAt = s.StartAt,
                     FinishAt = s.FinishAt,
                     TotalCandidates = s.TotalCandidates,
                     OrganizeExamId = s.OrganizeExamId,
-                    SessionId = s.SessionId
-                }).ToList()
+                    OrganizeExamName = organizeExamName ?? string.Empty,
+                    SessionId = s.SessionId,
+                    SessionName = sessionName ?? string.Empty,
+                });
+            }
+
+            return new RoomWithSchedulesDto
+            {
+                RoomId = room.Id,
+                RoomName = room.RoomName,
+                Schedules = scheduleDtos
             };
         }
+
         
         
         
