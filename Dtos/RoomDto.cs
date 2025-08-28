@@ -41,7 +41,9 @@ namespace Backend_online_testing.Dtos
         public DateTime FinishAt { get; set; }
         public int? TotalCandidates { get; set; }
         public string OrganizeExamId { get; set; } = string.Empty;
+        public string OrganizeExamName { get; set; } = string.Empty;
         public string SessionId { get; set; } = string.Empty;
+        public string SessionName { get; set; } = string.Empty;
     }
 
     public class RoomWithSchedulesDto

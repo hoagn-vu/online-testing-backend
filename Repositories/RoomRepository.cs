@@ -7,10 +7,12 @@ namespace Backend_online_testing.Repositories;
 public class RoomRepository
 {
     private readonly IMongoCollection<RoomsModel> _rooms;
+    private readonly IMongoCollection<OrganizeExamModel> _organizeExams;
     
     public RoomRepository(IMongoDatabase database)
     {
         _rooms = database.GetCollection<RoomsModel>("rooms");
+        _organizeExams = database.GetCollection<OrganizeExamModel>("organizeExams");
     }
     
     public async Task<long> CountAsync(FilterDefinition<RoomsModel> filter)
@@ -73,5 +75,12 @@ public class RoomRepository
     {
         var filter = Builders<RoomsModel>.Filter.Eq(r => r.Id, roomId);
         return await _rooms.UpdateOneAsync(filter, update);
+    }
+
+    public async Task<(string?, string?)> GetOrganizeExamNameAndSessionName(string organizeExamId, string sessionId)
+    {
+        var organizeExam = await _organizeExams.Find(e => e.Id == organizeExamId).FirstOrDefaultAsync();
+        var session = organizeExam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+        return session == null ? (null, null) : (organizeExam.OrganizeExamName, session.SessionName);
     }
 }
