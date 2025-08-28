@@ -213,6 +213,8 @@ public class OrganizeExamService
 
         var allSessions = organizeExam.Sessions
             .Where(ss => string.IsNullOrEmpty(keyword) || ss.SessionName.Contains(keyword, StringComparison.CurrentCultureIgnoreCase))
+            .OrderBy(ss => ss.StartAt)
+            .ThenBy(ss => ss.FinishAt)
             .ToList();
 
         var paginatedSessions = allSessions
