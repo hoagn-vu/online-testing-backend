@@ -27,4 +27,15 @@
         public string QuestionBankId { get; set; }
         public string QuestionBankName { get; set; } = string.Empty;
     }
+    
+    public class UpdateQuestionBankRequestDto
+    {
+        public string SubjectId { get; set; } = string.Empty;
+        public string QuestionBankId { get; set; } = string.Empty;
+
+        public string? QuestionBankName { get; set; }
+        public string? QuestionBankStatus { get; set; }
+        public List<string>? AllChapter { get; set; }
+        public List<string>? AllLevel { get; set; }
+    }
 }

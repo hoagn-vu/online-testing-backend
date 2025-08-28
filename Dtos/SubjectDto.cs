@@ -8,10 +8,17 @@ public class SubjectDto
     public long TotalQuestionBanks { get; set; }
 }
 
+public class GetSubjectDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string SubjectName { get; set; } = string.Empty;
+    public string SubjectStatus { get; set; } = string.Empty;
+}
+
 public class SubjectRequestDto
 {
     public string SubjectName { get; set; } = string.Empty;
-    public string? SubjectStatus { get; set; }
+    public string? SubjectStatus { get; set; } = string.Empty;
 }
 
 public class SubjectOptionsDto
