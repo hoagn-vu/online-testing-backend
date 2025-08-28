@@ -209,9 +209,9 @@ public class OrganizeExamController : ControllerBase
     }
 
     [HttpGet("options")]
-    public async Task<IActionResult> GetOptions([FromQuery] string? subjectId)
+    public async Task<IActionResult> GetOptions([FromQuery] string? subjectId, [FromQuery] string? status)
     {
-        var result = await _organizeExamService.GetOrganizeExamOptions(subjectId);
+        var result = await _organizeExamService.GetOrganizeExamOptions(subjectId, status);
         return Ok(result);
     }
     
