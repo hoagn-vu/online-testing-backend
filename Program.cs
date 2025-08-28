@@ -104,9 +104,9 @@ if (app.Configuration.GetValue<bool>("EnableSwagger") || app.Environment.IsDevel
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAll");
-
 app.UseRouting();
+
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 
