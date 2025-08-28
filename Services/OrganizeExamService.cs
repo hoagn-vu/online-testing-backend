@@ -1032,35 +1032,35 @@ public class OrganizeExamService
         string organizeExamId, string sessionId, AddRoomToSessionRequest request)
     {
         if (string.IsNullOrWhiteSpace(organizeExamId)) 
-            return ("missing-exam-id", "organizeExamId is required");
+            return ("missing-exam-id", "Vui lòng bổ sung thông tin kỳ thi");
         if (string.IsNullOrWhiteSpace(sessionId)) 
-            return ("missing-session-id", "sessionId is required");
+            return ("missing-session-id", "Vui lòng bổ sung thông tin ca thi");
         if (request is null) 
-            return ("missing-request-body", "Request body is required");
+            return ("missing-request-body", "Vui lòng bổ sung thông tin tìm kiếm");
         if (request.RoomIds is null || request.RoomIds.Count == 0)
-            return ("empty-room-ids", "RoomIds must not be empty");
+            return ("empty-room-ids", "Danh sách phòng không được để trống");
 
-        if (request.RoomIds.Any(x => x.Quantity < 0))
-            return ("invalid-room-quantity", "Quantity must be >= 0");
+        if (request.RoomIds.Any(x => x.Quantity <= 0))
+            return ("invalid-room-quantity", "Vui lòng nhập số lượng thí sinh trong phòng thi hợp lệ");
 
         var roomIds = request.RoomIds.Select(x => x.RoomId).Distinct().ToList();
 
         if (!await _organizeExamRepository.RoomsExistInMasterAsync(roomIds))
-            return ("room-not-found", "Some RoomId do not exist in collection 'rooms'.");
+            return ("room-not-found", "Một số phòng thi không tồn tại");
 
         var allSupIds = request.RoomIds.SelectMany(x => x.SupervisorIds ?? new()).Distinct().ToList();
         if (allSupIds.Count > 0 && !await _organizeExamRepository.AreAllSupervisorsAsync(allSupIds))
-            return ("invalid-supervisor", "Some SupervisorId are not role=supervisor.");
+            return ("invalid-supervisor", "Vui lòng chọn giám thị hợp lệ");
 
         var rawUserIds = await _organizeExamRepository.GetUserIdsByGroupIdsAsync(request.GroupUserIds ?? new());
         if (rawUserIds.Count == 0)
-            return ("candidates-not-found", "No candidates found in provided groupUserIds.");
+            return ("candidates-not-found", "Không tìm thấy thí sinh trong các nhóm");
 
         var orderedCandidateIds = await _organizeExamRepository.GetOrderedCandidatesAsync(rawUserIds);
 
         var anyExists = await _organizeExamRepository.AnyRoomExistsInSessionAsync(organizeExamId, sessionId, roomIds);
         if (anyExists)
-            return ("room-already-in-session", "One or more rooms already exist in this session.");
+            return ("room-already-in-session", "Vui lòng không thêm phòng đã sử dụng trong ca thi.");
 
         var roomInfos = await _organizeExamRepository.GetRoomsByIdsAsync(roomIds);
         // var totalCapacity = roomInfos.Sum(r => r.RoomCapacity ?? 0);
@@ -1070,29 +1070,29 @@ public class OrganizeExamService
         var totalCandidates = orderedCandidateIds.Count;
 
         if (totalRequested > totalCapacity)
-            return ("capacity-exceeded", "Not enough capacity for all candidates.");
+            return ("capacity-exceeded", $"Số chỗ ngồi các phòng thi ({totalCapacity}) không đáp ứng tổng số lượng thí sinh ({totalRequested})");
         
         if (totalRequested < totalCandidates)
-            return ("insufficient-quantity", $"Total requested quantity ({totalRequested}) is less than total candidates ({totalCandidates}).");
+            return ("insufficient-quantity", $"Tổng số lượng thí sinh mỗi phòng ({totalRequested}) không đáp ứng tổng số lượng thí sinh ({totalCandidates})");
 
         foreach (var r in request.RoomIds)
         {
             var roomInfo = roomInfos.FirstOrDefault(x => x.Id == r.RoomId);
             if (roomInfo != null && r.Quantity > (roomInfo.RoomCapacity ?? 0))
-                return ("room-capacity-exceeded", $"Room {r.RoomId} capacity exceeded.");
+                return ("room-capacity-exceeded", $"Phòng thi {roomInfo.RoomName} vượt quá số lượng chỗ ngồi");
         }
 
         var existingCandidateIds = await _organizeExamRepository.GetCandidateIdsInSessionAsync(organizeExamId, sessionId);
         if (orderedCandidateIds.Intersect(existingCandidateIds).Any())
-            return ("candidate-conflict", "Some candidates already assigned in this session.");
+            return ("candidate-conflict", "Một số thí sinh đã trong ca thi");
 
         var existingSupIds = await _organizeExamRepository.GetSupervisorIdsInSessionAsync(organizeExamId, sessionId);
         if (allSupIds.Intersect(existingSupIds).Any())
-            return ("supervisor-conflict", "Some supervisors already assigned in this session.");
+            return ("supervisor-conflict", "Một số giám thị đã được phân công trong ca thi");
 
         var hasDuplicateSession = await _organizeExamRepository.HasDuplicateSessionTimeAsync(organizeExamId, sessionId);
         if (hasDuplicateSession)
-            return ("session-time-duplicate", "Another session already exists at the same time window.");
+            return ("session-time-duplicate", "Một ca thi khác đã được thêm với cùng khoảng thời gian");
 
         var q = new Queue<string>(orderedCandidateIds);
         var roomsToAdd = new List<(string RoomId, List<string> SupervisorIds, List<string> CandidateIds, string? RoomStatus)>();
@@ -1117,7 +1117,7 @@ public class OrganizeExamService
 
         var ok = await _organizeExamRepository.AddRoomsIfAllAbsentAsync(organizeExamId, sessionId, roomsToAdd);
         if (!ok)
-            return ("repository-failure", "Failed to add rooms (session not found or some rooms existed concurrently).");
+            return ("repository-failure", "Thêm phòng thi thất bại");
 
         foreach (var r in roomsToAdd)
         {
@@ -1126,7 +1126,7 @@ public class OrganizeExamService
             await _organizeExamRepository.AddRoomScheduleAsync(organizeExamId, sessionId, r.RoomId, r.CandidateIds.Count);
         }
 
-        return ("success", "Rooms added successfully.");
+        return ("success", "Chia phòng thi thành công");
     }
 
 
