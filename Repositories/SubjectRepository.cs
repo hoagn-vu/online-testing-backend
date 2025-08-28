@@ -218,13 +218,50 @@ public class SubjectRepository
         await _subjects.InsertOneAsync(subject);
     }
 
-    //Update subject name
-    public async Task<UpdateResult> UpdateSubjectAsync(string? subjectId, string subjectName)
+    public async Task<SubjectsModel?> GetById(string id)
     {
-        var filter = SubjectFilterById(subjectId);
-        var update = Builders<SubjectsModel>.Update.Set(s => s.SubjectName, subjectName);
+        var filter = SubjectFilterById(id);
+        // var projection = Builders<SubjectsModel>.Projection
+        //     .Expression(sub => new GetSubjectDto
+        //     {
+        //         Id = sub.Id,
+        //         SubjectName = sub.SubjectName,
+        //         SubjectStatus = sub.SubjectStatus,
+        //     });
 
-        return await _subjects.UpdateOneAsync(filter, update);
+        return await _subjects.Find(filter).FirstOrDefaultAsync();
+    }
+
+    //Update subject name
+    public async Task<SubjectsModel?> UpdateSubjectAsync(string subjectId, SubjectRequestDto request)
+    {
+        var updateDef = new List<UpdateDefinition<SubjectsModel>>();
+        var builder = Builders<SubjectsModel>.Update;
+
+        if (!string.IsNullOrEmpty(request.SubjectName))
+        {
+            updateDef.Add(builder.Set(x => x.SubjectName, request.SubjectName));
+        }
+
+        if (!string.IsNullOrEmpty(request.SubjectStatus))
+        {
+            updateDef.Add(builder.Set(x => x.SubjectStatus, request.SubjectStatus));
+        }
+
+        if (!updateDef.Any())
+        {
+            return await GetById(subjectId);
+        }
+
+        var update = Builders<SubjectsModel>.Update.Combine(updateDef);
+
+        return await _subjects.FindOneAndUpdateAsync(
+            x => x.Id == subjectId,
+            update,
+            new FindOneAndUpdateOptions<SubjectsModel>
+            {
+                ReturnDocument = ReturnDocument.After
+            });
     }
 
     //Add question bank
@@ -304,4 +341,59 @@ public class SubjectRepository
 
         return await _subjects.UpdateOneAsync(filter, update);
     }
+    
+    
+    
+    
+    public async Task<QuestionBanksModel?> UpdateQuestionBankAsync(UpdateQuestionBankRequestDto request)
+    {
+        var filter = Builders<SubjectsModel>.Filter.And(
+            Builders<SubjectsModel>.Filter.Eq(s => s.Id, request.SubjectId),
+            Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankId == request.QuestionBankId)
+        );
+
+        var updateDef = new List<UpdateDefinition<SubjectsModel>>();
+        var qbFilter = "QuestionBanks.$."; // để update phần tử trong mảng
+
+        if (!string.IsNullOrEmpty(request.QuestionBankName))
+        {
+            updateDef.Add(Builders<SubjectsModel>.Update.Set(qbFilter + "QuestionBankName", request.QuestionBankName));
+        }
+
+        if (!string.IsNullOrEmpty(request.QuestionBankStatus))
+        {
+            updateDef.Add(Builders<SubjectsModel>.Update.Set(qbFilter + "QuestionBankStatus", request.QuestionBankStatus));
+        }
+
+        if (request.AllChapter != null && request.AllChapter.Any())
+        {
+            updateDef.Add(Builders<SubjectsModel>.Update.Set(qbFilter + "AllChapter", request.AllChapter));
+        }
+
+        if (request.AllLevel != null && request.AllLevel.Any())
+        {
+            updateDef.Add(Builders<SubjectsModel>.Update.Set(qbFilter + "AllLevel", request.AllLevel));
+        }
+
+        if (!updateDef.Any())
+        {
+            // Không có trường nào để update
+            var subject = await _subjects.Find(filter).FirstOrDefaultAsync();
+            return subject?.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == request.QuestionBankId);
+        }
+
+        var update = Builders<SubjectsModel>.Update.Combine(updateDef);
+
+        var options = new FindOneAndUpdateOptions<SubjectsModel>
+        {
+            ReturnDocument = ReturnDocument.After
+        };
+
+        var updatedSubject = await _subjects.FindOneAndUpdateAsync(filter, update, options);
+
+        return updatedSubject?.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == request.QuestionBankId);
+    }
+
+    
+    
 }

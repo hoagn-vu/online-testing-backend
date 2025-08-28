@@ -89,10 +89,9 @@ public class SubjectsService
         }
 
         var filteredQuestions = string.IsNullOrEmpty(keyWord)
-            ? questionBank.QuestionList
+            ? questionBank.QuestionList.OrderByDescending(q => q.QuestionId).ToList()
             : questionBank.QuestionList.Where(q => q.QuestionText.Contains(keyWord, StringComparison.OrdinalIgnoreCase))
-                               .ToList();
-
+                .ToList();
 
         var totalCount = filteredQuestions?.Count ?? 0;
 
@@ -142,17 +141,22 @@ public class SubjectsService
     }
 
     // Update subject
-    public async Task<string> UpdateSubject(string subjectId, string subjectName)
+    public async Task<(string?, string?, string?)> UpdateSubject(string subjectId, SubjectRequestDto? request)
     {
-        try
+        // var subject = await _subjectRepository.GetById(subjectId);
+        // if (subject == null)
+        // {
+        //     return ("error", "Subject not found", null);
+        // }
+
+        var updated = await _subjectRepository.UpdateSubjectAsync(subjectId, request);
+
+        if (updated == null)
         {
-            await _subjectRepository.UpdateSubjectAsync(subjectId, subjectName);
-            return "Update subject successfully";
+            return ("error", "Update failed", null);
         }
-        catch (Exception ex)
-        {
-            return $"Error: {ex.Message}";
-        }
+
+        return ("success", "Subject updated successfully", updated.SubjectName);
     }
 
     // Add question bank
@@ -305,6 +309,18 @@ public class SubjectsService
         {
             return $"Error: {ex.Message}";
         }
+    }
+    
+    public async Task<(string? status, string? message, QuestionBanksModel? questionBank)> UpdateQuestionBankAsync(UpdateQuestionBankRequestDto request)
+    {
+        var updated = await _subjectRepository.UpdateQuestionBankAsync(request);
+
+        if (updated == null)
+        {
+            return ("error", "Subject or QuestionBank not found", null);
+        }
+
+        return ("success", "QuestionBank updated successfully", updated);
     }
 
     // Update Question List

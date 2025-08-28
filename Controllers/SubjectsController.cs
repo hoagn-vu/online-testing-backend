@@ -58,26 +58,19 @@ public class SubjectsController : ControllerBase
             return BadRequest(new { error = result });
         }
     }
-
+    
     // Update Subject
-    [HttpPut("update/{subjectId}")]
+    [HttpPut("{subjectId}")]
     public async Task<ActionResult> UpdateSubject(string subjectId, [FromBody] SubjectRequestDto? subjectDto)
     {
-        if (subjectDto == null || string.IsNullOrEmpty(subjectDto.SubjectName))
+        if (string.IsNullOrEmpty(subjectId))
         {
-            return BadRequest(new { error = "Subject is required" });
+            return BadRequest(new { status = "error", message = "Id is required", subjectName = (string?)null });
         }
 
-        var result = await _subjectsService.UpdateSubject(subjectId, subjectDto.SubjectName);
+        var (status, message, result) = await _subjectsService.UpdateSubject(subjectId, subjectDto);
 
-        if (result == "Update subject successfully")
-        {
-            return Ok(new { message = result });
-        }
-        else
-        {
-            return BadRequest(new { error = result });
-        }
+        return Ok(new { status, message, subjectName = result });
     }
 
     // Search by question bank name
@@ -114,20 +107,41 @@ public class SubjectsController : ControllerBase
         }
     }
 
-    [HttpPut]
-    public async Task<ActionResult> UpdateQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
+    [HttpPut("question-bank")]
+    // public async Task<ActionResult> UpdateQuestionBankName([FromBody] QuestionBankRequestDto? questionBankDto)
+    // {
+    //     if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
+    //     var result = await _subjectsService.UpdateQuestionBankName(questionBankDto.SubjectId, questionBankDto.QuestionBankId ?? string.Empty, questionBankDto.QuestionBankName);
+    //
+    //     if (result == "Update question bank name successfully")
+    //     {
+    //         return Ok(new { message = result });
+    //     }
+    //     else
+    //     {
+    //         return this.BadRequest(new { error = result });
+    //     }
+    // }
+    public async Task<IActionResult> UpdateQuestionBank([FromBody] UpdateQuestionBankRequestDto request)
     {
-        if (questionBankDto == null) return BadRequest(new { error = "Question bank is required" });
-        var result = await _subjectsService.UpdateQuestionBankName(questionBankDto.SubjectId, questionBankDto.QuestionBankId ?? string.Empty, questionBankDto.QuestionBankName);
+        if (string.IsNullOrEmpty(request.SubjectId) || string.IsNullOrEmpty(request.QuestionBankId))
+        {
+            return BadRequest(new { status = "error", message = "SubjectId and QuestionBankId are required" });
+        }
 
-        if (result == "Update question bank name successfully")
+        var result = await _subjectsService.UpdateQuestionBankAsync(request);
+
+        if (result.questionBank == null)
         {
-            return Ok(new { message = result });
+            return NotFound(new { status = result.status, message = result.message });
         }
-        else
+
+        return Ok(new
         {
-            return this.BadRequest(new { error = result });
-        }
+            status = result.status,
+            message = result.message,
+            questionBank = result.questionBank
+        });
     }
 
     // Search by question name

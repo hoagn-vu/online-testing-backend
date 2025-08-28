@@ -259,7 +259,10 @@ public class OrganizeExamService
         if (session == null)
             return (organizeExamId, organizeExam.OrganizeExamName, sessionId, null, new List<RoomsInSessionDto>(), 0);
 
-        var allRooms = session.RoomsInSession.ToList();
+        var allRooms = session.RoomsInSession
+            .AsEnumerable()
+            .Reverse()
+            .ToList();
 
         // Lọc theo keyword nếu có
         if (!string.IsNullOrEmpty(keyword))
