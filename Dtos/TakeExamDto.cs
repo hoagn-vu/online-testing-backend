@@ -88,6 +88,8 @@ public class CandidateDetailsDto
     public string SessionName { get; set; } = string.Empty;
     public string RoomId { get; set; } = string.Empty;
     public string RoomName { get; set; } = string.Empty;
+    public string RoomStatus { get; set; } = string.Empty;
+    public string SessionPassword { get; set; } = string.Empty;
     public List<CandidateInfoDto> Candidates { get; set; } = new List<CandidateInfoDto>();
 }
 
@@ -156,12 +158,10 @@ public class UserAllTrackExamResponseDto
 public class TrackExamsInfo
 {
     public string TrackExamId { get; set; } = string.Empty;
-
     public string OrganizeExamId { get; set; } = string.Empty;
-
-    public string SessionId { get; set; } = string.Empty;
-
-    public string RoomId { get; set; } = string.Empty;
-
     public string OrganizeExamName { get; set; } = string.Empty;
+    public string SessionId { get; set; } = string.Empty;
+    public string SessionName { get; set; } = string.Empty;
+    public string RoomId { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
 }
