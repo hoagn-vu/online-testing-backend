@@ -81,4 +81,13 @@ public class GroupUserController : ControllerBase
         if (!result) return NotFound("Group not found");
         return Ok("Deleted successfully");
     }
+    
+    [HttpPost("get-users-from-groups")]
+    public async Task<IActionResult> GetUsersFromGroups([FromBody] GetUsersFromGroupsRequestDto request)
+    {
+        var result = await _groupUserService.GetUsersFromGroupsAsync(request.GroupUserIds);
+        return Ok(result);
+    }
+    
+    
 }

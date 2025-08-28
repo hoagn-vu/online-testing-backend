@@ -11,7 +11,7 @@ public class GroupUserModel
 
     public required string GroupName { get; set; }
 
-    public List<string> ListUser { get; set; } = new List<string>();
+    public List<string> ListUser { get; set; } = [];
 
     public string GroupStatus { get; set; } = "active";
 }
