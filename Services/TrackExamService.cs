@@ -31,19 +31,24 @@ public class TrackExamService
         var trackExamInfos = new List<TrackExamsInfo>();
         var activeTrackExams = user.TrackExam
             .Where(te => te.RoomSessionStatus == "active")
+            .OrderByDescending(te => te.Id)
             .ToList();
 
         foreach (var trackExam in activeTrackExams)
         {
             var organizeExam = await _trackExamRepository.GetOrganizeExamById(trackExam.OrganizeExamId);
+            var sessionName = organizeExam.Sessions.FirstOrDefault(s => s.SessionId == trackExam.SessionId)?.SessionName;
+            var roomName = await _trackExamRepository.GetRoomNameByIdAsync(trackExam.RoomId);
 
             trackExamInfos.Add(new TrackExamsInfo
             {
                 TrackExamId = trackExam.Id,
                 OrganizeExamId = trackExam.OrganizeExamId,
+                OrganizeExamName = organizeExam?.OrganizeExamName ?? string.Empty,
                 SessionId = trackExam.SessionId,
+                SessionName = sessionName ?? string.Empty,
                 RoomId = trackExam.RoomId,
-                OrganizeExamName = organizeExam ?.OrganizeExamName ?? string.Empty
+                RoomName = roomName ?? string.Empty,
             });
         }
 
@@ -82,9 +87,12 @@ public class TrackExamService
             return new CandidateDetailsDto { OrganizeExamId = organizeExamId, SessionId = sessionId, RoomId = roomId };
         }
 
+        var sessionPassword = session.SessionPassword ?? string.Empty;
+        
         var room = session.RoomsInSession.FirstOrDefault(r => r.RoomInSessionId == roomId);
         
         var roomName = await _trackExamRepository.GetRoomNameByIdAsync(room.RoomInSessionId) ?? "";
+        var roomStatus = room.RoomStatus;
         
         var candidateIds = room?.CandidateIds ?? new List<string>();
         if (!candidateIds.Any())
@@ -134,9 +142,12 @@ public class TrackExamService
             SessionName = session.SessionName,
             RoomId = roomId,
             RoomName = roomName,
+            RoomStatus = roomStatus,
+            SessionPassword = sessionPassword,
             Candidates = userDetails
         };
     }
+    
     //Report 
     public async Task<ReportDto> Report(string organizeExamId, string sessionId, string roomId)
     {

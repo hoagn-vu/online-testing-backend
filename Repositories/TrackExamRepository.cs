@@ -76,4 +76,10 @@ public class TrackExamRepository
     {
         return await _users.Find(u => u.Id == userId).FirstOrDefaultAsync();
     }
+    
+    public async Task<string?> GetRoomNameByRoomId(string roomId)
+    {
+        var room = await _rooms.Find(r => r.Id == roomId).FirstOrDefaultAsync();
+        return room?.RoomName ?? null;
+    }
 }
