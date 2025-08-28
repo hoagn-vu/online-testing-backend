@@ -34,6 +34,13 @@ namespace Backend_online_testing.Controllers
         {
             var rooms = await _roomsService.GetRoomOptionsAsync();
             return Ok(rooms);
+        }       
+        
+        [HttpGet("options")]
+        public async Task<IActionResult> GetAvailableRoomOptions([FromQuery] string? organizeExamId, [FromQuery] string? sessionId)
+        {
+            var rooms = await _roomsService.GetAvailableRoomOptionsAsync(organizeExamId, sessionId);
+            return Ok(rooms);
         }
 
         [HttpPost]

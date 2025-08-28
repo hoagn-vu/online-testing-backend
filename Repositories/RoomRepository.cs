@@ -83,4 +83,16 @@ public class RoomRepository
         var session = organizeExam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
         return session == null ? (null, null) : (organizeExam.OrganizeExamName, session.SessionName);
     }
+    
+    public async Task<List<RoomsModel>> GetAllRoomsAsync()
+    {
+        return await _rooms.Find(_ => true).ToListAsync();
+    }
+
+    public async Task<OrganizeExamModel?> GetOrganizeExamByIdAsync(string organizeExamId)
+    {
+        return await _organizeExams
+            .Find(x => x.Id == organizeExamId)
+            .FirstOrDefaultAsync();
+    }
 }

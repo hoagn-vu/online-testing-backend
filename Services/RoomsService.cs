@@ -49,6 +49,50 @@ namespace Backend_online_testing.Services
         {
             return await _roomRepository.GetRoomOptionsAsync();
         }
+        
+        public async Task<List<RoomOptionsDto>> GetAvailableRoomOptionsAsync(string? organizeExamId, string? sessionId)
+        {
+            // Lấy toàn bộ phòng "available"
+            var allRooms = (await _roomRepository.GetAllRoomsAsync())
+                .Where(r => r.RoomStatus == "available")
+                .ToList();
+
+            // Nếu thiếu organizeExamId hoặc sessionId thì trả toàn bộ
+            if (string.IsNullOrEmpty(organizeExamId) || string.IsNullOrEmpty(sessionId))
+            {
+                return allRooms.Select(r => new RoomOptionsDto
+                {
+                    RoomId = r.Id,
+                    RoomName = r.RoomName ?? string.Empty,
+                    RoomLocation = r.RoomLocation ?? string.Empty,
+                    RoomCapacity = r.RoomCapacity
+                }).ToList();
+            }
+
+            // Có đủ thì xử lý lọc
+            var organizeExam = await _roomRepository.GetOrganizeExamByIdAsync(organizeExamId);
+            if (organizeExam == null)
+                return new List<RoomOptionsDto>();
+
+            var session = organizeExam.Sessions.FirstOrDefault(s => s.SessionId == sessionId);
+            if (session == null)
+                return new List<RoomOptionsDto>();
+
+            var usedRoomIds = session.RoomsInSession.Select(r => r.RoomInSessionId).ToHashSet();
+
+            var availableRooms = allRooms
+                .Where(r => !usedRoomIds.Contains(r.Id))
+                .Select(r => new RoomOptionsDto
+                {
+                    RoomId = r.Id,
+                    RoomName = r.RoomName ?? string.Empty,
+                    RoomLocation = r.RoomLocation ?? string.Empty,
+                    RoomCapacity = r.RoomCapacity
+                })
+                .ToList();
+
+            return availableRooms;
+        }
 
         public async Task<string> CreateRoomAsync(RoomDto dto)
         {
