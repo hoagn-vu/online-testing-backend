@@ -50,5 +50,6 @@
         public string Id { get; set; } = string.Empty;
         public string? ExamCode { get; set; } = string.Empty;
         public string ExamName { get; set; } = string.Empty;
+        public int TotalQuestions { get; set; }
     }
 }

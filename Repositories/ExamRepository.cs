@@ -168,6 +168,7 @@ public class ExamRepository
         }
 
         var filter = Builders<ExamsModel>.Filter.And(filters);
+        var sort = Builders<ExamsModel>.Sort.Descending(r => r.Id);
 
         var projection = Builders<ExamsModel>.Projection
             .Expression(e => new ExamOptionsDTO
@@ -175,8 +176,9 @@ public class ExamRepository
                 Id = e.Id,
                 ExamCode = e.ExamCode,
                 ExamName = e.ExamName,
+                TotalQuestions = e.QuestionSet.Count,
             });
 
-        return await _exams.Find(filter).Project(projection).ToListAsync();
+        return await _exams.Find(filter).Sort(sort).Project(projection).ToListAsync();
     }
 }
