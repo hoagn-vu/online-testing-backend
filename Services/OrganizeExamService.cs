@@ -163,7 +163,7 @@ public class OrganizeExamService
         return (organizeExamResponseList, totalCount);
     }
     
-    public async Task<List<OrganizeExamOptionsDto>> GetOrganizeExamOptions(string? subjectId)
+    public async Task<List<OrganizeExamOptionsDto>> GetOrganizeExamOptions(string? subjectId, string? status)
     {
         var filter = Builders<OrganizeExamModel>.Filter.Ne(ex => ex.OrganizeExamStatus, "deleted");
 
@@ -172,6 +172,13 @@ public class OrganizeExamService
             filter = Builders<OrganizeExamModel>.Filter.And(
                 filter,
                 Builders<OrganizeExamModel>.Filter.Eq(ex => ex.SubjectId, subjectId));
+        }
+
+        if (!string.IsNullOrEmpty(status))
+        {
+            filter = Builders<OrganizeExamModel>.Filter.And(
+                filter,
+                Builders<OrganizeExamModel>.Filter.Eq(ex => ex.OrganizeExamStatus, status));
         }
         
         var organizeExams = await _organizeExamCollection
