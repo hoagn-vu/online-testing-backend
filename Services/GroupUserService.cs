@@ -111,4 +111,42 @@ public class GroupUserService
     {
         return await _groupUserRepository.RemoveUserCodeFromGroupAsync(groupId, userCode);
     }
+    
+    public async Task<List<UsersFromGroupsDto>> GetUsersFromGroupsAsync(List<string> groupUserIds)
+    {
+        if (groupUserIds == null || !groupUserIds.Any())
+            return new List<UsersFromGroupsDto>();
+
+        // Lấy group
+        var groups = await _groupUserRepository.GetGroupsByIdsAsync(groupUserIds);
+
+        // Lấy toàn bộ userId từ các group
+        var userIds = groups.SelectMany(g => g.ListUser).Distinct().ToList();
+
+        if (!userIds.Any())
+            return new List<UsersFromGroupsDto>();
+
+        // Lấy users
+        var users = await _groupUserRepository.GetUsersByIdsAsync(userIds);
+
+        // Map sang DTO + Sort theo FirstName, LastName
+        return users
+            .Select(u => new UsersFromGroupsDto
+            {
+                Id = u.Id,
+                UserName = u.UserName,
+                UserCode = u.UserCode,
+                FullName = u.FullName,
+                FirstName = u.FirstName ?? string.Empty,
+                LastName = u.LastName ?? string.Empty,
+                Gender = u.Gender ?? string.Empty,
+                DateOfBirth = u.DateOfBirth ?? string.Empty,
+            })
+            .OrderBy(u => u.FirstName)
+            .ThenBy(u => u.LastName)
+            .ToList();
+    }
+
+    
+    
 }

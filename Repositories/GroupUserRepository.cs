@@ -188,4 +188,16 @@ public class GroupUserRepository
             .Limit(pageSize)
             .ToListAsync();
     }
+    
+    public async Task<List<GroupUserModel>> GetGroupsByIdsAsync(List<string> groupIds)
+    {
+        return await _groupUser.Find(g => groupIds.Contains(g.Id)).ToListAsync();
+    }
+    
+    public async Task<List<UsersModel>> GetUsersByIdsAsync(List<string> userIds)
+    {
+        return await _user.Find(u => userIds.Contains(u.Id)).ToListAsync();
+    }
+    
+    
 }

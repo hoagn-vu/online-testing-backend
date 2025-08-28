@@ -527,7 +527,6 @@ public class OrganizeExamService
                 e => e.Id == organizeExamId,
                 updateDefinition
             );
-
             return "Cập nhật kỳ thi thành công";
         }
         catch (Exception ex)
