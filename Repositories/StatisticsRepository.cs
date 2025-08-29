@@ -343,15 +343,25 @@ public class StatisticsRepository
 
     public async Task UpsertOrganizeExamStatisticAsync(OrganizeExamStatisticModel doc)
     {
-        if (string.IsNullOrWhiteSpace(doc.Id))
-            doc.Id = ObjectId.GenerateNewId().ToString();
-
         var filter = Builders<OrganizeExamStatisticModel>.Filter
-                        .Eq(x => x.OrganizeExamId, doc.OrganizeExamId);
+            .Eq(x => x.OrganizeExamId, doc.OrganizeExamId);
 
-        var options = new ReplaceOptions { IsUpsert = true };
+        var existingId = await _organizeExamStats.Find(filter)
+            .Project(x => x.Id)
+            .FirstOrDefaultAsync();
 
-        await _organizeExamStats.ReplaceOneAsync(filter, doc, options);
+        if (string.IsNullOrWhiteSpace(existingId))
+        {
+            if (string.IsNullOrWhiteSpace(doc.Id))
+                doc.Id = ObjectId.GenerateNewId().ToString();
+        }
+        else
+        {
+            doc.Id = existingId;
+        }
+
+        await _organizeExamStats.ReplaceOneAsync(
+            filter, doc, new ReplaceOptions { IsUpsert = true });
     }
 
     public async Task<OrganizeExamStatisticModel?> GetOrganizeExamStatisticAsync(string organizeExamId)
@@ -363,11 +373,22 @@ public class StatisticsRepository
 
     public async Task UpsertParticipationViolationAsync(ParticipationViolationModel doc)
     {
-        if (string.IsNullOrWhiteSpace(doc.Id))
-            doc.Id = ObjectId.GenerateNewId().ToString();
-
         var filter = Builders<ParticipationViolationModel>.Filter
-            .Eq(x => x.OrganizeExamId, doc.OrganizeExamId);
+        .Eq(x => x.OrganizeExamId, doc.OrganizeExamId);
+
+        var existingId = await _participationViolations.Find(filter)
+            .Project(x => x.Id)
+            .FirstOrDefaultAsync();
+
+        if (string.IsNullOrWhiteSpace(existingId))
+        {
+            if (string.IsNullOrWhiteSpace(doc.Id))
+                doc.Id = ObjectId.GenerateNewId().ToString();
+        }
+        else
+        {
+            doc.Id = existingId;
+        }
 
         await _participationViolations.ReplaceOneAsync(
             filter, doc, new ReplaceOptions { IsUpsert = true });
