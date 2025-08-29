@@ -21,7 +21,7 @@ namespace Backend_online_testing.Dtos
         public string ExamName { get; set; } = string.Empty;
         public int Duration { get; set; }
         public int TotalQuestions { get; set; }
-        public int MaxScore { get; set; }
+        public double MaxScore { get; set; }
         public List<GenerateExamQuestionResponseDto> Questions { get; set; } = [];
     }
     

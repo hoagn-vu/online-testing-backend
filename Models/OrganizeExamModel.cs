@@ -19,7 +19,7 @@ public class OrganizeExamModel
     public int? TotalQuestions { get; set; }
 
     [BsonElement("maxScore")] 
-    public int? MaxScore { get; set; } = 10;
+    public double? MaxScore { get; set; } = 10;
     
     [BsonElement("subjectId")]
     public string SubjectId { get; set; } = string.Empty;

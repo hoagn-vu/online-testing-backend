@@ -427,4 +427,30 @@ public class OrganizeExamRepository
 
         await _rooms.UpdateOneAsync(r => r.Id == roomId, update);
     }
+    
+    public async Task<double> GetTotalQuestionScoreByExamId(string examId)
+    {
+        var exam = await _exams
+            .Find(e => e.Id == examId)
+            .FirstOrDefaultAsync();
+
+        if (exam?.QuestionSet == null)
+            return 0;
+
+        return exam.QuestionSet.Sum(q => q.QuestionScore ?? 0);
+    }
+    
+    public async Task<double> GetTotalMatrixScoreById(string matrixId)
+    {
+        var matrix = await _examMatrices
+            .Find(m => m.Id == matrixId)
+            .FirstOrDefaultAsync();
+
+        if (matrix?.MatrixTags == null)
+            return 0;
+
+        return matrix.MatrixTags.Sum(t => t.Score);
+    }
+    
+    
 }
