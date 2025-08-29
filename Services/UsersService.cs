@@ -32,12 +32,10 @@ public interface IUsersService
 public class UsersService : IUsersService
 {
     private readonly IUserRepository _userRepository;
-    private readonly LogService _logService;
 
-    public UsersService(IUserRepository userRepository, LogService logService)
+    public UsersService(IUserRepository userRepository)
     {
         _userRepository = userRepository;
-        _logService = logService;
     }
 
     //Get all User

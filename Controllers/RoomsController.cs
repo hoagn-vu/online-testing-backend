@@ -1,4 +1,5 @@
-﻿using Backend_online_testing.Dtos;
+﻿using System.Security.Claims;
+using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
 using Backend_online_testing.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -13,10 +14,12 @@ namespace Backend_online_testing.Controllers
     public class RoomsController : ControllerBase
     {
         private readonly RoomsService _roomsService;
+        private readonly ILogsService _logService;
 
-        public RoomsController(RoomsService roomsService)
+        public RoomsController(RoomsService roomsService, ILogsService logService)
         {
             _roomsService = roomsService;
+            _logService = logService;
         }
 
         // Get all room
@@ -26,6 +29,14 @@ namespace Backend_online_testing.Controllers
         public async Task<ActionResult<RoomsModel>> GetAllRoom([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var (rooms, total) = await _roomsService.GetRooms(keyword, page, pageSize);
+            
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "get",
+                LogDetails = $"Truy cập danh sách phòng thi"
+            });
+            
             return this.Ok(new { rooms, total });
         }    
         

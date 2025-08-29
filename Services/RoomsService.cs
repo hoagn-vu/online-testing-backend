@@ -13,12 +13,10 @@ namespace Backend_online_testing.Services
     {
         private readonly IMongoCollection<RoomsModel> _rooms;
         private readonly RoomRepository _roomRepository;
-        private readonly LogService _logService;
         
-        public RoomsService(RoomRepository repository, LogService logService)
+        public RoomsService(RoomRepository repository)
         {
             _roomRepository = repository;
-            _logService = logService;
         }
 
         // Get all room
@@ -109,7 +107,7 @@ namespace Backend_online_testing.Services
             };
 
             await _roomRepository.InsertAsync(newRoom);
-            await _logService.AddLogAsync("update thanh userId sau", "create", $"Thêm phòng: {newRoom.RoomName}");
+            // await _logService.WriteLogAsync("update thanh userId sau", "create", $"Thêm phòng: {newRoom.RoomName}");
 
             var inserted = await _roomRepository.GetByIdAsync(newRoom.Id);
             return inserted != null ? "Success" : "Failed to create room.";
@@ -151,10 +149,10 @@ namespace Backend_online_testing.Services
             //     .Set(r => r.RoomSchedule, dto.RoomSchedule);
 
             var result = await _roomRepository.UpdateAsync(roomId, update);
-            if (result.ModifiedCount > 0)
-            {
-                await _logService.AddLogAsync("update thanh userId sau", "update", $"Cập nhật phòng {roomId} - {dto.RoomName}");
-            }
+            // if (result.ModifiedCount > 0)
+            // {
+            //     await _logService.AddLogAsync("update thanh userId sau", "update", $"Cập nhật phòng {roomId} - {dto.RoomName}");
+            // }
 
             return result.MatchedCount switch
             {
@@ -175,10 +173,10 @@ namespace Backend_online_testing.Services
                 // Nếu có thêm log: .Push(r => r.RoomLogs, roomLog)
 
             var result = await _roomRepository.UpdateAsync(roomId, update);
-            if (result.ModifiedCount > 0)
-            {
-                await _logService.AddLogAsync("update thanh userId sau", "delete", $"Xóa  phòng {roomId}");
-            }
+            // if (result.ModifiedCount > 0)
+            // {
+            //     await _logService.AddLogAsync("update thanh userId sau", "delete", $"Xóa  phòng {roomId}");
+            // }
             return result.ModifiedCount > 0 ? "Success" : "Disable room error";
         }
         
