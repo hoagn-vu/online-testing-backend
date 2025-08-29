@@ -9,7 +9,7 @@ public class OrganizeExamDto
     public string OrganizeExamName { get; set; } = string.Empty;
     public int Duration { get; set; }
     public int? TotalQuestions { get; set; }
-    public int? MaxScore { get; set; }
+    public double? MaxScore { get; set; }
     public string SubjectId { get; set; } = string.Empty;
     public string SubjectName { get; set; } = string.Empty;
     public string ExamType { get; set; } = string.Empty;
@@ -48,7 +48,7 @@ public class OrganizeExamResponseDto
     public string OrganizeExamName { get; set; } = string.Empty;
     public int Duration { get; set; }
     public int? TotalQuestions { get; set; }
-    public int? MaxScore { get; set; }
+    public double? MaxScore { get; set; }
     public string SubjectId { get; set; } = string.Empty;
     public string? QuestionBankId { get; set; } = string.Empty;
     public string ExamType { get; set; } = string.Empty;

@@ -423,13 +423,22 @@ public class OrganizeExamService
     public async Task<(string status, OrganizeExamModel? exam)> CreateOrganizeExamWithSessions(OrganizeExamRequestDto dto)
     {
         var totalQuestions = dto.TotalQuestions ?? 0;
+        var totalScore = dto.MaxScore ?? 0.0;
+
+        if (dto.ExamType == "matrix" && !string.IsNullOrEmpty(dto.MatrixId))
+        {
+            totalScore = await _organizeExamRepository.GetTotalMatrixScoreById(dto.MatrixId);
+        } else if (dto is { ExamType: "exams", Exams.Count: > 0 })
+        {
+            totalScore = await _organizeExamRepository.GetTotalQuestionScoreByExamId(dto.Exams[0]);
+        }
 
         var newExam = new OrganizeExamModel
         {
             OrganizeExamName = dto.OrganizeExamName,
             Duration = dto.Duration * 60,
             TotalQuestions = totalQuestions,
-            MaxScore = dto.MaxScore,
+            MaxScore = totalScore,
             SubjectId = dto.SubjectId,
             QuestionBankId = dto.QuestionBankId,
             ExamType = dto.ExamType,
