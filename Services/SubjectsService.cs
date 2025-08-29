@@ -546,4 +546,9 @@ public class SubjectsService
 
         return [];
     }
+    
+    public async Task<bool> AddQuestionsAsync(AddQuestionsRequestDto request)
+    {
+        return await _subjectRepository.AddQuestionsAsync(request);
+    }
 }
