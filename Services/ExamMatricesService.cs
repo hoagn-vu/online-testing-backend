@@ -13,10 +13,10 @@ namespace Backend_online_testing.Services
         Task<(List<ExamMatrixDto>, long)> GetExamMatrices(string? keyword, int page, int pageSize);
         Task<ExamMatricesModel> GetByIdExamMatrix(string id);
         Task<string> AddExamMatrix(ExamMatrixRequestDto matrixData);
-        Task<string> UpdateExamMatrix(string examMatrixId, ExamMatrixUpdateDto examMatrixData);
+        Task<(string?, string?)> UpdateExamMatrix(string examMatrixId, ExamMatrixUpdateDto examMatrixData);
         Task<string> DeleteExamMatrix(string examMatrixId, string matrixLogUserId);
         Task<(string, List<MatrixOptionsDto>)> GetMatrixOptions(string subjectId, string? questionBankId);
-        Task<(string status, List<GenerateExamByMatrixResponseDto>?)> GenerateExamAsync(GenerateExamByMatrixRequestDto request);
+        Task<(string status, string? matrixName, List<GenerateExamByMatrixResponseDto>?)> GenerateExamAsync(GenerateExamByMatrixRequestDto request);
 
     }
     
@@ -145,11 +145,11 @@ namespace Backend_online_testing.Services
         //     return result.ModifiedCount > 0 ? "Tags added successfully" : "Failed to add tags";
         // }
 
-        public async Task<string> UpdateExamMatrix(string examMatrixId, ExamMatrixUpdateDto examMatrixData)
+        public async Task<(string?, string?)> UpdateExamMatrix(string examMatrixId, ExamMatrixUpdateDto examMatrixData)
         {
             if (examMatrixData == null)
             {
-                return "Invalid data";
+                return (null, "Invalid data");
             }
 
             var filter = Builders<ExamMatricesModel>.Filter.Eq(x => x.Id, examMatrixId);
@@ -158,7 +158,7 @@ namespace Backend_online_testing.Services
 
             if (existingExamMatrix == null)
             {
-                return "Exam matrix not found";
+                return (null, "Exam matrix not found");
             }
 
             var updates = new List<UpdateDefinition<ExamMatricesModel>>();
@@ -179,13 +179,13 @@ namespace Backend_online_testing.Services
                 updates.Add(Builders<ExamMatricesModel>.Update.Set(x => x.QuestionBankId, examMatrixData.QuestionBankId));
 
             if (!updates.Any())
-                return "No valid data provided for update";
+                return (null, "No valid data provided for update");
 
             var updateDefinition = Builders<ExamMatricesModel>.Update.Combine(updates);
 
             var result = await _examMatrixsCollection.UpdateOneAsync(filter, updateDefinition);
 
-            return result.ModifiedCount > 0 ? "Exam matrix updated successfully" : "No changes were made";
+            return result.ModifiedCount > 0 ? (existingExamMatrix.MatrixName, "Exam matrix updated successfully") : (existingExamMatrix.MatrixName, "No changes were made");
         }
 
         // public async Task<string> UpdateTag(string examMatrixId, string tagName, int questionCount, double tagScore)
@@ -359,19 +359,19 @@ namespace Backend_online_testing.Services
             return ("ok", result);
         }
         
-        public async Task<(string status, List<GenerateExamByMatrixResponseDto>?)> GenerateExamAsync(GenerateExamByMatrixRequestDto request)
+        public async Task<(string status, string? matrixName, List<GenerateExamByMatrixResponseDto>?)> GenerateExamAsync(GenerateExamByMatrixRequestDto request)
         {
             var examMatrix = await _repo.GetExamMatrixByIdAsync(request.ExamMatrixId);
             if (examMatrix == null)
-                return ("exam-matrix-not-found", null);
+                return ("exam-matrix-not-found", null, null);
 
             var subject = await _repo.GetSubjectByIdAsync(examMatrix.SubjectId);
             if (subject == null)
-                return ("subject-not-found", null);
+                return ("subject-not-found", null, null);
 
             var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == examMatrix.QuestionBankId);
             if (questionBank == null)
-                return ("question-bank-not-found", null);
+                return ("question-bank-not-found", null, null);
 
             var generatedExams = new List<GenerateExamByMatrixResponseDto>();
 
@@ -400,7 +400,7 @@ namespace Backend_online_testing.Services
                             .ToList();
 
                         if (pool.Count < tag.QuestionCount)
-                            return ($"not-enough-questions-both-{tag.Chapter}-{tag.Level}", null);
+                            return ($"not-enough-questions-both-{tag.Chapter}-{tag.Level}", null, null);
 
                         var questions = pool
                             .OrderBy(_ => Guid.NewGuid())
@@ -429,7 +429,7 @@ namespace Backend_online_testing.Services
                             .ToList();
 
                         if (pool.Count < tag.QuestionCount)
-                            return ($"not-enough-questions-chapter-{tag.Chapter}", null);
+                            return ($"not-enough-questions-chapter-{tag.Chapter}", null, null);
 
                         var questions = pool
                             .OrderBy(_ => Guid.NewGuid())
@@ -458,7 +458,7 @@ namespace Backend_online_testing.Services
                             .ToList();
 
                         if (pool.Count < tag.QuestionCount)
-                            return ($"not-enough-questions-level-{tag.Level}", null);
+                            return ($"not-enough-questions-level-{tag.Level}", null, null);
 
                         var questions = pool
                             .OrderBy(_ => Guid.NewGuid())
@@ -492,7 +492,7 @@ namespace Backend_online_testing.Services
                 });
             }
 
-            return ("success", generatedExams);
+            return ("success", examMatrix.MatrixName, generatedExams);
         }
 
         

@@ -27,7 +27,8 @@ public class LogService : ILogsService
             MadeBy = dto.MadeBy,
             LogAction = dto.LogAction,
             LogDetails = dto.LogDetails,
-            LogAt = DateTime.UtcNow
+            LogAt = DateTime.UtcNow,
+            AffectedObject = dto.AffectedObject ?? null
         };
 
         await _logsRepository.AddLogAsync(log);
@@ -42,7 +43,8 @@ public class LogService : ILogsService
             MadeBy = l.MadeBy,
             LogAction = l.LogAction,
             LogAt = l.LogAt,
-            LogDetails = l.LogDetails
+            LogDetails = l.LogDetails,
+            AffectedObject = l.AffectedObject
         }).ToList();
     }
 
@@ -57,7 +59,8 @@ public class LogService : ILogsService
             MadeBy = log.MadeBy,
             LogAction = log.LogAction,
             LogAt = log.LogAt,
-            LogDetails = log.LogDetails
+            LogDetails = log.LogDetails,
+            AffectedObject = log.AffectedObject
         };
     }
 }

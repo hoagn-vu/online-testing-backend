@@ -33,7 +33,7 @@ namespace Backend_online_testing.Controllers
             await _logService.WriteLogAsync(new CreateLogDto
             {
                 MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
-                LogAction = "get",
+                LogAction = "get-room",
                 LogDetails = $"Truy cập danh sách phòng thi"
             });
             
@@ -58,6 +58,14 @@ namespace Backend_online_testing.Controllers
         public async Task<IActionResult> CreateRoom([FromBody] RoomDto dto)
         {
             var result = await _roomsService.CreateRoomAsync(dto);
+            
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "post-room",
+                LogDetails = $"Tạo phòng \"{dto.RoomName}\""
+            });
+            
             return result == "Success"
                 ? Ok(new { message = "Created" })
                 : BadRequest(new { message = result });
@@ -67,6 +75,14 @@ namespace Backend_online_testing.Controllers
         public async Task<IActionResult> UpdateRoom([FromBody] RoomDto dto, string roomId)
         {
             var result = await _roomsService.UpdateRoomAsync(dto, roomId);
+            
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "put-room",
+                LogDetails = $"Cập nhật thông tin phòng \"{dto.RoomName}\"",
+            });
+            
             return result == "Success"
                 ? Ok(new { message = "Updated" })
                 : BadRequest(new { error = result });
@@ -75,7 +91,15 @@ namespace Backend_online_testing.Controllers
         [HttpDelete("delete-room/{roomId}")]
         public async Task<IActionResult> DeleteRoom(string roomId)
         {
-            var result = await _roomsService.DeleteRoomAsync(roomId);
+            var (roomName, result) = await _roomsService.DeleteRoomAsync(roomId);
+            
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "delete-room",
+                LogDetails = $"Cập nhật thông tin phòng \"{roomName}\"",
+            });
+            
             return result == "Success"
                 ? Ok(new { message = "Deleted" })
                 : BadRequest(new { error = result });
@@ -87,6 +111,14 @@ namespace Backend_online_testing.Controllers
             var request = new GetRoomSchedulesRequestDto { RoomId = roomId, Start = start, End = end };
 
             var result = await _roomsService.GetRoomSchedulesAsync(request);
+            
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "get-room_schedules",
+                LogDetails = $"Truy cập lịch thi phòng \"{result?.RoomName}\"",
+            });
+            
             if (result == null)
             {
                 return NotFound(new { message = "Room not found" });

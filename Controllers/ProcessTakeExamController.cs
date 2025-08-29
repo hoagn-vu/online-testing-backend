@@ -11,10 +11,12 @@ namespace Backend_online_testing.Controllers;
 public class ProcessTakeExamController : ControllerBase
 {
     private readonly ProcessTakeExamService _processTakeExamService;
+    private readonly ILogsService _logService;
 
-    public ProcessTakeExamController(ProcessTakeExamService processTakeExamService)
+    public ProcessTakeExamController(ProcessTakeExamService processTakeExamService,  ILogsService logService)
     {
         _processTakeExamService = processTakeExamService;
+        _logService = logService;
     }
     
     [Authorize]
@@ -38,6 +40,12 @@ public class ProcessTakeExamController : ControllerBase
         if (status != "success")
             return BadRequest(new { code = status, message = "Toggle session failed" });
 
+        await _logService.WriteLogAsync(new CreateLogDto
+        {
+            MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+            LogAction = "post-session_status",
+            LogDetails = $"Cập nhật trạng thái ca thi (id: {request.SessionId})",
+        });
         return Ok(new { code = status, newStatus });
     }
 
@@ -51,6 +59,16 @@ public class ProcessTakeExamController : ControllerBase
         var (status, message) = await _processTakeExamService
             .ToggleRoomStatus(request.OrganizeExamId, request.SessionId, request.RoomId);
 
+        if (status == "success")
+        {
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "post-room_status",
+                LogDetails = $"Cập nhật trạng thái phòng thi (id: {request.RoomId})",
+            });
+        }
+        
         return status switch
         {
             "active" or "closed" => Ok(new
@@ -102,6 +120,15 @@ public class ProcessTakeExamController : ControllerBase
         if (!status)
             return BadRequest(new { code = description, description = "Không thể lưu/nộp bài."});
 
+        if (type == "submit")
+        {
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "post-submit_answers",
+                LogDetails = $"Nộp bài thi",
+            });
+        }
         return Ok(new { message = type == "submit" ? "Nộp bài thành công." : "Lưu bài thành công." });
     }
 
@@ -128,6 +155,12 @@ public class ProcessTakeExamController : ControllerBase
         var success = await _processTakeExamService.IncreaseViolationCount(userId, takeExamId);
         if (!success) return NotFound("User or TakeExam not found.");
 
+        await _logService.WriteLogAsync(new CreateLogDto
+        {
+            MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+            LogAction = "post-violation",
+            LogDetails = $"Phát hiện vi phạm",
+        });
         return Ok("Violation count increased.");
     }
     
@@ -190,6 +223,13 @@ public class ProcessTakeExamController : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var result = await _processTakeExamService.GetUserExamResultsAsync(userId, page, pageSize);
+        
+        await _logService.WriteLogAsync(new CreateLogDto
+        {
+            MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+            LogAction = "get-take_exam_history",
+            LogDetails = $"Truy cập lịch sử làm bài",
+        });
         return Ok(result);
     }
 

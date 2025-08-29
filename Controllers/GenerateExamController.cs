@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Backend_online_testing.Dtos;
 using Backend_online_testing.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -9,16 +10,28 @@ namespace Backend_online_testing.Controllers
     public class GenerateExamController : ControllerBase
     {
         private readonly IGenerateExamService _examService;
+        private readonly ILogsService  _logService;
 
-        public GenerateExamController(IGenerateExamService examService)
+        public GenerateExamController(IGenerateExamService examService,  ILogsService  logService)
         {
             _examService = examService;
+            _logService = logService;
         }
 
         [HttpPost]
         public async Task<IActionResult> GenerateExam([FromBody] GenerateExamRequestDto request)
         {
             var (status, response) = await _examService.GenerateExamAsync(request);
+
+            if (status == "success")
+            {
+                await _logService.WriteLogAsync(new CreateLogDto
+                {
+                    MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                    LogAction = "get-take_exam",
+                    LogDetails = $"Làm bài thi \"{response?.ExamName}\"",
+                });
+            }
                 
             return status switch
             {
@@ -39,7 +52,8 @@ namespace Backend_online_testing.Controllers
                 "error-exam-type" => BadRequest(new { code = status, message = "Lỗi lấy dữ liệu loại bài thi" }),
                 "exam-done" => Ok(new { code = status, message = "Bài thi đã hoàn thành" }),
                 "terminate" => Ok(new { code = status, message = "Bài thi bị hủy" }),
-                "success" => Ok(new {code = status, data = response})
+                "success" => Ok(new { code = status, data = response }),
+                _ => BadRequest(new { code = status, data = response })
             };
         }
     }

@@ -162,11 +162,11 @@ namespace Backend_online_testing.Services
             };
         }
 
-        public async Task<string> DeleteRoomAsync(string roomId)
+        public async Task<(string?, string?)> DeleteRoomAsync(string roomId)
         {
             var room = await _roomRepository.GetByIdAsync(roomId);
             if (room == null)
-                return "Room Not Found!";
+                return (null, "Room Not Found!");
 
             var update = Builders<RoomsModel>.Update
                 .Set(r => r.RoomStatus, "deleted");
@@ -177,7 +177,7 @@ namespace Backend_online_testing.Services
             // {
             //     await _logService.AddLogAsync("update thanh userId sau", "delete", $"Xóa  phòng {roomId}");
             // }
-            return result.ModifiedCount > 0 ? "Success" : "Disable room error";
+            return result.ModifiedCount > 0 ? (room.RoomName, "Success") : (room.RoomName, "Disable room error");
         }
         
         public async Task<RoomWithSchedulesDto?> GetRoomSchedulesAsync(GetRoomSchedulesRequestDto request)

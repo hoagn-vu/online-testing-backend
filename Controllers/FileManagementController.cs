@@ -1,4 +1,7 @@
-﻿namespace Backend_online_testing.Controllers
+﻿using System.Security.Claims;
+using Backend_online_testing.Dtos;
+
+namespace Backend_online_testing.Controllers
 {
     using Services;
     using Microsoft.AspNetCore.Mvc;
@@ -7,10 +10,12 @@
     public class FileManagementController : ControllerBase
     {
         private readonly IFileManagementService _fileService;
+        private readonly ILogsService _logService;
 
-        public FileManagementController(IFileManagementService fileService)
+        public FileManagementController(IFileManagementService fileService,  ILogsService logService)
         {
             _fileService = fileService;
+            _logService = logService;
         }
 
         [HttpPost("upload-file-question")]
@@ -50,6 +55,12 @@
 
                 if (result == "Tải tệp câu hỏi thành công")
                 {
+                    await _logService.WriteLogAsync(new CreateLogDto
+                    {
+                        MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                        LogAction = "post-upload_file-question",
+                        LogDetails = $"Tải lên tệp danh sách câu hỏi",
+                    });
                     return this.Ok(new { message = "Tải tệp câu hỏi thành công" });
                 }
                 else
@@ -82,6 +93,12 @@
 
             var users = await _fileService.UsersFileExcel(stream);
 
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "post-upload_file_user",
+                LogDetails = $"Tải lên tệp danh sách người dùng",
+            });
             return Ok(users);
         }
 
@@ -98,6 +115,13 @@
             stream.Position = 0;
 
             var result = await _fileService.GroupUser(stream);
+            
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "post-upload_file_user_group",
+                LogDetails = $"Tải lên tệp danh sách nhóm người dùng",
+            });
             return Ok(result);
         }
     }

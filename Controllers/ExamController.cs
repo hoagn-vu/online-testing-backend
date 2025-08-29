@@ -1,4 +1,6 @@
-﻿#pragma warning disable SA1309
+﻿using System.Security.Claims;
+
+#pragma warning disable SA1309
 namespace Backend_online_testing.Controllers
 {
     using Backend_online_testing.DTO;
@@ -13,10 +15,12 @@ namespace Backend_online_testing.Controllers
     public class ExamController : ControllerBase
     {
         private readonly ExamsService _examsService;
+        private readonly ILogsService _logService;
 
-        public ExamController(ExamsService examsService)
+        public ExamController(ExamsService examsService, ILogsService logService)
         {
             this._examsService = examsService;
+            _logService = logService;
         }
 
         // Get all Exam
@@ -24,6 +28,13 @@ namespace Backend_online_testing.Controllers
         public async Task<IActionResult> GetExams([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var (exams, totalCount) = await _examsService.GetExams(keyword, page, pageSize);
+            
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "get-exam",
+                LogDetails = $"Truy cập danh sách đề thi",
+            });
 
             return Ok(new { exams, totalCount });
         }
@@ -39,6 +50,13 @@ namespace Backend_online_testing.Controllers
                 return NotFound(new { message = "Không tìm thấy phân môn" });
             if (status == "error-questionBank")
                 return NotFound(new { message = "Không tìm thấy bộ đề thi" });
+            
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "get-exam_detail",
+                LogDetails = $"Truy cập chi tiết đề thi \"{detailedQuestions?.ExamName}\" - \"{detailedQuestions?.ExamCode}\"",
+            });
             return Ok(detailedQuestions);
         }
 
@@ -59,6 +77,12 @@ namespace Backend_online_testing.Controllers
             }
             else if (result == "Exam created successfully.")
             {
+                await _logService.WriteLogAsync(new CreateLogDto
+                {
+                    MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                    LogAction = "post-exam",
+                    LogDetails = $"Tạo đề thi \"{createExamData.ExamName}\" - \"{createExamData.ExamCode}\"",
+                });
                 return this.Ok(new { Message = result });
             }
             else
@@ -68,13 +92,20 @@ namespace Backend_online_testing.Controllers
         }
 
         // Add questions to Exam
-        [HttpPost("{examId}/questions")]
+        [HttpPost("{examId}/questions")]    
         public async Task<IActionResult> AddQuestionExam(string examId, [FromBody] ExamQuestionDTO addQuestionData, string userLogId)
         {
-            string addStatus = await this._examsService.AddExamQuestion(addQuestionData, examId, userLogId);
+            var (examCode, examName, addStatus) = await this._examsService.AddExamQuestion(addQuestionData, examId, userLogId);
 
             if (addStatus == "Question added successfully")
             {
+                await _logService.WriteLogAsync(new CreateLogDto
+                {
+                    MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                    LogAction = "put-exam_question",
+                    LogDetails = $"Thêm câu hỏi vào đề thi \"{examCode}\" - \"{examName}\"",
+                });
+                
                 return this.Ok(new { status = "Success", message = "Added question successfully." });
             }
 
@@ -94,6 +125,13 @@ namespace Backend_online_testing.Controllers
 
             if (updateSuccess)
             {
+                await _logService.WriteLogAsync(new CreateLogDto
+                {
+                    MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                    LogAction = "put-exam",
+                    LogDetails = $"Cập nhật đề thi \"{updateExamData.ExamName}\" - \"{updateExamData.ExamCode}\"",
+                });
+                
                 return this.Ok(new { status = "Success", message = "Exam updated successfully." });
             }
 

@@ -189,17 +189,17 @@ public class ExamsService
 
 
     // Add question one/list
-    public async Task<string> AddExamQuestion([FromBody] ExamQuestionDTO questionData, string examId, string userLogId)
+    public async Task<(string?, string?, string?)> AddExamQuestion([FromBody] ExamQuestionDTO questionData, string examId, string userLogId)
     {
         if (questionData == null)
         {
-            return "Invalid data";
+            return (null, null, "Invalid data");
         }
 
         var exam = await _examsRepository.GetByIdAsync(examId);
         if (exam == null)
         {
-            return "Exam not found";
+            return (null, null, "Exam not found");
         }
 
         var existingQuestions = exam.QuestionSet.Select(q => q.QuestionId).ToHashSet();
@@ -207,12 +207,12 @@ public class ExamsService
 
         if (!newQuestions.Any())
         {
-            return "Question already exists";
+            return (null, null, "Question already exists");
         }
 
         var result = await _examsRepository.AddQuestionAsync(examId, newQuestions);
 
-        return result.ModifiedCount > 0 ? "Question added successfully" : "Failure create question";
+        return result.ModifiedCount > 0 ? (exam.ExamCode, exam.ExamName, "Question added successfully") : (exam.ExamCode, exam.ExamName, "Failure create question");
     }
 
     // Update Question

@@ -21,4 +21,7 @@ public class LogsModel
 
     [BsonElement("logDetails")]
     public string LogDetails { get; set; } = string.Empty;
+    
+    [BsonElement("affectedObject")]
+    public string? AffectedObject { get; set; }
 }

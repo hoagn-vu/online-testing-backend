@@ -1,4 +1,6 @@
-﻿#pragma warning disable SA1309
+﻿using System.Security.Claims;
+
+#pragma warning disable SA1309
 namespace Backend_online_testing.Controllers;
 
 using System.Runtime.CompilerServices;
@@ -14,11 +16,13 @@ public class SubjectsController : ControllerBase
 {
     private readonly SubjectsService _subjectsService;
     private readonly S3Service _s3Service;
+    private readonly ILogsService _logService;
 
-    public SubjectsController(SubjectsService subjectsService, S3Service s3Service)
+    public SubjectsController(SubjectsService subjectsService, S3Service s3Service,  ILogsService logService)
     {
         _subjectsService = subjectsService;
         _s3Service = s3Service;
+        _logService = logService;
     }
 
     // Get subject
@@ -27,6 +31,12 @@ public class SubjectsController : ControllerBase
     {
         var (subjects, totalCount) = await _subjectsService.GetSubjects(keyword ?? string.Empty, page, pageSize);
 
+        await _logService.WriteLogAsync(new CreateLogDto
+        {
+            MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+            LogAction = "get-subject",
+            LogDetails = $"Truy cập danh sách phân môn",
+        });
         return Ok(new { subjects, totalCount });
     }
 
@@ -51,6 +61,12 @@ public class SubjectsController : ControllerBase
 
         if (result == "Add subject successfully")
         {
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "post-subject",
+                LogDetails = $"Tạo phân môn \"{subjectDto.SubjectName}\"",
+            });
             return Ok(new { message = result });
         }
         else
@@ -69,7 +85,13 @@ public class SubjectsController : ControllerBase
         }
 
         var (status, message, result) = await _subjectsService.UpdateSubject(subjectId, subjectDto);
-
+        
+        await _logService.WriteLogAsync(new CreateLogDto
+        {
+            MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+            LogAction = "put-subject",
+            LogDetails = $"Cập nhật phân môn \"{subjectDto?.SubjectName}\"",
+        });
         return Ok(new { status, message, subjectName = result });
     }
 
@@ -80,6 +102,12 @@ public class SubjectsController : ControllerBase
         var questionBanks = await _subjectsService.GetQuestionBanks(subjectId, keyword, page, pageSize);
         if (questionBanks == null) return NotFound();
         
+        await _logService.WriteLogAsync(new CreateLogDto
+        {
+            MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+            LogAction = "get-subject_question_banks",
+            LogDetails = $"Truy cập danh sách bộ câu hỏi của phân môn \"{questionBanks?.SubjectName}\"",
+        });
         return Ok(questionBanks);
     }
 
@@ -99,6 +127,12 @@ public class SubjectsController : ControllerBase
 
         if (result == "Add question bank successfully")
         {
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "post-subject_question_banks",
+                LogDetails = $"Tạo bộ câu hỏi \"{questionBankDto?.QuestionBankName}\"",
+            });
             return this.Ok(new { message = result });
         }
         else
@@ -136,6 +170,12 @@ public class SubjectsController : ControllerBase
             return NotFound(new { status = result.status, message = result.message });
         }
 
+        await _logService.WriteLogAsync(new CreateLogDto
+        {
+            MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+            LogAction = "put-subject_question_banks",
+            LogDetails = $"Cập nhật bộ câu hỏi \"{result.questionBank?.QuestionBankName}\"",
+        });
         return Ok(new
         {
             status = result.status,
@@ -149,6 +189,13 @@ public class SubjectsController : ControllerBase
     public async Task<ActionResult<List<SubjectsModel>>> GetQuestions(string subId, string qbId, [FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var (subjectId, subjectName, questionBankId, questionBankName, allChapter, allLevel, questions, totalCount) = await _subjectsService.GetQuestions(subId, qbId, keyword, page, pageSize);
+        
+        await _logService.WriteLogAsync(new CreateLogDto
+        {
+            MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+            LogAction = "get-subject_question_banks_questions",
+            LogDetails = $"Truy cập danh sách câu hỏi trong bộ câu hỏi \"{questionBankName}\" thuộc phân môn \"{subjectName}\"",
+        });
         return Ok(new { subjectId, subjectName, questionBankId, questionBankName, allChapter, allLevel, questions, totalCount });
     }    
     
@@ -260,11 +307,18 @@ public class SubjectsController : ControllerBase
     [HttpDelete("delete-subject")]
     public async Task<ActionResult> DeleteSubject(string subjectId)
     {
-        var result = await this._subjectsService.DeleteSubject(subjectId);
+        var result = await _subjectsService.DeleteSubject(subjectId);
 
         if (result == "Delete subject successfully")
         {
-            return this.Ok(new { message = result });
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "delete-subject",
+                LogDetails = $"Xóa phân môn (id: {subjectId})",
+            });
+            
+            return Ok(new { message = result });
         }
         else
         {
@@ -280,6 +334,13 @@ public class SubjectsController : ControllerBase
 
         if (result == "Delete question bank successfully")
         {
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "delete-subject_question_banks",
+                LogDetails = $"Xóa bộ câu hỏi  (id: {questionBankId})",
+            });
+            
             return this.Ok(new { message = result });
         }
         else
@@ -296,6 +357,13 @@ public class SubjectsController : ControllerBase
 
         if (result == "Question deleted successfully")
         {
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "delete-subject_question_banks_questions",
+                LogDetails = $"Xóa câu hỏi (id: {questionId})",
+            });
+            
             return this.Ok(new { message = result });
         }
         else
