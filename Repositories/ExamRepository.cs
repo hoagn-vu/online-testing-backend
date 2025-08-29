@@ -11,11 +11,13 @@ public class ExamRepository
 {
     private readonly IMongoCollection<ExamsModel> _exams;
     private readonly IMongoCollection<SubjectsModel> _subjects;
+    private readonly IMongoCollection<ExamMatricesModel> _examMatrices;
 
     public ExamRepository(IMongoDatabase database)
     {
         _exams = database.GetCollection<ExamsModel>("exams");
         _subjects = database.GetCollection<SubjectsModel>("subjects");
+        _examMatrices = database.GetCollection<ExamMatricesModel>("examMatrices");
     }
 
     //Filter definition
@@ -180,5 +182,12 @@ public class ExamRepository
             });
 
         return await _exams.Find(filter).Sort(sort).Project(projection).ToListAsync();
+    }
+    
+    
+    
+    public async Task<ExamMatricesModel?> GetMatrixByIdAsync(string matrixId)
+    {
+        return await _examMatrices.Find(m => m.Id == matrixId).FirstOrDefaultAsync();
     }
 }

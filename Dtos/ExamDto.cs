@@ -22,6 +22,8 @@
         public string ExamStatus { get; set; } = string.Empty;
         public string QuestionBankId { get; set; } = string.Empty;
         public string? QuestionBankName { get; set; } = string.Empty;
+        public string? MatrixId { get; set; }
+        public string? MatrixName { get; set; }
     }
 
     public class ExamDetailResponseDto

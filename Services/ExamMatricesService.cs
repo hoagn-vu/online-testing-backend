@@ -384,7 +384,7 @@ namespace Backend_online_testing.Services
                     SubjectId = examMatrix.SubjectId,
                     QuestionBankId = examMatrix.QuestionBankId,
                     MatrixId = examMatrix.Id,
-                    ExamStatus = "pending",
+                    ExamStatus = "available",
                     QuestionSet = []
                 };
 

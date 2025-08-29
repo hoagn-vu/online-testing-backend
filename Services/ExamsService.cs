@@ -48,6 +48,13 @@ public class ExamsService
                 var questionBank = subject.QuestionBanks.FirstOrDefault(qb => qb.QuestionBankId == exam.QuestionBankId);
                 questionBankName = questionBank?.QuestionBankName ?? string.Empty;
             }
+            
+            var matrixName = string.Empty;
+            if (!string.IsNullOrEmpty(exam.MatrixId))
+            {
+                var matrix = await _examsRepository.GetMatrixByIdAsync(exam.MatrixId);
+                matrixName = matrix?.MatrixName;
+            }
 
             examResponseList.Add(new ExamResponseDto
             {
@@ -58,7 +65,9 @@ public class ExamsService
                 SubjectName = subjectName,
                 ExamStatus = exam.ExamStatus,
                 QuestionBankId = exam.QuestionBankId,
-                QuestionBankName = questionBankName
+                QuestionBankName = questionBankName,
+                MatrixId = exam.MatrixId,
+                MatrixName = matrixName
             });
         }
 
