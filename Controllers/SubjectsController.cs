@@ -15,10 +15,10 @@ using Microsoft.AspNetCore.Mvc;
 public class SubjectsController : ControllerBase
 {
     private readonly SubjectsService _subjectsService;
-    private readonly S3Service _s3Service;
+    private readonly IS3Service _s3Service;
     private readonly ILogsService _logService;
 
-    public SubjectsController(SubjectsService subjectsService, S3Service s3Service,  ILogsService logService)
+    public SubjectsController(SubjectsService subjectsService, IS3Service s3Service,  ILogsService logService)
     {
         _subjectsService = subjectsService;
         _s3Service = s3Service;
@@ -303,6 +303,21 @@ public class SubjectsController : ControllerBase
 
         return Ok(new { message = "Thêm câu hỏi thành công" });
     }
+    
+    // save question with img availble
+    [HttpPost("{subjectId}/question-banks/{questionBankId}/questions-with-images")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> AddQuestionsWithImages(
+        string subjectId, 
+        string questionBankId, 
+        [FromForm] List<AddSubjectQuestionWithImageDto> questions)
+    {
+        var success = await _subjectsService.AddQuestionsWithImagesAsync(subjectId, questionBankId, questions);
+        if (!success) return NotFound(new { message = "Subject hoặc QuestionBank không tồn tại" });
+
+        return Ok(new { message = "Thêm câu hỏi kèm ảnh thành công" });
+    }
+
 
     // Update question Id
     [HttpPut("update-question/{questionId}")]
