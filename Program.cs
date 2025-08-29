@@ -100,15 +100,40 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Configuration.GetValue<bool>("EnableSwagger") || app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+        var ex = exFeature?.Error;
+
+        context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
+        context.Response.Headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type,Accept,Origin,X-Requested-With";
+
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+
+        var payload = new
+        {
+            error = "Internal Server Error",
+            message = app.Environment.IsDevelopment() ? ex?.Message : null,
+            stackTrace = app.Environment.IsDevelopment() ? ex?.ToString() : null
+        };
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
+    });
+});
+
+app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseCors("AllowAll");
-
-app.UseHttpsRedirection();
 
 app.UseAuthentication();
 
