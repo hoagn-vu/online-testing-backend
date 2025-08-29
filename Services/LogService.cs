@@ -1,32 +1,63 @@
+using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
 using Backend_online_testing.Repositories;
 
 namespace Backend_online_testing.Services;
 
-public class LogService
+public interface ILogsService
 {
-    private readonly LogRepository _logRepository;
+    Task WriteLogAsync(CreateLogDto dto);
+    Task<List<LogResponseDto>> GetLogsAsync();
+    Task<LogResponseDto?> GetLogByIdAsync(string id);
+}
 
-    public LogService(LogRepository logRepository)
+public class LogService : ILogsService
+{
+    private readonly ILogsRepository _logsRepository;
+
+    public LogService(ILogsRepository logsRepository)
     {
-        _logRepository = logRepository;
+        _logsRepository = logsRepository;
     }
 
-    public async Task<List<LogsModel>> GetLogsAsync()
-    {
-        return await _logRepository.GetAllLogsAsync();
-    }
-
-    public async Task AddLogAsync(string madeBy, string action, string details)
+    public async Task WriteLogAsync(CreateLogDto dto)
     {
         var log = new LogsModel
         {
-            MadeBy = madeBy,
-            LogAction = action,
-            LogDetails = details,
+            MadeBy = dto.MadeBy,
+            LogAction = dto.LogAction,
+            LogDetails = dto.LogDetails,
             LogAt = DateTime.UtcNow
         };
 
-        await _logRepository.InsertLogAsync(log);
+        await _logsRepository.AddLogAsync(log);
+    }
+
+    public async Task<List<LogResponseDto>> GetLogsAsync()
+    {
+        var logs = await _logsRepository.GetAllLogsAsync();
+        return logs.Select(l => new LogResponseDto
+        {
+            Id = l.Id,
+            MadeBy = l.MadeBy,
+            LogAction = l.LogAction,
+            LogAt = l.LogAt,
+            LogDetails = l.LogDetails
+        }).ToList();
+    }
+
+    public async Task<LogResponseDto?> GetLogByIdAsync(string id)
+    {
+        var log = await _logsRepository.GetLogByIdAsync(id);
+        if (log == null) return null;
+
+        return new LogResponseDto
+        {
+            Id = log.Id,
+            MadeBy = log.MadeBy,
+            LogAction = log.LogAction,
+            LogAt = log.LogAt,
+            LogDetails = log.LogDetails
+        };
     }
 }

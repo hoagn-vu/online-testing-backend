@@ -1,3 +1,4 @@
+using Backend_online_testing.Dtos;
 using Backend_online_testing.Models;
 using Backend_online_testing.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -23,9 +24,9 @@ namespace Backend_online_testing.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddLog([FromBody] LogsModel log)
+        public async Task<IActionResult> AddLog([FromBody] CreateLogDto log)
         {
-            await _logService.AddLogAsync(log.MadeBy, log.LogAction, log.LogDetails);
+            await _logService.WriteLogAsync(log);
             return Ok(new { message = "Log created successfully" });
         }
     }
