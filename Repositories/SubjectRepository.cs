@@ -418,4 +418,34 @@ public class SubjectRepository
 
     
     
+    public async Task<bool> AddQuestionsAsync(AddQuestionsRequestDto request)
+    {
+        var filter = Builders<SubjectsModel>.Filter.And(
+            Builders<SubjectsModel>.Filter.Eq(s => s.Id, request.SubjectId),
+            Builders<SubjectsModel>.Filter.ElemMatch(s => s.QuestionBanks, qb => qb.QuestionBankId == request.QuestionBankId)
+        );
+
+        var newQuestions = request.Questions.Select(q => new QuestionModel
+        {
+            QuestionType = q.QuestionType ?? "single-choice",
+            QuestionText = q.QuestionText ?? string.Empty,
+            QuestionStatus = q.QuestionStatus ?? "available",
+            Options = q.Options?.Select(o => new OptionsModel
+            {
+                OptionText = o.OptionText,
+                IsCorrect = o.IsCorrect
+            }).ToList() ?? [],
+            IsRandomOrder = q.IsRandomOrder,
+            Tags = q.Tags ?? [],
+            ImgLinks = q.ImgLinks ?? []
+        }).ToList();
+
+        var update = Builders<SubjectsModel>.Update.PushEach(
+            "questionBanks.$.questionList",
+            newQuestions
+        );
+
+        var result = await _subjects.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
+    }
 }

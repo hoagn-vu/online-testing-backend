@@ -286,6 +286,23 @@ public class SubjectsController : ControllerBase
             return BadRequest(new { error = result });
         }
     }
+    
+    // Save qua dto
+    [HttpPost("{subjectId}/question-banks/{questionBankId}/questions")]
+    public async Task<IActionResult> AddQuestionss(string subjectId, string questionBankId, [FromBody] List<AddSubjectQuestionDto> questions)
+    {
+        var request = new AddQuestionsRequestDto
+        {
+            SubjectId = subjectId,
+            QuestionBankId = questionBankId,
+            Questions = questions
+        };
+
+        var success = await _subjectsService.AddQuestionsAsync(request);
+        if (!success) return NotFound(new { message = "Subject hoặc QuestionBank không tồn tại" });
+
+        return Ok(new { message = "Thêm câu hỏi thành công" });
+    }
 
     // Update question Id
     [HttpPut("update-question/{questionId}")]
