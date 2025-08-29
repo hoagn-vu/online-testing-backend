@@ -2,6 +2,8 @@ using System.Text;
 using Backend_online_testing.Services;
 using Backend_online_testing.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
+using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 
@@ -9,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add configuration file
 builder.Configuration
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile("Connection.json", optional: true, reloadOnChange: true);
 
 // Configure MongoDb
@@ -99,22 +101,50 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Configuration.GetValue<bool>("EnableSwagger") || app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAll");
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+        var ex = exFeature?.Error;
 
-app.UseRouting();
+        context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
+        context.Response.Headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type,Accept,Origin,X-Requested-With";
+
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+
+        var payload = new
+        {
+            error = "Internal Server Error",
+            message = app.Environment.IsDevelopment() ? ex?.Message : null,
+            stackTrace = app.Environment.IsDevelopment() ? ex?.ToString() : null
+        };
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
+    });
+});
 
 app.UseHttpsRedirection();
+app.UseRouting();
+
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGet("/health", () => Results.Ok(new { ok = true, env = app.Environment.EnvironmentName, time = DateTime.UtcNow }));
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();

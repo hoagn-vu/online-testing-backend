@@ -15,6 +15,8 @@
     <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.1" />
+    <None Include="appsettings.json" CopyToOutputDirectory="Always" />
+    <None Include="appsettings.Production.json" CopyToOutputDirectory="Always" Condition="Exists('appsettings.Production.json')" />
   </ItemGroup>
 
   <ItemGroup>
