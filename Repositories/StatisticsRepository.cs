@@ -380,13 +380,24 @@ public class StatisticsRepository
 
     public async Task UpsertGradeStatisticAsync(GradeStatisticModel doc)
     {
-        if (string.IsNullOrWhiteSpace(doc.Id))
-            doc.Id = ObjectId.GenerateNewId().ToString();
-
         var filter = Builders<GradeStatisticModel>.Filter
-            .Eq(x => x.OrganizeExamId, doc.OrganizeExamId);
+        .Eq(x => x.OrganizeExamId, doc.OrganizeExamId);
 
-        await _gradeStats.ReplaceOneAsync(filter, doc, new ReplaceOptions { IsUpsert = true });
+        var existing = await _gradeStats.Find(filter).FirstOrDefaultAsync();
+
+        if (existing is null)
+        {
+            if (string.IsNullOrWhiteSpace(doc.Id))
+                doc.Id = ObjectId.GenerateNewId().ToString();
+
+            await _gradeStats.InsertOneAsync(doc);
+        }
+        else
+        {
+            // PHẢI giữ nguyên _id cũ
+            doc.Id = existing.Id;
+            await _gradeStats.ReplaceOneAsync(filter, doc);
+        }
     }
 
     public async Task<GradeStatisticModel?> GetGradeStatisticSnapshotAsync(string organizeExamId)
