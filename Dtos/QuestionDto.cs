@@ -85,4 +85,28 @@ namespace Backend_online_testing.Dtos
         public SubjectQuestionDto Question { get; set; } = new();
         public List<IFormFile>? Images { get; set; }
     }
+    
+    public class AddSubjectQuestionWithImageDto
+    {
+        public string? QuestionType { get; set; } = "single-choice";
+        public string? QuestionText { get; set; } = string.Empty;
+        public string? QuestionStatus { get; set; } = "available";
+        public List<OptionsDto>? Options { get; set; } = [];
+        public bool? IsRandomOrder { get; set; }
+        public List<string>? Tags { get; set; } = ["", ""];
+        public List<IFormFile>? Images { get; set; }
+        public List<string> ImgLinks { get; set; } = [];
+    }
+    
+    public class AddSubjectQuestionWithImageLinksDto
+    {
+        public string? QuestionType { get; set; } = "single-choice";
+        public string? QuestionText { get; set; } = string.Empty;
+        public string? QuestionStatus { get; set; } = "available";
+        public List<OptionsDto>? Options { get; set; } = [];
+        public bool? IsRandomOrder { get; set; }
+        public List<string>? Tags { get; set; } = ["", ""];
+        public List<string> ImgLinks { get; set; } = [];
+    }
+
 }

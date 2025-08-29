@@ -4,7 +4,12 @@ using Microsoft.Extensions.Configuration;
 
 namespace Backend_online_testing.Services
 {
-    public class S3Service
+    public interface IS3Service
+    {
+        Task<string> UploadFileAsync(IFormFile file);
+    }
+    
+    public class S3Service:  IS3Service
     {
         private readonly IAmazonS3 _s3Client;
         private readonly string _bucketName;

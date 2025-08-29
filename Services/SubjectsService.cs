@@ -15,10 +15,12 @@ public class SubjectsService
     //private readonly IMongoCollection<LogsModel> _logsCollection;
 
     private readonly SubjectRepository _subjectRepository;
-
-    public SubjectsService(SubjectRepository subjectRepository)
+    private readonly IS3Service _s3Service;
+    
+    public SubjectsService(SubjectRepository subjectRepository, IS3Service s3Service)
     {
         _subjectRepository = subjectRepository;
+        _s3Service = s3Service;
     }
 
     // Find all
@@ -550,5 +552,28 @@ public class SubjectsService
     public async Task<bool> AddQuestionsAsync(AddQuestionsRequestDto request)
     {
         return await _subjectRepository.AddQuestionsAsync(request);
+    }
+    
+    public async Task<bool> AddQuestionsWithImagesAsync(string subjectId, string questionBankId, List<AddSubjectQuestionWithImageDto> questions)
+    {
+        foreach (var q in questions)
+        {
+            var imgLinks = new List<string>();
+
+            if (q.Images is { Count: > 0 })
+            {
+                foreach (var file in q.Images)
+                {
+                    var link = await _s3Service.UploadFileAsync(file);
+                    imgLinks.Add(link);
+                }
+            }
+
+            // Gán lại link ảnh sau khi upload
+            q.ImgLinks = imgLinks;
+            q.Images = null; // tránh serialize thừa
+        }
+
+        return await _subjectRepository.AddQuestionsWithImagesAsync(subjectId, questionBankId, questions);
     }
 }
