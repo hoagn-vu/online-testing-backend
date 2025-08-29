@@ -74,7 +74,9 @@ public class StatisticsRepository
         var te = user?.TakeExam?
             .FirstOrDefault(x => x.OrganizeExamId == organizeExamId
                               && x.SessionId == sessionId
-                              && x.RoomId == roomId);
+                              && x.RoomId == roomId
+                              && x.Status == "done"
+                          );
 
         return te?.TotalScore;
     }

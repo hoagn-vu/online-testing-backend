@@ -45,11 +45,12 @@ public class StatisticsService
 
                 foreach (var candId in candidates)
                 {
-                    totalCandidates++;
 
                     // get user score -> takeExams following (organizeExamId, sessionId, roomId)
                     var score = await _statisticsRepository.GetTotalScoreFromTakeExamAsync(
                         candId, organizeExam.Id, sessionId, roomId);
+
+                    totalCandidates++;
 
                     if (score is null)
                     {
