@@ -10,6 +10,7 @@ namespace Backend_online_testing.Dtos
         public string MadeBy { get; set; } = string.Empty;
         public string LogAction { get; set; } = string.Empty;
         public string LogDetails { get; set; } = string.Empty;
+        public string? AffectedObject { get; set; } = null;
     }
 
     public class LogResponseDto
@@ -19,5 +20,6 @@ namespace Backend_online_testing.Dtos
         public string LogAction { get; set; } = string.Empty;
         public DateTime LogAt { get; set; }
         public string LogDetails { get; set; } = string.Empty;
+        public string? AffectedObject { get; set; } = null;
     }
 }

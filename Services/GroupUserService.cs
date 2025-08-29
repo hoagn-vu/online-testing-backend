@@ -2,6 +2,7 @@
 using Backend_online_testing.Models;
 using Backend_online_testing.Repositories;
 using DocumentFormat.OpenXml.Office2010.Excel;
+using MongoDB.Driver;
 
 namespace Backend_online_testing.Services;
 
@@ -70,7 +71,7 @@ public class GroupUserService
     }
 
     //Create group user
-    public async Task<bool> CreateGroupUserAsync(GroupUserCreateDto groupDto)
+    public async Task<(string?, bool)> CreateGroupUserAsync(GroupUserCreateDto groupDto)
     {
         var userIds = await _groupUserRepository.GetUserIdsByUserCodesAsync(groupDto.ListUser);
 
@@ -82,7 +83,7 @@ public class GroupUserService
         };
 
         await _groupUserRepository.CreateGroupUserAsync(group);
-        return true;
+        return (groupDto.GroupName, true);
     }
 
     //Add users to group
@@ -101,9 +102,20 @@ public class GroupUserService
 
 
     //Delete group user by id
-    public async Task<bool> DeleteGroupUserAsync(string userGroupId)
+    public async Task<(string?, string?)> DeleteGroupUserAsync(string userGroupId)
     {
-        return await _groupUserRepository.DeleteByIdAsync(userGroupId);
+        // return await _groupUserRepository.DeleteByIdAsync(userGroupId);
+        var group = await _groupUserRepository.GetByIdAsync(userGroupId);
+        if (group == null)
+            return (null, "not-found");
+
+        var update = Builders<GroupUserModel>.Update
+            .Set(r => r.GroupStatus, "deleted");
+        // Nếu có thêm log: .Push(r => r.RoomLogs, roomLog)
+
+        var result = await _groupUserRepository.UpdateGroupAsync(userGroupId, update);
+ 
+        return result.ModifiedCount > 0 ? (group.GroupName, "Success") : (group.GroupName, "Delete group error");
     }
 
     //Delete user code in group

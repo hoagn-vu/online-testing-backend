@@ -103,6 +103,12 @@ public class GroupUserRepository
         return result.ModifiedCount > 0;
     }
 
+    public async Task<UpdateResult> UpdateGroupAsync(string groupId, UpdateDefinition<GroupUserModel> update)
+    {
+        var filter = Builders<GroupUserModel>.Filter.Eq(r => r.Id, groupId);
+        return await _groupUser.UpdateOneAsync(filter, update);
+    }
+    
     //Update group name
     public async Task<bool> UpdateGroupNameAsync(string groupId, string newGroupName)
     {
@@ -119,8 +125,16 @@ public class GroupUserRepository
     //Delete user by id
     public async Task<bool> DeleteByIdAsync(string id)
     {
-        var result = await _groupUser.DeleteOneAsync(g => g.Id == id);
-        return result.DeletedCount > 0;
+        // var result = await _groupUser.DeleteOneAsync(g => g.Id == id);
+        // return result.DeletedCount > 0;
+        var update = Builders<GroupUserModel>.Update.Set(g => g.GroupStatus, "deleted");
+
+        var result = await _groupUser.UpdateOneAsync(
+            g => g.Id == id,
+            update
+        );
+
+        return result.ModifiedCount > 0;
     }
 
     //Delete by user code

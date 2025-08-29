@@ -338,9 +338,31 @@ public class SubjectRepository
     {
         var filter = SubjectFilterById(subjectId);
         var update = Builders<SubjectsModel>.Update.Set(s => s.QuestionBanks, subject.QuestionBanks);
-
+    
         return await _subjects.UpdateOneAsync(filter, update);
     }
+    // public async Task<UpdateResult> DeleteQuestion(string subjectId, string questionBankId, string questionId)
+    // {
+    //     var filter = Builders<SubjectsModel>.Filter.And(
+    //         SubjectFilterById(subjectId),
+    //         Builders<SubjectsModel>.Filter.Eq("questionBanks.QuestionBankId", questionBankId)
+    //     );
+    //
+    //     var update = Builders<SubjectsModel>.Update
+    //         .Set("questionBanks.$[qb].questionList.$[q].questionStatus", "deleted");
+    //
+    //     var options = new UpdateOptions
+    //     {
+    //         ArrayFilters = new List<ArrayFilterDefinition>
+    //         {
+    //             new JsonArrayFilterDefinition<QuestionBanksModel>("{ 'qb.QuestionBankId': '" + questionBankId + "' }"),
+    //             new JsonArrayFilterDefinition<QuestionModel>("{ 'q.QuestionId': '" + questionId + "' }")
+    //         }
+    //     };
+    //
+    //     return await _subjects.UpdateOneAsync(filter, update, options);
+    // }
+
     
     
     

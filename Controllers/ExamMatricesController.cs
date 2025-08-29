@@ -1,4 +1,6 @@
-﻿namespace Backend_online_testing.Controllers
+﻿using System.Security.Claims;
+
+namespace Backend_online_testing.Controllers
 {
     using Backend_online_testing.Dtos;
     using Backend_online_testing.Models;
@@ -12,10 +14,12 @@
     public class ExamMatricesController : ControllerBase
     {
         private readonly IExamMatricesService _examMatricesService;
+        private readonly ILogsService _logService;
 
-        public ExamMatricesController(IExamMatricesService examMatricesService)
+        public ExamMatricesController(IExamMatricesService examMatricesService,  ILogsService logService)
         {
             this._examMatricesService = examMatricesService;
+            _logService = logService;
         }
 
         // Get all exam matrix
@@ -23,6 +27,13 @@
         public async Task<IActionResult> GetExamMatrices([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var (examMatrices, totalCount) = await _examMatricesService.GetExamMatrices(keyword, page, pageSize);
+            
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "get-matrix",
+                LogDetails = $"Truy cập danh sách ma trận đề thi",
+            });
 
             return Ok(new { examMatrices, totalCount });
         }
@@ -38,6 +49,12 @@
                 return NotFound(new { message = "Exam matrix not found" });
             }
 
+            await _logService.WriteLogAsync(new CreateLogDto
+            {
+                MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                LogAction = "get-matrix_detail",
+                LogDetails = $"Truy cập chi tiết ma trận đề thi \"{result.MatrixName}\"",
+            });
             return this.Ok(new { status = "Success", data = result });
         }
 
@@ -49,6 +66,12 @@
 
             if (result == "Tạo ma trận thành công")
             {
+                await _logService.WriteLogAsync(new CreateLogDto
+                {
+                    MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                    LogAction = "post-matrix",
+                    LogDetails = $"Tạo ma trận đề thi \"{examMatrixData.MatrixName}\"",
+                });
                 return Ok(new { status = "Success", message = result });
             }
 
@@ -72,9 +95,15 @@
         [HttpPut("{examMatrixId}")]
         public async Task<IActionResult> UpdateMatrixExam(string examMatrixId, [FromBody] ExamMatrixUpdateDto examMatrixData)
         {
-            var result = await this._examMatricesService.UpdateExamMatrix(examMatrixId, examMatrixData);
+            var (matrixName, result) = await this._examMatricesService.UpdateExamMatrix(examMatrixId, examMatrixData);
             if (result == "Exam matrix updated successfully")
             {
+                await _logService.WriteLogAsync(new CreateLogDto
+                {
+                    MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                    LogAction = "post-matrix",
+                    LogDetails = $"Tạo ma trận đề thi \"{matrixName}\"",
+                });
                 return this.Ok(new { status = "Success", message = result });
             }
 
@@ -142,7 +171,20 @@
         [HttpPost("generate-exam")]
         public async Task<IActionResult> Generate([FromBody] GenerateExamByMatrixRequestDto request)
         {
-            var (status, result) = await _examMatricesService.GenerateExamAsync(request);
+            var (status, matrixName, result) = await _examMatricesService.GenerateExamAsync(request);
+
+            if (status == "success" && result != null)
+            {
+                foreach (var ex in result)
+                {
+                    await _logService.WriteLogAsync(new CreateLogDto
+                    {
+                        MadeBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                        LogAction = "post-matrix_generate_exam",
+                        LogDetails = $"Tạo đề thi \"{ex.ExamName}\" - \"{ex.ExamCode}\" ma trận đề thi \"{matrixName}\"",
+                    });
+                }
+            }
 
             return status switch
             {
