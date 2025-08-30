@@ -132,7 +132,7 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseCors("AllowAll");
