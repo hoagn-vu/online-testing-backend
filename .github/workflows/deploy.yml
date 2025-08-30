@@ -3,7 +3,7 @@ name: Deploy Online Testing Backend
 on:
   push:
     branches:
-      - stone04
+      - main
   workflow_dispatch:
 
 jobs:
